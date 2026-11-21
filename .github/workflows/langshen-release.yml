@@ -377,7 +377,9 @@ jobs:
         with:
           name: android
           if-no-files-found: error
-          path: out/langshenagent-*-android*.apk out/langshenagent-*.apk
+          path: |
+            out/langshenagent-*-android*.apk
+            out/langshenagent-*.apk
       - uses: actions/upload-artifact@v6
         with:
           name: symbols-android
