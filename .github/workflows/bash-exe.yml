@@ -15,8 +15,7 @@
 name: LangshenAgent Bash
 
 on:
-  push:
-    tags: ['bash-exe-*']
+  # No R2 secrets on this account; kept for a hand-run build only.
   # Its main, with this workflow and its test changed.
   pull_request:
     paths:

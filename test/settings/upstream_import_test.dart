@@ -127,7 +127,7 @@ void main() {
       expect(find.text(why), findsNothing);
       await click(find.text('Why am I seeing this?'));
       await click(find.text('List My Site Too'));
-      expect(opened.last, Uri.parse('https://langshenagent.dev/upstreams'));
+      expect(opened.last, Uri.parse('https://langshen.shop/upstreams'));
       expect(find.text(why), findsNothing);
     });
 
@@ -220,7 +220,7 @@ void main() {
     });
 
     testWidgets('Settings → Models shows the list kept at once, the new one '
-        'as langshenagent.dev answers, a site of theirs then leading', (
+        'as langshen.shop answers, a site of theirs then leading', (
       tester,
     ) async {
       tester.view.physicalSize = const Size(1000, 1400);

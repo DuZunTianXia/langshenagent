@@ -15,8 +15,10 @@
 name: Mobile
 
 on:
-  push:
-    tags: ['mobile-*']
+  # langshen-release.yml publishes the phone app in mobile/ to
+  # dl.langshen.shop now; this one (langshenagent-dev/mobile) is kept for
+  # a hand-run build only.
+  workflow_dispatch:
 
 permissions:
   contents: read

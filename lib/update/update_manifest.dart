@@ -5,8 +5,8 @@ import 'dart:convert';
 import 'version.dart';
 
 /// Where the app looks for its next version: the release manifest
-/// dl.langshenagent.dev serves (docs/auto-update.md has its format).
-const defaultManifestUrl = 'https://dl.langshenagent.dev/releases/latest.json';
+/// dl.langshen.shop serves (docs/auto-update.md has its format).
+const defaultManifestUrl = 'https://dl.langshen.shop/releases/latest.json';
 
 /// The environment variable that points the app at another manifest, to
 /// try a release before it is published (a local server's, say).
@@ -38,7 +38,7 @@ class UpdateUrlPolicy {
       ? const UpdateUrlPolicy()
       : UpdateUrlPolicy(extraOrigins: {manifest.origin});
 
-  static const domain = 'langshenagent.dev';
+  static const domain = 'langshen.shop';
 
   final Set<String> extraOrigins;
 

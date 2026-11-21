@@ -1,4 +1,4 @@
-// The upstreams Settings → Models lists, got from langshenagent.dev: kept with
+// The upstreams Settings → Models lists, got from langshen.shop: kept with
 // their logos, and what was kept when it does not answer.
 
 import 'dart:convert';
@@ -44,7 +44,7 @@ void main() {
   });
 
   test('a site listed shows at once, its logo downloaded beside the list; '
-      'kept for when langshenagent.dev does not answer', () async {
+      'kept for when langshen.shop does not answer', () async {
     list = jsonEncode({
       'upstreams': [
         {'id': 'a', 'name': 'A', 'url': 'https://a.dev', 'logo': 'a.png'},

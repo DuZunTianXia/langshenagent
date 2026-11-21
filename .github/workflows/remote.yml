@@ -17,8 +17,8 @@
 name: Remote server
 
 on:
-  push:
-    tags: ['server-*']
+  # langshen-release.yml calls this (workflow_call) and mirrors the
+  # builds; a server-* tag's own publish went to R2, which is not set up.
   workflow_dispatch:
   workflow_call:
 

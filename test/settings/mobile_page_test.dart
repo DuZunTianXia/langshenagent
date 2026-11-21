@@ -40,8 +40,8 @@ void main() {
     // The download page's links (site/download.html), which lead to the
     // release current when scanned.
     expect(codes, [
-      'https://langshenagent.dev/dl/android',
-      'https://langshenagent.dev/dl/ios',
+      'https://langshen.shop/dl/android',
+      'https://langshen.shop/dl/ios',
     ]);
     expect(find.text('Android'), findsOneWidget);
     expect(find.text('iPhone and iPad'), findsOneWidget);
@@ -76,7 +76,7 @@ void main() {
     expect(host.enabled, isTrue);
     expect(_pairCode, findsOneWidget);
     expect(
-      find.text('On, reachable through relay-us1.langshenagent.dev'),
+      find.text('On, reachable through relay-us1.langshen.shop'),
       findsOneWidget,
     );
 

@@ -12,8 +12,8 @@
 name: Extension
 
 on:
-  push:
-    tags: ['extension-*']
+  # No R2/store secrets on this account; kept for a hand-run build only.
+  workflow_dispatch:
   pull_request:
     paths:
       - 'browser_extension/**'

@@ -32,11 +32,12 @@ class UpdateController {
   /// Opens a file in the app the system opens it with: the install's log.
   final Future<void> Function(String path)? openFile;
 
-  /// [version]'s notes on the site's changelog (tool/build_changelog.dart
-  /// makes it), the Chinese page for [languageCode] `zh`.
+  /// [version]'s notes on its GitHub release (the publish job's
+  /// `gh release create` writes them; tool/build_changelog.dart's page is
+  /// not up). [languageCode] makes no difference there.
   static Uri changelogUrl(AppVersion version, String languageCode) => Uri.parse(
-    'https://langshenagent.dev/${languageCode.startsWith('zh') ? 'zh/' : ''}'
-    'changelog#v${version.marketing}',
+    'https://github.com/DuZunTianXia/baocode/releases/tag/'
+    'v${version.marketing}',
   );
 
   bool _restarting = false;

@@ -6849,8 +6849,8 @@ void main() {
           ClaudeLaunch(cwd: '/p', attribution: attribution);
       expect(flagSettings(launch(CommitAttribution.langshenagent)), {
         'attribution': {
-          'commit': 'Co-Authored-By: LangshenAgent <noreply@langshenagent.dev>',
-          'pr': '🤖 Generated with [LangshenAgent](https://langshenagent.dev)',
+          'commit': 'Co-Authored-By: LangshenAgent <noreply@langshen.shop>',
+          'pr': '🤖 Generated with [LangshenAgent](https://langshen.shop)',
         },
       });
       expect(flagSettings(launch(CommitAttribution.none)), {

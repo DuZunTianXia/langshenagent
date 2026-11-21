@@ -10,13 +10,13 @@ import '../workspace/editor_launcher.dart' show openExternal;
 import 'browser_bridge.dart';
 
 /// Where LangshenAgent's extension is got. The store's page is the site's to say
-/// (`store` in dl.langshenagent.dev's releases/extension/latest.json, which
+/// (`store` in dl.langshen.shop's releases/extension/latest.json, which
 /// .github/workflows/extension.yml writes): fetched once a run, kept in
 /// the cache for when the site does not answer, and before the first
 /// answer the page the extension's id makes.
 abstract final class ExtensionStore {
   static final manifest = Uri.https(
-    'dl.langshenagent.dev',
+    'dl.langshen.shop',
     '/releases/extension/latest.json',
   );
 

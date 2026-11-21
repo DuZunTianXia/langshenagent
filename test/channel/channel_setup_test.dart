@@ -270,8 +270,8 @@ void main() {
       await setup.openPage(zh: false);
       await setup.openPage(zh: true);
       expect(opened, [
-        Uri.parse('https://langshenagent.dev/activate#i=$_id'),
-        Uri.parse('https://langshenagent.dev/zh/activate#i=$_id'),
+        Uri.parse('https://langshen.shop/activate#i=$_id'),
+        Uri.parse('https://langshen.shop/zh/activate#i=$_id'),
       ]);
       expect(setup.waiting, isTrue);
     });
@@ -379,7 +379,7 @@ void main() {
       addTearDown(setup.dispose);
       for (final link in [
         '',
-        'https://langshenagent.dev/activate#i=$_id',
+        'https://langshen.shop/activate#i=$_id',
         'langshenagent://provider/import?v=1',
         'langshenagent://activate?i=$_id',
         'langshenagent://activate?i=$_id&s=channel',
@@ -407,7 +407,7 @@ void main() {
       expect(setup.done, isFalse);
       await setup.openPage(zh: false);
       expect(opened, [
-        Uri.parse('https://langshenagent.dev/activate#i=$_id&again=$_again'),
+        Uri.parse('https://langshen.shop/activate#i=$_id&again=$_again'),
       ]);
       server.kept = const ChannelAttribution('channel', 'aijws');
       await until(() => setup.done);
@@ -419,7 +419,7 @@ void main() {
     test('tells its links from the other langshenagent:// links', () {
       expect(ChannelSetup.isLink('langshenagent://activate?i=x'), isTrue);
       expect(ChannelSetup.isLink('langshenagent://provider/import?v=1'), isFalse);
-      expect(ChannelSetup.isLink('https://langshenagent.dev/activate'), isFalse);
+      expect(ChannelSetup.isLink('https://langshen.shop/activate'), isFalse);
     });
   });
 
@@ -562,7 +562,7 @@ void main() {
       final shown = await open(tester, setup);
       await tester.tap(find.text('在浏览器中完成设置').last);
       await tester.pump();
-      expect(opened, [Uri.parse('https://langshenagent.dev/zh/activate#i=$_id')]);
+      expect(opened, [Uri.parse('https://langshen.shop/zh/activate#i=$_id')]);
       expect(find.text('正在等待浏览器完成…'), findsOneWidget);
       expect(find.text('重新打开网页'), findsOneWidget);
 
@@ -667,7 +667,7 @@ void main() {
       await tester.tap(find.text('去浏览器确认'));
       await tester.pump();
       expect(opened, [
-        Uri.parse('https://langshenagent.dev/zh/activate#i=$_id&again=$_again'),
+        Uri.parse('https://langshen.shop/zh/activate#i=$_id&again=$_again'),
       ]);
       expect(shown.gate.stage, ChannelStage.setup);
       expect(find.text('正在等待浏览器完成…'), findsOneWidget);
@@ -731,7 +731,7 @@ void main() {
       await tester.pump();
       expect(find.text('浏览器没有打开'), findsOneWidget);
       expect(find.text('正在等待浏览器完成…'), findsNothing);
-      final address = 'https://langshenagent.dev/zh/activate#i=$_id';
+      final address = 'https://langshen.shop/zh/activate#i=$_id';
       expect(find.text(address), findsOneWidget);
       await tester.tap(find.text('复制'));
       await tester.pump();

@@ -28,8 +28,8 @@
 name: Release
 
 on:
-  push:
-    tags: ['v*', 'test-*']
+  # Published by langshen-release.yml to dl.langshen.shop now; kept for a
+  # hand-run build only (Run workflow).
   workflow_dispatch:
     inputs:
       editions:

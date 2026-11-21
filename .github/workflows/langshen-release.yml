@@ -1,0 +1,551 @@
+# Builds LangshenAgent and publishes it to dl.langshen.shop — the Caddy on
+# the Mac mini serving ~/langshen-dl-mirror/data (mirror.env), where the
+# installed apps find their updates. The builds run on that Mac (the
+# self-hosted runner labelled `langshen`), the Windows and Linux ones on
+# GitHub's, and the publish job copies the files into the mirror and signs
+# the update manifest (tool/release_manifest.dart).
+#
+#   git tag v2.0.4 && git push origin v2.0.4
+#                                      build and publish the desktop
+#                                      release of pubspec.yaml's version
+#   git tag mobile-v1.0.35 && git push origin mobile-v1.0.35
+#                                      build and publish the phone app of
+#                                      mobile/pubspec.yaml's version
+#   git tag test-foo / mobile-test-foo, pushed the same
+#                                      build, and put the files at
+#                                      dl.langshen.shop/test/… for testers
+#                                      (no manifest written, no update)
+#   Actions → LangshenAgent release → Run workflow
+#                                      build only, to try the build
+#
+# The remote server builds on GitHub's runners beside the desktop builds
+# (remote.yml called as a job); the publish mirrors them too, for SSH
+# remote projects (--remote-release).
+name: LangshenAgent release
+
+on:
+  push:
+    tags: ['v*', 'mobile-*', 'test-*']
+  workflow_dispatch:
+    inputs:
+      target:
+        description: What to build
+        type: choice
+        default: desktop
+        options: [desktop, mobile]
+
+permissions:
+  contents: read
+  # To see when the remote server's artifact is there (wait-for-artifact).
+  actions: read
+
+# One release at a time; one that started is never cancelled halfway
+# through its upload. A build for testers, or run by hand, publishes no
+# release, and waits for none.
+concurrency:
+  group: ${{ startsWith(github.ref, 'refs/tags/v') && 'release' ||
+            startsWith(github.ref, 'refs/tags/mobile-v') && 'mobile-release' ||
+            format('build-{0}', github.run_id) }}
+  cancel-in-progress: false
+
+env:
+  FLUTTER_VERSION: 3.47.5
+  # The mirror Caddy serves (~/langshen-dl-mirror/mirror.env), on the
+  # self-hosted runner. The publish jobs' outputs land in it directly.
+  MIRROR_ROOT: /Users/xiaolang/langshen-dl-mirror/data
+  UPDATE_SIGNING_KEY: /Users/xiaolang/.langshenagent-release/update-signing.key
+
+jobs:
+  check:
+    name: Check the version
+    runs-on: ubuntu-latest
+    outputs:
+      kind: ${{ steps.version.outputs.kind }}
+      version: ${{ steps.version.outputs.version }}
+      marketing: ${{ steps.version.outputs.marketing }}
+      publish: ${{ steps.version.outputs.publish }}
+      share: ${{ steps.version.outputs.share }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: version
+        name: Read the version, and match the tag against it
+        env:
+          TARGET: ${{ inputs.target }}
+        run: |
+          kind=desktop
+          case "$GITHUB_REF_NAME" in
+            mobile-*) kind=mobile ;;
+            v*|test-*) kind=desktop ;;
+            *) [ "$GITHUB_EVENT_NAME" = workflow_dispatch ] || exit 1
+               kind=$TARGET ;;
+          esac
+          spec=pubspec.yaml
+          [ "$kind" = mobile ] && spec=mobile/pubspec.yaml
+          version=$(sed -n 's/^version:[[:space:]]*//p' "$spec")
+          marketing=${version%%+*}
+          echo "$spec: $version"
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+\+[0-9]+$ ]]; then
+            echo "::error::$version is not x.y.z+build"
+            exit 1
+          fi
+          publish=false
+          share=false
+          if [ "$GITHUB_REF_TYPE" = tag ] && [ "$GITHUB_EVENT_NAME" = push ]; then
+            if [[ "$GITHUB_REF_NAME" == *-test-* || "$GITHUB_REF_NAME" == test-* ]]; then
+              share=true
+            else
+              expected=v$marketing
+              [ "$kind" = mobile ] && expected=mobile-v$marketing
+              if [ "$GITHUB_REF_NAME" != "$expected" ]; then
+                echo "::error::Tag $GITHUB_REF_NAME, but $spec is $version: the tag has to be $expected"
+                exit 1
+              fi
+              publish=true
+            fi
+          fi
+          {
+            echo "kind=$kind"
+            echo "version=$version"
+            echo "marketing=$marketing"
+            echo "publish=$publish"
+            echo "share=$share"
+          } >> "$GITHUB_OUTPUT"
+
+  # The remote server, built once on GitHub's runners for the desktop
+  # builds to carry (wait-for-artifact) and the publish to mirror.
+  remote:
+    name: Remote server
+    needs: check
+    if: needs.check.outputs.kind == 'desktop'
+    uses: ./.github/workflows/remote.yml
+
+  # On the Mac mini: the Flutter SDK and the toolchain are its own, the
+  # dmg/zip signed ad hoc unless the MACOS_* secrets are set.
+  macos:
+    name: Build for macOS
+    needs: check
+    if: needs.check.outputs.kind == 'desktop'
+    runs-on: [self-hosted, langshen]
+    env:
+      MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+      MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+      NOTARY_KEY: ${{ secrets.NOTARY_KEY }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+      - name: Put the Developer ID certificate in a keychain
+        if: env.MACOS_CERTIFICATE != ''
+        run: |
+          keychain="$RUNNER_TEMP/signing.keychain-db"
+          password=$(openssl rand -hex 24)
+          echo "$MACOS_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
+          security create-keychain -p "$password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$password" "$keychain"
+          security import "$RUNNER_TEMP/certificate.p12" -k "$keychain" \
+            -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -k "$password" "$keychain" > /dev/null
+          security list-keychains -d user -s "$keychain" $(security list-keychains -d user | tr -d '"')
+          rm "$RUNNER_TEMP/certificate.p12"
+      - name: Put the notary key in a file
+        if: env.NOTARY_KEY != ''
+        run: |
+          echo "$NOTARY_KEY" > "$RUNNER_TEMP/notary.p8"
+          echo "LANGSHENAGENT_NOTARY_KEY=$RUNNER_TEMP/notary.p8" >> "$GITHUB_ENV"
+      - name: Install create-dmg
+        run: brew install create-dmg
+      - id: iroh
+        uses: ./.github/actions/bao-iroh-prebuilt
+      - if: steps.iroh.outputs.hit != 'true'
+        uses: ./.github/actions/setup-rust
+      # The Mac's PATH has FlyEnv's rustc ahead of the toolchain's, which a
+      # `rustup run` cargo picks up (E0463): the toolchain's bin first.
+      - name: Put the Rust toolchain's bin ahead on PATH
+        run: echo "$HOME/.rustup/toolchains/1.97.1-aarch64-apple-darwin/bin" >> "$GITHUB_PATH"
+      - name: Build
+        run: dart run tool/build_macos.dart --build-only
+      - uses: ./.github/actions/wait-for-artifact
+        with:
+          name: remote
+          path: build/remote
+          job: Remote server / Build the remote server
+      - name: Sign, notarise and package
+        env:
+          LANGSHENAGENT_MACOS_SIGN_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
+          LANGSHENAGENT_NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          LANGSHENAGENT_NOTARY_ISSUER: ${{ secrets.NOTARY_ISSUER }}
+        run: dart run tool/build_macos.dart --skip-build --remote-built
+      - uses: actions/upload-artifact@v6
+        with:
+          name: macos
+          if-no-files-found: error
+          path: |
+            build/installers/LangshenAgent-*.dmg
+            build/installers/LangshenAgent-*-mac-*.zip
+      - uses: actions/upload-artifact@v6
+        with:
+          name: symbols-macos
+          if-no-files-found: error
+          retention-days: 90
+          path: build/symbols/App.macos.symbols
+      - name: Forget the certificate and the key
+        if: always()
+        run: |
+          security delete-keychain "$RUNNER_TEMP/signing.keychain-db" 2>/dev/null || true
+          rm -f "$RUNNER_TEMP/notary.p8"
+
+  windows:
+    name: Build for Windows (${{ matrix.arch }})
+    needs: check
+    if: needs.check.outputs.kind == 'desktop'
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, arm64]
+        include:
+          - arch: x64
+            runner: windows-latest
+          - arch: arm64
+            runner: windows-11-arm
+    env:
+      ARCH_SUFFIX: ${{ matrix.arch == 'arm64' && '-arm64' || '' }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        if: matrix.arch == 'x64'
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+      - name: Clone Flutter
+        if: matrix.arch == 'arm64'
+        shell: pwsh
+        run: |
+          git clone --depth 1 --branch "$env:FLUTTER_VERSION" https://github.com/flutter/flutter.git "$env:RUNNER_TEMP\flutter"
+          "$env:RUNNER_TEMP\flutter\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          & "$env:RUNNER_TEMP\flutter\bin\flutter.bat" --version
+          & "$env:RUNNER_TEMP\flutter\bin\flutter.bat" precache --windows
+      - name: Install Inno Setup
+        if: matrix.arch == 'x64'
+        run: choco install innosetup --no-progress -y
+      - name: Install Inno Setup
+        if: matrix.arch == 'arm64'
+        shell: pwsh
+        run: |
+          $is = "$env:RUNNER_TEMP\innosetup.exe"
+          Invoke-WebRequest https://github.com/jrsoftware/issrc/releases/download/is-6_7_3/innosetup-6.7.3.exe -OutFile $is
+          if ((Get-FileHash $is -Algorithm SHA256).Hash -ne '9C73C3BAE7ED48D44112A0F48E66742C00090BDB5BEF71D9D3C056C66E97B732') { throw 'innosetup-6.7.3.exe: wrong SHA-256' }
+          $setup = Start-Process $is -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-','/ALLUSERS' -Wait -PassThru
+          if ($setup.ExitCode -ne 0) { throw "Inno Setup's installer exited with $($setup.ExitCode)" }
+      - id: iroh
+        uses: ./.github/actions/bao-iroh-prebuilt
+      - if: steps.iroh.outputs.hit != 'true'
+        uses: ./.github/actions/setup-rust
+      - name: Build
+        run: dart run tool/build_windows.dart --build-only --arch ${{ matrix.arch }}
+      - uses: ./.github/actions/wait-for-artifact
+        with:
+          name: remote
+          path: build/remote
+          job: Remote server / Build the remote server
+      - name: Package
+        run: dart run tool/build_windows.dart --skip-build --remote-built --arch ${{ matrix.arch }}
+      - uses: actions/upload-artifact@v6
+        with:
+          name: windows-${{ matrix.arch }}
+          if-no-files-found: error
+          path: build/installers/LangshenAgent-*-setup${{ env.ARCH_SUFFIX }}.exe
+      - uses: actions/upload-artifact@v6
+        with:
+          name: symbols-windows-${{ matrix.arch }}
+          if-no-files-found: error
+          retention-days: 90
+          path: build/symbols/app.windows-${{ matrix.arch }}.symbols
+
+  linux:
+    name: Build for Linux (${{ matrix.arch }})
+    needs: check
+    if: needs.check.outputs.kind == 'desktop'
+    runs-on: ${{ matrix.runner }}
+    container:
+      image: ubuntu:20.04
+      options: --dns 8.8.8.8 --dns 1.1.1.1
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, arm64]
+        include:
+          - arch: x64
+            runner: ubuntu-22.04
+          - arch: arm64
+            runner: ubuntu-22.04-arm
+    steps:
+      - name: Install the build's tools
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sed -i 's#http://\(archive\|security\)\.ubuntu\.com#http://azure.archive.ubuntu.com#' \
+            /etc/apt/sources.list
+          for attempt in 1 2 3 4 5; do
+            apt-get -o Acquire::Retries=5 update 2>&1 | tee "$RUNNER_TEMP/apt.log" || true
+            grep -q '^[WE]: Failed to fetch' "$RUNNER_TEMP/apt.log" || break
+            [ "$attempt" = 5 ] && exit 1
+            sleep 15
+          done
+          apt-get -o Acquire::Retries=5 install -y build-essential ca-certificates curl git jq unzip \
+            xz-utils zip file clang cmake ninja-build pkg-config libgtk-3-dev \
+            liblzma-dev python3 procps xvfb xauth dbus-x11 zstd
+          git config --global --add safe.directory '*'
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        if: matrix.arch == 'x64'
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+      - name: Clone Flutter
+        if: matrix.arch == 'arm64'
+        run: |
+          git clone --depth 1 --branch "$FLUTTER_VERSION" \
+            https://github.com/flutter/flutter.git "$RUNNER_TEMP/flutter"
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/flutter/bin/flutter" --version
+      - id: iroh
+        uses: ./.github/actions/bao-iroh-prebuilt
+      - if: steps.iroh.outputs.hit != 'true'
+        uses: ./.github/actions/setup-rust
+      - name: Build
+        run: |
+          mkdir -p build/symbols
+          flutter build linux --release \
+            "--extra-gen-snapshot-options=--save-debugging-info=$PWD/build/symbols/app.linux-${{ matrix.arch }}.symbols"
+      - uses: ./.github/actions/wait-for-artifact
+        with:
+          name: remote
+          path: build/remote
+          job: Remote server / Build the remote server
+      - name: Package the .deb and the tarball
+        run: |
+          sh tool/package_linux_deb.sh
+          dpkg-deb --info build/installers/LangshenAgent-*.deb
+      - uses: actions/upload-artifact@v6
+        with:
+          name: linux-${{ matrix.arch }}
+          if-no-files-found: error
+          path: |
+            build/installers/LangshenAgent-*.deb
+            build/installers/LangshenAgent-*.tar.gz
+      - uses: actions/upload-artifact@v6
+        with:
+          name: symbols-linux-${{ matrix.arch }}
+          if-no-files-found: error
+          retention-days: 90
+          path: build/symbols/app.linux-${{ matrix.arch }}.symbols
+
+  # The phone app on the Mac mini: its Android SDK and the debug key every
+  # APK so far is signed with (a new key would not update over them).
+  android:
+    name: Build for Android
+    needs: check
+    if: needs.check.outputs.kind == 'mobile'
+    runs-on: [self-hosted, langshen]
+    env:
+      MARKETING: ${{ needs.check.outputs.marketing }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+      - name: Put the Rust toolchain's bin ahead on PATH
+        run: echo "$HOME/.rustup/toolchains/1.97.1-aarch64-apple-darwin/bin" >> "$GITHUB_PATH"
+      - name: Build the APK
+        working-directory: mobile
+        run: |
+          mkdir -p ../out
+          flutter build apk --release --obfuscate --split-debug-info=../symbols/android
+          cp build/app/outputs/flutter-apk/app-release.apk "../out/langshenagent-$MARKETING.apk"
+      - uses: actions/upload-artifact@v6
+        with:
+          name: android
+          if-no-files-found: error
+          path: out/langshenagent-*-android*.apk out/langshenagent-*.apk
+      - uses: actions/upload-artifact@v6
+        with:
+          name: symbols-android
+          if-no-files-found: error
+          retention-days: 90
+          path: symbols/
+
+  # A test-* / mobile-test-* tag's files at dl.langshen.shop/test/…, no
+  # manifest touched: installed apps are never offered them.
+  share:
+    name: Put it at dl.langshen.shop/test/ for testers
+    needs: [check, macos, windows, linux, android]
+    if: always() && needs.check.outputs.share == 'true'
+    runs-on: [self-hosted, langshen]
+    env:
+      MARKETING: ${{ needs.check.outputs.marketing }}
+      KIND: ${{ needs.check.outputs.kind }}
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Upload
+        run: |
+          name=$(printf '%s' "${GITHUB_REF_NAME}" | tr -c 'A-Za-z0-9.-' '-' | sed 's/^test-\|^mobile-test-//;s/-*$//')
+          dir="test/$KIND-$MARKETING-$name-$GITHUB_RUN_NUMBER"
+          mkdir -p "$MIRROR_ROOT/$dir"
+          {
+            echo "## For testers: $MARKETING, \`$GITHUB_REF_NAME\` (${GITHUB_SHA::7})"
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+          for file in dist/LangshenAgent-* dist/langshenagent-*; do
+            [ -f "$file" ] || continue
+            name=$(basename "$file")
+            cp "$file" "$MIRROR_ROOT/$dir/$name"
+            url="https://dl.langshen.shop/$dir/$name"
+            served=$(curl -fsSI "$url" | tr -d '\r' | awk 'tolower($1) == "content-length:" { print $2 }')
+            [ "$served" = "$(stat -f %z "$file")" ] || { echo "::error::$url is not served as copied"; exit 1; }
+            echo "- [$name]($url)" >> "$GITHUB_STEP_SUMMARY"
+          done
+          cat "$GITHUB_STEP_SUMMARY"
+
+  # The desktop files into the mirror, the remote server with them, and
+  # the update manifest signed (the key on the Mac, out of the repo).
+  publish:
+    name: Publish to dl.langshen.shop
+    needs: [check, remote, macos, windows, linux]
+    if: needs.check.outputs.kind == 'desktop' && needs.check.outputs.publish == 'true'
+    runs-on: [self-hosted, langshen]
+    permissions:
+      contents: write # the GitHub release
+    env:
+      VERSION: ${{ needs.check.outputs.version }}
+      MARKETING: ${{ needs.check.outputs.marketing }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+      - uses: actions/download-artifact@v7
+        with:
+          path: dist
+      - name: Gather the files
+        run: |
+          mkdir -p out
+          for arch in arm64 x64; do
+            cp "dist/macos/LangshenAgent-$MARKETING-$arch.dmg" \
+              "dist/macos/LangshenAgent-$MARKETING-mac-$arch.zip" out/
+            cp "dist/windows-$arch/LangshenAgent-$MARKETING-setup$([ "$arch" = arm64 ] && echo -arm64).exe" out/
+            cp dist/linux-$arch/LangshenAgent-$MARKETING-linux-*.deb \
+              dist/linux-$arch/LangshenAgent-$MARKETING-linux-*.tar.gz out/
+          done
+          remote="out/remote/$(cat dist/remote/VERSION)"
+          mkdir -p "$remote"
+          cp dist/remote/*.gz dist/remote/servers.json "$remote/"
+          find out -type f | sort
+      - name: Put the Rust toolchain's bin ahead on PATH
+        run: echo "$HOME/.rustup/toolchains/1.97.1-aarch64-apple-darwin/bin" >> "$GITHUB_PATH"
+      - name: Sign the release into latest.json
+        run: |
+          flutter pub get
+          notes=()
+          for language in en zh; do
+            file="release-notes/$MARKETING.$language.md"
+            if [ -f "$file" ]; then
+              notes+=(--notes-$language "$file")
+            else
+              echo "::warning::No $file: the update notification and the changelog say nothing of $MARKETING"
+            fi
+          done
+          LANGSHENAGENT_UPDATE_SIGNING_KEY="$UPDATE_SIGNING_KEY" \
+            dart run tool/release_manifest.dart \
+              --version "$VERSION" \
+              --windows "out/LangshenAgent-$MARKETING-setup.exe" \
+              --windows-arm64 "out/LangshenAgent-$MARKETING-setup-arm64.exe" \
+              --macos-arm64 "out/LangshenAgent-$MARKETING-mac-arm64.zip" \
+              --macos-x64 "out/LangshenAgent-$MARKETING-mac-x64.zip" \
+              --dmg-arm64 "out/LangshenAgent-$MARKETING-arm64.dmg" \
+              --dmg-x64 "out/LangshenAgent-$MARKETING-x64.dmg" \
+              --linux-x64 "out/LangshenAgent-$MARKETING-linux-amd64.deb" \
+              --linux-arm64 "out/LangshenAgent-$MARKETING-linux-arm64.deb" \
+              --manifest out/latest.json \
+              "${notes[@]}"
+      - name: Copy into the mirror
+        run: |
+          mkdir -p "$MIRROR_ROOT/releases/$MARKETING" "$MIRROR_ROOT/releases/remote"
+          cp -R out/remote/* "$MIRROR_ROOT/releases/remote/"
+          jq -n --arg version "$(cat dist/remote/VERSION)" --arg tag "$GITHUB_REF_NAME" --arg commit "$GITHUB_SHA" \
+            '{version: $version, tag: $tag, commit: $commit}' > remote-latest.json
+          cp remote-latest.json "$MIRROR_ROOT/releases/remote/latest.json"
+          cp out/LangshenAgent-* "$MIRROR_ROOT/releases/$MARKETING/"
+          cp out/latest.json "$MIRROR_ROOT/releases/latest.json"
+      - name: Check the downloads are served
+        run: |
+          sleep 2
+          jq -r '(.downloads[], .platforms[]?) | "\(.url) \(.size)"' out/latest.json | sort -u |
+          while read -r url expected; do
+            served=$(curl -fsSI "$url" | tr -d '\r' | awk 'tolower($1) == "content-length:" { print $2 }')
+            echo "$url: $served bytes (expected $expected)"
+            [ "$served" = "$expected" ] || { echo "::error::$url is not served as copied"; exit 1; }
+          done
+          cat out/latest.json | jq .
+      # The page UpdateController.changelogUrl points at.
+      - name: Make the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          notes=(--generate-notes)
+          [ -f "release-notes/$MARKETING.en.md" ] && notes=(--notes-file "release-notes/$MARKETING.en.md")
+          gh release delete "v$MARKETING" --yes 2>/dev/null || true
+          gh release create "v$MARKETING" --title "LangshenAgent $MARKETING" "${notes[@]}" \
+            out/LangshenAgent-$MARKETING-arm64.dmg out/LangshenAgent-$MARKETING-x64.dmg \
+            out/LangshenAgent-$MARKETING-setup.exe out/LangshenAgent-$MARKETING-setup-arm64.exe \
+            out/LangshenAgent-$MARKETING-linux-amd64.deb out/LangshenAgent-$MARKETING-linux-arm64.deb \
+            out/LangshenAgent-$MARKETING-linux-amd64.tar.gz out/LangshenAgent-$MARKETING-linux-arm64.tar.gz
+
+  # The phone app's APK into the mirror and its manifest beside the
+  # diagnostics' (reports/langshenagent-latest.json, mobile/lib/update.dart).
+  publish-mobile:
+    name: Publish the APK to dl.langshen.shop
+    needs: [check, android]
+    if: needs.check.outputs.kind == 'mobile' && needs.check.outputs.publish == 'true'
+    runs-on: [self-hosted, langshen]
+    env:
+      VERSION: ${{ needs.check.outputs.version }}
+      MARKETING: ${{ needs.check.outputs.marketing }}
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: android
+          path: dist
+      - name: Copy into the mirror and write the manifest
+        run: |
+          apk="langshenagent-$MARKETING.apk"
+          cp "dist/$apk" "$MIRROR_ROOT/apk/$apk"
+          size=$(stat -f %z "$MIRROR_ROOT/apk/$apk")
+          notes="LangshenAgent $MARKETING"
+          file="release-notes/$MARKETING.zh.md"
+          [ -f "$file" ] && notes=$(head -c 500 "$file" | tr '\n' ' ')
+          jq -n --arg version "$MARKETING" --argjson build "${VERSION##*+}" \
+            --arg apk "/apk/$apk" --argjson size "$size" --arg notes "$notes" \
+            '{version: $version, build: $build, apk: $apk, size: $size, notes: $notes}' \
+            > "$MIRROR_ROOT/reports/langshenagent-latest.json"
+          cat "$MIRROR_ROOT/reports/langshenagent-latest.json"
+      - name: Check it is served
+        run: |
+          sleep 2
+          url="https://dl.langshen.shop/apk/langshenagent-$MARKETING.apk"
+          served=$(curl -fsSI "$url" | tr -d '\r' | awk 'tolower($1) == "content-length:" { print $2 }')
+          expected=$(jq -r .size "$MIRROR_ROOT/reports/langshenagent-latest.json")
+          echo "$url: $served bytes (expected $expected)"
+          [ "$served" = "$expected" ]
