@@ -1,0 +1,78 @@
+{
+  "version": "2.0.3+36",
+  "pubDate": "2026-11-21T16:17:19.395919Z",
+  "notes": {
+    "en": "Mostly about bots looking after your agents: they start conversations, hand out work, wait for it and check the files changed, just as an agent in a conversation does. Also, Quick Open finds every file of a large project, and big folders on a Linux remote host no longer stall the connection.\n\nNew\n- Bots manage agents with the same tools as a conversation: a new conversation can be given a model or a worktree on a new branch; a message to a busy one is queued instead of refused; whole replies are read, a conversation waited for, and the files it changed checked.\n- When a conversation is compacted early, the divider says why: the provider refused the request as too long, the model taking less than the context set. The divider is translated too.\n- Java: the modules of a multi-module project share one language server; when a project fails to import you get a notice with its log, instead of only \"No references found\". Thanks to @bestK.\n\nFixed\n- Conversations a bot handed work to are still known as its own after the desktop restarts, and it is still told when they are done.\n- After the desktop restarts, the phone is no longer pushed the bot's earlier messages again.\n- A bot without Agent notifications tells you, when it hands out work, that it won't hear when it is done.\n- Quick Open (⌘P / Ctrl+P) finds every file of a very large project, not only the first 50,000.\n- Linux remote hosts: with tens of thousands of folders watched, a batch rename or a reconnect no longer stalls the connection for tens of seconds.\n- Diagnostics: on a Mac, the window suddenly not taking clicks while typing with an input method is now logged, to track it down.",
+    "zh": "这一版主要是 Bot 管智能体的能力补齐了：开对话、派活、等结果、看改了哪些文件，都和对话里的 agent 一样。另外快速打开在大项目里能找到全部文件，Linux 远程主机上大目录不再卡住连接。\n\n新功能\n- Bot 管智能体用上和对话一样的工具：开新对话可以选模型、开一个新分支的 worktree；对方在忙时消息会排队，不再被拒；能读完整回复、等它做完、查看它改了哪些文件。\n- 对话被提前自动压缩时会说明原因：上游嫌请求太长，模型实际能接受的比设置的上下文小。压缩分隔线也有了中文。\n- Java：多模块工程共用一个语言服务器；工程导入失败时会弹出提示，能直接查看日志，不再只显示「未找到引用」。感谢 @bestK。\n\n修复\n- Bot 派出去的对话，电脑端重启后它还认得，做完照样通知它。\n- 电脑端重启后，手机不再把 Bot 之前发过的消息再推送一遍。\n- Bot 没开「接收智能体通知」时，派活会告诉你它收不到完成通知。\n- 快速打开（⌘P / Ctrl+P）在超大项目里能找到所有文件，不再只列前 5 万个。\n- Linux 远程主机：监听几万个文件夹时，批量重命名或重连不再让连接卡住几十秒。\n- 诊断：Mac 上用输入法时窗口突然点不动的情况会记进日志，方便排查。"
+  },
+  "platforms": {
+    "windows-x64": {
+      "url": "https://github.com/DuZunTianXia/langshenagent/releases/download/v2.0.3/LangshenAgent-2.0.3-setup.exe?sha256=a393b980a164e55a",
+      "size": 25984926,
+      "sha256": "a393b980a164e55a75fccdde72c8e0508ee81413299fe01b681664760b016508",
+      "signature": "QNke12rBPq1jdj+b70KSlRi/fLokSZvONKFX4cAmf0goLwjDakfaG/N9O11JRcP4nlq+HSumaqK4a3zDB5F+AA=="
+    },
+    "windows-arm64": {
+      "url": "https://github.com/DuZunTianXia/langshenagent/releases/download/v2.0.3/LangshenAgent-2.0.3-setup-arm64.exe?sha256=a12aa4de17dfd2da",
+      "size": 24657004,
+      "sha256": "a12aa4de17dfd2daeac9971f144432ecfd8fcd33934b599c4b68b1d4e86f45c9",
+      "signature": "qxeytgZ/HMazt7lQxd1+RB42atUQpizUoAP8PkLW54szBp9D6GvQF6k4B4ZTUuKeSKaoI+hmTVhX5Fk+tSMDAQ=="
+    },
+    "macos-arm64": {
+      "url": "https://github.com/DuZunTianXia/langshenagent/releases/download/v2.0.3/LangshenAgent-2.0.3-mac-arm64.zip?sha256=840f8be2d8946f6b",
+      "size": 29850062,
+      "sha256": "840f8be2d8946f6baff5a03749f48cd642ccbcd898af0a3e9dead68d8cf930b7",
+      "signature": "VS8VEo955ine5190a+oMIu6eL2/ily7yeqgo6VmtoxF6eJ7XBcjpy1ztNQZOHwGR1t377PvjYJv5uFgnZS0+Dw=="
+    },
+    "macos-x64": {
+      "url": "https://github.com/DuZunTianXia/langshenagent/releases/download/v2.0.3/LangshenAgent-2.0.3-mac-x64.zip?sha256=ea1c07b760eb6357",
+      "size": 31503498,
+      "sha256": "ea1c07b760eb63573699c419a6d3ded1ed4bf3dd31b8adf846412c492ec742fd",
+      "signature": "ujECLL/CU9LgBX8o4NTpD0XuNrNXb5HvdvJKzURQ8okgO49Zr90LOf4bEh8XblNptpljaXqVLKPAQkQhUCG/BA=="
+    },
+    "linux-x64": {
+      "url": "https://github.com/DuZunTianXia/langshenagent/releases/download/v2.0.3/LangshenAgent-2.0.3-linux-amd64.deb?sha256=08c26375272314b7",
+      "size": 22011296,
+      "sha256": "08c26375272314b7bb3abe4824f4efa3050a0b766899bd49b91d44c4e3c305f0",
+      "signature": "h4+H8oqnlxRH5DQbvl/8BqC759LX21UkIANuH59Qc/FMv7J3OFaS1HRgfdMWeQxJm64TbLeiWyRC2QnhAXUyDg=="
+    },
+    "linux-arm64": {
+      "url": "https://github.com/DuZunTianXia/langshenagent/releases/download/v2.0.3/LangshenAgent-2.0.3-linux-arm64.deb?sha256=a632510b25db8743",
+      "size": 20585988,
+      "sha256": "a632510b25db874379e2701bde73c9f422d4064f01f7434dbbd465147e57955e",
+      "signature": "0+QTa7G6xurBdWSvhvf9WDYOAvHjBiIf+FdPw0IZDpveqXOAdWSYpItfcmIKMZ+e5WniOYjcG1aQTCCblGf1AA=="
+    }
+  },
+  "downloads": {
+    "windows": {
+      "url": "https://github.com/DuZunTianXia/langshenagent/releases/download/v2.0.3/LangshenAgent-2.0.3-setup.exe?sha256=a393b980a164e55a",
+      "size": 25984926,
+      "sha256": "a393b980a164e55a75fccdde72c8e0508ee81413299fe01b681664760b016508"
+    },
+    "windows-arm64": {
+      "url": "https://github.com/DuZunTianXia/langshenagent/releases/download/v2.0.3/LangshenAgent-2.0.3-setup-arm64.exe?sha256=a12aa4de17dfd2da",
+      "size": 24657004,
+      "sha256": "a12aa4de17dfd2daeac9971f144432ecfd8fcd33934b599c4b68b1d4e86f45c9"
+    },
+    "linux-x64": {
+      "url": "https://github.com/DuZunTianXia/langshenagent/releases/download/v2.0.3/LangshenAgent-2.0.3-linux-amd64.deb?sha256=08c26375272314b7",
+      "size": 22011296,
+      "sha256": "08c26375272314b7bb3abe4824f4efa3050a0b766899bd49b91d44c4e3c305f0"
+    },
+    "linux-arm64": {
+      "url": "https://github.com/DuZunTianXia/langshenagent/releases/download/v2.0.3/LangshenAgent-2.0.3-linux-arm64.deb?sha256=a632510b25db8743",
+      "size": 20585988,
+      "sha256": "a632510b25db874379e2701bde73c9f422d4064f01f7434dbbd465147e57955e"
+    },
+    "macos-arm64": {
+      "url": "https://github.com/DuZunTianXia/langshenagent/releases/download/v2.0.3/LangshenAgent-2.0.3-arm64.dmg?sha256=4b343087572abf5b",
+      "size": 25690235,
+      "sha256": "4b343087572abf5be8443c7b5aa43d26e7505a27f9f6259d6a898de21bccf767"
+    },
+    "macos-x64": {
+      "url": "https://github.com/DuZunTianXia/langshenagent/releases/download/v2.0.3/LangshenAgent-2.0.3-x64.dmg?sha256=5ef74926f84f4bd1",
+      "size": 27873698,
+      "sha256": "5ef74926f84f4bd10e618f0383d1f621938e9c13791cd592f046449848e22463"
+    }
+  }
+}
