@@ -258,9 +258,10 @@ Future<void> main(List<String> arguments) async {
     // icons where it expects them). create-dmg lays the window out with
     // Finder, which asks this terminal for permission to the first time.
     if (dmg.existsSync()) dmg.deleteSync();
-    await _run(createDmg, [
+    final volname = 'LangshenAgent ${version.marketing}';
+    final styled = await _tryRun(createDmg, [
       '--volname',
-      'LangshenAgent ${version.marketing}',
+      volname,
       '--background',
       '${root.path}/$_dmgBackgroundRelative',
       '--window-size',
@@ -286,6 +287,15 @@ Future<void> main(List<String> arguments) async {
       // The folder the app alone is in: all of it goes in the image.
       app.parent.path,
     ], root.path);
+    if (styled != 0) {
+      // Finder's styling AppleScript times out on some systems (AppleEvent
+      // -1712) even where it answers trivial events; ship a plainer image
+      // with the same contents rather than nothing.
+      stdout.writeln(
+        'create-dmg could not lay the window out; a plain image instead',
+      );
+      await _plainDmg(app.parent, volname, dmg);
+    }
     if (!signing.adHoc) await signing.sign(dmg.path);
     finishing.add(
       _finish(signing, installers, version.marketing, edition, arch, app, dmg),
@@ -675,6 +685,16 @@ Future<void> _run(
   List<String> arguments,
   String workingDirectory,
 ) async {
+  final code = await _tryRun(executable, arguments, workingDirectory);
+  if (code != 0) _fail('$executable exited with code $code.');
+}
+
+/// [_run] that hands the exit code back instead of stopping.
+Future<int> _tryRun(
+  String executable,
+  List<String> arguments,
+  String workingDirectory,
+) async {
   stdout.writeln('  \$ $executable ${arguments.join(' ')}');
   final result = await Process.run(
     executable,
@@ -685,8 +705,41 @@ Future<void> _run(
   if (output.isNotEmpty) stdout.writeln(output);
   final error = '${result.stderr}'.trim();
   if (error.isNotEmpty) stderr.writeln(error);
-  if (result.exitCode != 0) {
-    _fail('$executable exited with code ${result.exitCode}.');
+  return result.exitCode;
+}
+
+/// A disk image hdiutil alone makes when create-dmg's Finder scripting
+/// fails: the app and an Applications shortcut, without the laid-out
+/// window. The app folder is cloned into a staging folder beside [dmg]
+/// so the shortcut is not left in the build tree.
+Future<void> _plainDmg(Directory source, String volname, File dmg) async {
+  final staging = Directory('${dmg.path}.staging');
+  if (staging.existsSync()) staging.deleteSync(recursive: true);
+  staging.createSync();
+  try {
+    final work = dmg.parent.path;
+    for (final entry in source.listSync()) {
+      final name = entry.path.split('/').last;
+      await _run('ditto', [entry.path, '${staging.path}/$name'], work);
+    }
+    await _run('ln', [
+      '-s',
+      '/Applications',
+      '${staging.path}/Applications',
+    ], work);
+    await _run('hdiutil', [
+      'create',
+      '-format',
+      'ULMO',
+      '-volname',
+      volname,
+      '-srcfolder',
+      staging.path,
+      '-ov',
+      dmg.path,
+    ], work);
+  } finally {
+    if (staging.existsSync()) staging.deleteSync(recursive: true);
   }
 }
 
