@@ -36,7 +36,7 @@ class UpdateController {
   /// `gh release create` writes them; tool/build_changelog.dart's page is
   /// not up). [languageCode] makes no difference there.
   static Uri changelogUrl(AppVersion version, String languageCode) => Uri.parse(
-    'https://github.com/DuZunTianXia/baocode/releases/tag/'
+    'https://github.com/DuZunTianXia/langshenagent/releases/tag/'
     'v${version.marketing}',
   );
 

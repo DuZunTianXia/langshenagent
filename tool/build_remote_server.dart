@@ -56,7 +56,7 @@ const _platforms = [
 /// Where the gzipped builds are downloaded from: the `server-<VERSION>`
 /// GitHub release's assets, `<base>/server-<VERSION>/<file>`.
 const _downloadsBase =
-    'https://github.com/DuZunTianXia/baocode/releases/download';
+    'https://github.com/DuZunTianXia/langshenagent/releases/download';
 
 Future<void> main(List<String> arguments) async {
   final root = File.fromUri(Platform.script).parent.parent.absolute;

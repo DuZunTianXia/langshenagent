@@ -22,7 +22,7 @@ class BaoBashRelease {
 
   /// Where the builds are named.
   static final latestUrl = Uri.parse(
-    'https://duzuntianxia.github.io/baocode/tools/bash-exe/latest.json',
+    'https://duzuntianxia.github.io/langshenagent/tools/bash-exe/latest.json',
   );
 
   /// The build for [arch] (`x64`, `arm64`) in [json], `latest.json`; null

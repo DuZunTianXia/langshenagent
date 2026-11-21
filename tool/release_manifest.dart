@@ -54,7 +54,7 @@ import 'package:crypto/crypto.dart' as crypto;
 /// Where the downloads go: `<base>/<tag>/<file>` — the GitHub release's
 /// assets (`gh release create v<marketing>`).
 const _releasesBase =
-    'https://github.com/DuZunTianXia/baocode/releases/download';
+    'https://github.com/DuZunTianXia/langshenagent/releases/download';
 
 /// [name]'s link, for the file whose SHA-256 is [sha256].
 Uri _link(AppVersion version, String name, String sha256) => Uri.parse(

@@ -7,7 +7,7 @@ import 'version.dart';
 /// Where the app looks for its next version: the release manifest GitHub
 /// Pages serves (docs/auto-update.md has its format).
 const defaultManifestUrl =
-    'https://duzuntianxia.github.io/baocode/releases/latest.json';
+    'https://duzuntianxia.github.io/langshenagent/releases/latest.json';
 
 /// The environment variable that points the app at another manifest, to
 /// try a release before it is published (a local server's, say).

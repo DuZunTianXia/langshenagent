@@ -1,7 +1,7 @@
 # Builds LangshenAgent and publishes it on GitHub: installers go to the
 # tag's GitHub release, and the manifests the apps poll go to the `pages`
 # branch — GitHub Pages serves them at
-# duzuntianxia.github.io/baocode (update_manifest.dart, update.dart).
+# duzuntianxia.github.io/langshenagent (update_manifest.dart, update.dart).
 # The builds run on the Mac mini (the self-hosted runner labelled
 # `langshen`), the Windows and Linux ones on GitHub's, and the publish
 # job creates the releases and signs the update manifest
@@ -516,7 +516,7 @@ jobs:
       - name: Check the downloads are served
         run: |
           for try in $(seq 1 30); do
-            curl -fsS "https://duzuntianxia.github.io/baocode/releases/latest.json" -o /dev/null && break
+            curl -fsS "https://duzuntianxia.github.io/langshenagent/releases/latest.json" -o /dev/null && break
             sleep 10
           done
           jq -r '(.downloads[], .platforms[]?) | "\(.url) \(.size)"' pages-site/releases/latest.json | sort -u |
@@ -581,7 +581,7 @@ jobs:
       - name: Check it is served
         run: |
           for try in $(seq 1 30); do
-            curl -fsS "https://duzuntianxia.github.io/baocode/releases/mobile/latest.json" -o /dev/null && break
+            curl -fsS "https://duzuntianxia.github.io/langshenagent/releases/mobile/latest.json" -o /dev/null && break
             sleep 10
           done
           url="https://github.com/${GITHUB_REPOSITORY}/releases/download/mobile-v$MARKETING/langshenagent-$MARKETING.apk"

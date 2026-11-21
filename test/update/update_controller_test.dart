@@ -87,7 +87,7 @@ void main() {
       offer.secondary.single.run();
       expect(opened, [
         Uri.parse(
-          'https://github.com/DuZunTianXia/baocode/releases/tag/v1.2.0',
+          'https://github.com/DuZunTianXia/langshenagent/releases/tag/v1.2.0',
         ),
       ]);
 
@@ -99,7 +99,7 @@ void main() {
       make();
       final version = AppVersion.parse('1.2.0+13');
       const url =
-          'https://github.com/DuZunTianXia/baocode/releases/tag/v1.2.0';
+          'https://github.com/DuZunTianXia/langshenagent/releases/tag/v1.2.0';
       for (final language in ['zh', 'en']) {
         expect(
           UpdateController.changelogUrl(version, language),
@@ -145,7 +145,7 @@ void main() {
       expect(opened, [ManualUpdateRequired.downloadPage]);
       expect(
         '${ManualUpdateRequired.downloadPage}',
-        'https://github.com/DuZunTianXia/baocode/releases',
+        'https://github.com/DuZunTianXia/langshenagent/releases',
       );
     });
 

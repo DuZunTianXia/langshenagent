@@ -77,7 +77,7 @@ class ManualUpdateRequired implements Exception {
   const ManualUpdateRequired(this.reason);
 
   static final downloadPage = Uri.parse(
-    'https://github.com/DuZunTianXia/baocode/releases',
+    'https://github.com/DuZunTianXia/langshenagent/releases',
   );
 
   final String reason;
