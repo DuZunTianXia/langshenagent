@@ -51,7 +51,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  FLUTTER_VERSION: 3.47.5
+  FLUTTER_VERSION: 3.47.6
 
 # flutter-action caches nothing here: a tag's run restores only main's
 # caches, so each one missed and saved its own Flutter (2 GB, minutes on

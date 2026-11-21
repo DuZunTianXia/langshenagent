@@ -51,7 +51,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  FLUTTER_VERSION: 3.47.5
+  FLUTTER_VERSION: 3.47.6
   # The update signing key on the self-hosted runner, out of the repo.
   UPDATE_SIGNING_KEY: /Users/xiaolang/.langshenagent-release/update-signing.key
   # The branch GitHub Pages serves (the manifests' home).
