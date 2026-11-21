@@ -5,8 +5,8 @@
 
 import 'package:bao_editor/monaco/flutter/editor_document_model.dart';
 import 'package:bao_editor/monaco/flutter/editor_surface.dart';
-import 'package:baocode/ide/git/git_model.dart';
-import 'package:baocode/ide/ide_workspace.dart';
+import 'package:langshenagent/ide/git/git_model.dart';
+import 'package:langshenagent/ide/ide_workspace.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_test/flutter_test.dart';
 

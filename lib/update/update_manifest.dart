@@ -4,16 +4,17 @@ import 'dart:convert';
 
 import 'version.dart';
 
-/// Where the app looks for its next version: the release manifest
-/// dl.langshen.shop serves (docs/auto-update.md has its format).
-const defaultManifestUrl = 'https://dl.langshen.shop/releases/latest.json';
+/// Where the app looks for its next version: the release manifest GitHub
+/// Pages serves (docs/auto-update.md has its format).
+const defaultManifestUrl =
+    'https://duzuntianxia.github.io/baocode/releases/latest.json';
 
 /// The environment variable that points the app at another manifest, to
 /// try a release before it is published (a local server's, say).
 const manifestUrlVariable = 'LANGSHENAGENT_UPDATE_URL';
 
 /// A manifest that cannot be used: not JSON, a field missing or wrong, a
-/// download not on langshenagent.dev.
+/// download not on github.com.
 class UpdateManifestException implements Exception {
   const UpdateManifestException(this.message);
 
@@ -23,7 +24,7 @@ class UpdateManifestException implements Exception {
   String toString() => 'Invalid update manifest: $message';
 }
 
-/// Which download links a manifest may give: https on langshenagent.dev (or a
+/// Which download links a manifest may give: https on github.com (or a
 /// subdomain of it), and [extraOrigins] besides — the origin of a manifest
 /// [manifestUrlVariable] points at, so a release can be tried from where it
 /// is served before it is published.
@@ -38,7 +39,7 @@ class UpdateUrlPolicy {
       ? const UpdateUrlPolicy()
       : UpdateUrlPolicy(extraOrigins: {manifest.origin});
 
-  static const domain = 'langshen.shop';
+  static const domain = 'github.com';
 
   final Set<String> extraOrigins;
 

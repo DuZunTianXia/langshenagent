@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 
-/// The build's own update channel: `dl.langshen.shop` serves a small JSON
+/// The build's own update channel: GitHub Pages serves a small JSON
 /// (`/update/latest.json`) naming the newest APK under `/apk/`; the app
 /// fetches it, downloads the package over IPv6 and hands it to the
 /// native installer (`langshenagent/update` channel).
@@ -45,12 +45,15 @@ class AppUpdate {
 }
 
 abstract final class Updates {
-  /// The download service's root.
-  static const base = 'https://dl.langshen.shop';
+  /// The release's assets, for a relative `apk` in the manifest
+  /// (`mobile-v<x.y.z>/<file>`).
+  static const base =
+      'https://github.com/DuZunTianXia/baocode/releases/download';
 
-  /// Where it tells what the newest build is. Under `/reports/` because
-  /// the assets routes are cached immutable — this one is not.
-  static const manifest = '$base/reports/langshenagent-latest.json';
+  /// Where it tells what the newest build is: the Pages manifest the
+  /// release writes (langshen-release.yml's publish-mobile).
+  static const manifest =
+      'https://duzuntianxia.github.io/baocode/releases/mobile/latest.json';
 
   /// Whether the manifest names a build newer than this one; null when the
   /// service can't be asked (offline, down) — not an update.

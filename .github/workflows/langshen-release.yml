@@ -1,9 +1,11 @@
-# Builds LangshenAgent and publishes it to dl.langshen.shop — the Caddy on
-# the Mac mini serving ~/langshen-dl-mirror/data (mirror.env), where the
-# installed apps find their updates. The builds run on that Mac (the
-# self-hosted runner labelled `langshen`), the Windows and Linux ones on
-# GitHub's, and the publish job copies the files into the mirror and signs
-# the update manifest (tool/release_manifest.dart).
+# Builds LangshenAgent and publishes it on GitHub: installers go to the
+# tag's GitHub release, and the manifests the apps poll go to the `pages`
+# branch — GitHub Pages serves them at
+# duzuntianxia.github.io/baocode (update_manifest.dart, update.dart).
+# The builds run on the Mac mini (the self-hosted runner labelled
+# `langshen`), the Windows and Linux ones on GitHub's, and the publish
+# job creates the releases and signs the update manifest
+# (tool/release_manifest.dart).
 #
 #   git tag v2.0.4 && git push origin v2.0.4
 #                                      build and publish the desktop
@@ -12,15 +14,15 @@
 #                                      build and publish the phone app of
 #                                      mobile/pubspec.yaml's version
 #   git tag test-foo / mobile-test-foo, pushed the same
-#                                      build, and put the files at
-#                                      dl.langshen.shop/test/… for testers
+#                                      build, and put the files on a
+#                                      prerelease of the tag for testers
 #                                      (no manifest written, no update)
 #   Actions → LangshenAgent release → Run workflow
 #                                      build only, to try the build
 #
 # The remote server builds on GitHub's runners beside the desktop builds
-# (remote.yml called as a job); the publish mirrors them too, for SSH
-# remote projects (--remote-release).
+# (remote.yml called as a job); the publish puts them on a server-*
+# release too, for SSH remote projects (--remote-release).
 name: LangshenAgent release
 
 on:
@@ -50,10 +52,10 @@ concurrency:
 
 env:
   FLUTTER_VERSION: 3.47.5
-  # The mirror Caddy serves (~/langshen-dl-mirror/mirror.env), on the
-  # self-hosted runner. The publish jobs' outputs land in it directly.
-  MIRROR_ROOT: /Users/xiaolang/langshen-dl-mirror/data
+  # The update signing key on the self-hosted runner, out of the repo.
   UPDATE_SIGNING_KEY: /Users/xiaolang/.langshenagent-release/update-signing.key
+  # The branch GitHub Pages serves (the manifests' home).
+  PAGES_BRANCH: pages
 
 jobs:
   check:
@@ -383,53 +385,44 @@ jobs:
           retention-days: 90
           path: symbols/
 
-  # A test-* / mobile-test-* tag's files at dl.langshen.shop/test/…, no
+  # A test-* / mobile-test-* tag's files on a prerelease of that tag, no
   # manifest touched: installed apps are never offered them.
   share:
-    name: Put it at dl.langshen.shop/test/ for testers
+    name: Put the files on a prerelease for testers
     needs: [check, macos, windows, linux, android]
     if: always() && needs.check.outputs.share == 'true'
-    runs-on: [self-hosted, langshen]
-    env:
-      MARKETING: ${{ needs.check.outputs.marketing }}
-      KIND: ${{ needs.check.outputs.kind }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # the prerelease
     steps:
       - uses: actions/download-artifact@v7
         with:
           path: dist
           merge-multiple: true
-      - name: Upload
+      - name: Make the prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          name=$(printf '%s' "${GITHUB_REF_NAME}" | tr -c 'A-Za-z0-9.-' '-' | sed 's/^test-\|^mobile-test-//;s/-*$//')
-          dir="test/$KIND-$MARKETING-$name-$GITHUB_RUN_NUMBER"
-          mkdir -p "$MIRROR_ROOT/$dir"
-          {
-            echo "## For testers: $MARKETING, \`$GITHUB_REF_NAME\` (${GITHUB_SHA::7})"
-            echo
-          } >> "$GITHUB_STEP_SUMMARY"
-          for file in dist/LangshenAgent-* dist/langshenagent-*; do
-            [ -f "$file" ] || continue
-            name=$(basename "$file")
-            cp "$file" "$MIRROR_ROOT/$dir/$name"
-            url="https://dl.langshen.shop/$dir/$name"
-            served=$(curl -fsSI "$url" | tr -d '\r' | awk 'tolower($1) == "content-length:" { print $2 }')
-            [ "$served" = "$(stat -f %z "$file")" ] || { echo "::error::$url is not served as copied"; exit 1; }
-            echo "- [$name]($url)" >> "$GITHUB_STEP_SUMMARY"
-          done
-          cat "$GITHUB_STEP_SUMMARY"
+          files=(dist/LangshenAgent-* dist/langshenagent-*)
+          gh release create "$GITHUB_REF_NAME" --prerelease --generate-notes \
+            --title "LangshenAgent test build $GITHUB_REF_NAME" "${files[@]}"
 
-  # The desktop files into the mirror, the remote server with them, and
-  # the update manifest signed (the key on the Mac, out of the repo).
+  # The desktop files on the tag's GitHub release, the remote server on a
+  # server-* one, and the update manifest signed into the pages branch
+  # (the key on the Mac, out of the repo). Pages then serves what
+  # update_manifest.dart, fetch_remote_server.dart and the installers
+  # fetch_remote_server downloads name.
   publish:
-    name: Publish to dl.langshen.shop
+    name: Publish to GitHub
     needs: [check, remote, macos, windows, linux]
     if: needs.check.outputs.kind == 'desktop' && needs.check.outputs.publish == 'true'
     runs-on: [self-hosted, langshen]
     permissions:
-      contents: write # the GitHub release
+      contents: write # the releases and the pages branch
     env:
       VERSION: ${{ needs.check.outputs.version }}
       MARKETING: ${{ needs.check.outputs.marketing }}
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v5
       - uses: subosito/flutter-action@v2
@@ -453,6 +446,34 @@ jobs:
           mkdir -p "$remote"
           cp dist/remote/*.gz dist/remote/servers.json "$remote/"
           find out -type f | sort
+      - name: Create the releases' assets first — the manifest names them
+        run: |
+          notes=(--generate-notes)
+          [ -f "release-notes/$MARKETING.en.md" ] && notes=(--notes-file "release-notes/$MARKETING.en.md")
+          gh release delete "v$MARKETING" --yes 2>/dev/null || true
+          gh release create "v$MARKETING" --title "LangshenAgent $MARKETING" "${notes[@]}" \
+            out/LangshenAgent-$MARKETING-arm64.dmg out/LangshenAgent-$MARKETING-x64.dmg \
+            out/LangshenAgent-$MARKETING-mac-arm64.zip out/LangshenAgent-$MARKETING-mac-x64.zip \
+            out/LangshenAgent-$MARKETING-setup.exe out/LangshenAgent-$MARKETING-setup-arm64.exe \
+            out/LangshenAgent-$MARKETING-linux-amd64.deb out/LangshenAgent-$MARKETING-linux-arm64.deb \
+            out/LangshenAgent-$MARKETING-linux-amd64.tar.gz out/LangshenAgent-$MARKETING-linux-arm64.tar.gz
+          remote_version="$(cat dist/remote/VERSION)"
+          gh release delete "server-$remote_version" --yes 2>/dev/null || true
+          gh release create "server-$remote_version" --generate-notes \
+            --title "LangshenAgent remote server $remote_version" \
+            "out/remote/$remote_version/"*
+      # The manifests' home: the branch GitHub Pages serves.
+      - name: Check out the pages branch
+        run: |
+          if git ls-remote --exit-code origin "$PAGES_BRANCH" >/dev/null 2>&1; then
+            git clone --depth 1 --branch "$PAGES_BRANCH" \
+              "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" pages-site
+          else
+            mkdir pages-site && git -C pages-site init -q -b "$PAGES_BRANCH"
+            git -C pages-site remote add origin \
+              "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          fi
+          mkdir -p pages-site/releases/remote
       - name: Put the Rust toolchain's bin ahead on PATH
         run: echo "$HOME/.rustup/toolchains/1.97.1-aarch64-apple-darwin/bin" >> "$GITHUB_PATH"
       - name: Sign the release into latest.json
@@ -478,74 +499,91 @@ jobs:
               --dmg-x64 "out/LangshenAgent-$MARKETING-x64.dmg" \
               --linux-x64 "out/LangshenAgent-$MARKETING-linux-amd64.deb" \
               --linux-arm64 "out/LangshenAgent-$MARKETING-linux-arm64.deb" \
-              --manifest out/latest.json \
+              --manifest pages-site/releases/latest.json \
               "${notes[@]}"
-      - name: Copy into the mirror
+      - name: Commit the manifests to Pages
         run: |
-          mkdir -p "$MIRROR_ROOT/releases/$MARKETING" "$MIRROR_ROOT/releases/remote"
-          cp -R out/remote/* "$MIRROR_ROOT/releases/remote/"
           jq -n --arg version "$(cat dist/remote/VERSION)" --arg tag "$GITHUB_REF_NAME" --arg commit "$GITHUB_SHA" \
-            '{version: $version, tag: $tag, commit: $commit}' > remote-latest.json
-          cp remote-latest.json "$MIRROR_ROOT/releases/remote/latest.json"
-          cp out/LangshenAgent-* "$MIRROR_ROOT/releases/$MARKETING/"
-          cp out/latest.json "$MIRROR_ROOT/releases/latest.json"
+            '{version: $version, tag: $tag, commit: $commit}' > pages-site/releases/remote/latest.json
+          git -C pages-site config user.name "langshen-release"
+          git -C pages-site config user.email "langshen-release@users.noreply.github.com"
+          git -C pages-site add -A
+          git -C pages-site commit -qm "Publish $MARKETING ($GITHUB_SHA)" || echo "nothing changed"
+          git -C pages-site push -q origin "$PAGES_BRANCH"
       - name: Check the downloads are served
         run: |
-          sleep 2
-          jq -r '(.downloads[], .platforms[]?) | "\(.url) \(.size)"' out/latest.json | sort -u |
-          while read -r url expected; do
-            served=$(curl -fsSI "$url" | tr -d '\r' | awk 'tolower($1) == "content-length:" { print $2 }')
-            echo "$url: $served bytes (expected $expected)"
-            [ "$served" = "$expected" ] || { echo "::error::$url is not served as copied"; exit 1; }
+          for try in $(seq 1 30); do
+            curl -fsS "https://duzuntianxia.github.io/baocode/releases/latest.json" -o /dev/null && break
+            sleep 10
           done
-          cat out/latest.json | jq .
-      # The page UpdateController.changelogUrl points at.
-      - name: Make the GitHub release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          notes=(--generate-notes)
-          [ -f "release-notes/$MARKETING.en.md" ] && notes=(--notes-file "release-notes/$MARKETING.en.md")
-          gh release delete "v$MARKETING" --yes 2>/dev/null || true
-          gh release create "v$MARKETING" --title "LangshenAgent $MARKETING" "${notes[@]}" \
-            out/LangshenAgent-$MARKETING-arm64.dmg out/LangshenAgent-$MARKETING-x64.dmg \
-            out/LangshenAgent-$MARKETING-setup.exe out/LangshenAgent-$MARKETING-setup-arm64.exe \
-            out/LangshenAgent-$MARKETING-linux-amd64.deb out/LangshenAgent-$MARKETING-linux-arm64.deb \
-            out/LangshenAgent-$MARKETING-linux-amd64.tar.gz out/LangshenAgent-$MARKETING-linux-arm64.tar.gz
+          jq -r '(.downloads[], .platforms[]?) | "\(.url) \(.size)"' pages-site/releases/latest.json | sort -u |
+          while read -r url expected; do
+            served=$(curl -fsSIL "$url" | tr -d '\r' | awk 'tolower($1) == "content-length:" { n = $2 } END { print n }')
+            echo "$url: $served bytes (expected $expected)"
+            [ "$served" = "$expected" ] || { echo "::error::$url is not served as uploaded"; exit 1; }
+          done
+          jq . pages-site/releases/latest.json
 
-  # The phone app's APK into the mirror and its manifest beside the
-  # diagnostics' (reports/langshenagent-latest.json, mobile/lib/update.dart).
+  # The phone app's APK on the tag's release and its Pages manifest
+  # (releases/mobile/latest.json, mobile/lib/update.dart).
   publish-mobile:
-    name: Publish the APK to dl.langshen.shop
+    name: Publish the APK to GitHub
     needs: [check, android]
     if: needs.check.outputs.kind == 'mobile' && needs.check.outputs.publish == 'true'
     runs-on: [self-hosted, langshen]
+    permissions:
+      contents: write # the release and the pages branch
     env:
       VERSION: ${{ needs.check.outputs.version }}
       MARKETING: ${{ needs.check.outputs.marketing }}
+      GH_TOKEN: ${{ github.token }}
     steps:
+      - uses: actions/checkout@v5
       - uses: actions/download-artifact@v7
         with:
           name: android
           path: dist
-      - name: Copy into the mirror and write the manifest
+      - name: Put the APK on the release
         run: |
+          notes=(--generate-notes)
+          [ -f "release-notes/$MARKETING.zh.md" ] && notes=(--notes-file "release-notes/$MARKETING.zh.md")
+          gh release delete "mobile-v$MARKETING" --yes 2>/dev/null || true
+          gh release create "mobile-v$MARKETING" --title "LangshenAgent $MARKETING" "${notes[@]}" \
+            "dist/langshenagent-$MARKETING.apk"
+      - name: Check out the pages branch and write the manifest
+        run: |
+          if git ls-remote --exit-code origin "$PAGES_BRANCH" >/dev/null 2>&1; then
+            git clone --depth 1 --branch "$PAGES_BRANCH" \
+              "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" pages-site
+          else
+            mkdir pages-site && git -C pages-site init -q -b "$PAGES_BRANCH"
+            git -C pages-site remote add origin \
+              "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          fi
+          mkdir -p pages-site/releases/mobile
           apk="langshenagent-$MARKETING.apk"
-          cp "dist/$apk" "$MIRROR_ROOT/apk/$apk"
-          size=$(stat -f %z "$MIRROR_ROOT/apk/$apk")
+          size=$(stat -f %z "dist/$apk")
           notes="LangshenAgent $MARKETING"
           file="release-notes/$MARKETING.zh.md"
           [ -f "$file" ] && notes=$(head -c 500 "$file" | tr '\n' ' ')
           jq -n --arg version "$MARKETING" --argjson build "${VERSION##*+}" \
-            --arg apk "/apk/$apk" --argjson size "$size" --arg notes "$notes" \
+            --arg apk "/mobile-v$MARKETING/$apk" --argjson size "$size" --arg notes "$notes" \
             '{version: $version, build: $build, apk: $apk, size: $size, notes: $notes}' \
-            > "$MIRROR_ROOT/reports/langshenagent-latest.json"
-          cat "$MIRROR_ROOT/reports/langshenagent-latest.json"
+            > pages-site/releases/mobile/latest.json
+          git -C pages-site config user.name "langshen-release"
+          git -C pages-site config user.email "langshen-release@users.noreply.github.com"
+          git -C pages-site add -A
+          git -C pages-site commit -qm "Publish mobile $MARKETING ($GITHUB_SHA)" || echo "nothing changed"
+          git -C pages-site push -q origin "$PAGES_BRANCH"
       - name: Check it is served
         run: |
-          sleep 2
-          url="https://dl.langshen.shop/apk/langshenagent-$MARKETING.apk"
-          served=$(curl -fsSI "$url" | tr -d '\r' | awk 'tolower($1) == "content-length:" { print $2 }')
-          expected=$(jq -r .size "$MIRROR_ROOT/reports/langshenagent-latest.json")
+          for try in $(seq 1 30); do
+            curl -fsS "https://duzuntianxia.github.io/baocode/releases/mobile/latest.json" -o /dev/null && break
+            sleep 10
+          done
+          url="https://github.com/${GITHUB_REPOSITORY}/releases/download/mobile-v$MARKETING/langshenagent-$MARKETING.apk"
+          expected=$(stat -f %z "dist/langshenagent-$MARKETING.apk")
+          served=$(curl -fsSIL "$url" | tr -d '\r' | awk 'tolower($1) == "content-length:" { n = $2 } END { print n }')
           echo "$url: $served bytes (expected $expected)"
+          [ "$served" = "$expected" ] || { echo "::error::$url is not served as uploaded"; exit 1; }
           [ "$served" = "$expected" ]

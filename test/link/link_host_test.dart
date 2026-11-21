@@ -976,7 +976,7 @@ void main() {
     await turn('two');
     await _until(() => platform.posted.isNotEmpty);
     final (url, body) = platform.posted.single;
-    expect(url.toString(), 'https://push.langshen.shop/v1/push');
+    expect(url.toString(), 'https://push.langshenagent.dev/v1/push');
     final key = '${host.id}/${session.id}';
     expect(body, {
       'token': token,

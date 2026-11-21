@@ -2522,7 +2522,7 @@ void main() {
     final (:panel, :session) = await _pumpReply(
       tester,
       '[key](../outside/key.pem), [passwd](/etc/passwd), '
-      '`/etc/hosts` and [the site](https://langshen.shop).',
+      '`/etc/hosts` and [the site](https://langshenagent.dev).',
       texts: {'/etc/hosts': 'x', '/outside/key.pem': 'x'},
     );
     expect(_span(tester, 'key')?.recognizer, isNotNull);
@@ -2532,7 +2532,7 @@ void main() {
     expect(_span(tester, 'the site')?.recognizer, isA<TapGestureRecognizer>());
     final scope = tester.element(find.byType(MarkdownView));
     expect(
-      FileOpenScope.maybeOf(scope)!.linkRecognizer('https://langshen.shop'),
+      FileOpenScope.maybeOf(scope)!.linkRecognizer('https://langshenagent.dev'),
       isNull,
     );
     expect(panel.shown, isFalse);

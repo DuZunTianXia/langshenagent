@@ -100,7 +100,7 @@ Map<String, Object?> _latest(String version) => {
   'commit': 'abc',
   'files': {
     'x64': {
-      'url': 'https://dl.langshen.shop/tools/bash-exe/$version/x64.exe.gz',
+      'url': 'https://github.com/langshenagent-dev/bash-exe/releases/download/v$version/x64.exe.gz',
       'size': 13 * 1024 * 1024,
       'sha256': 'AB' * 32,
       'unpacked': 31 * 1024 * 1024,
@@ -233,7 +233,7 @@ void main() {
     final bash = BaoBash(host: _Host());
     await bash.install();
     expect(bash.installed, isNull);
-    expect(bash.error, contains('dl.langshen.shop'));
+    expect(bash.error, contains('duzuntianxia.github.io'));
     expect(bash.busy, isFalse);
   });
 

@@ -1,6 +1,6 @@
 // Signs a release's installers and writes the manifest the app reads to
-// update itself (https://dl.langshen.shop/releases/latest.json; see
-// docs/auto-update.md). Run from anywhere in the repository:
+// update itself (Pages' /releases/latest.json; see docs/auto-update.md).
+// Run from anywhere in the repository:
 //
 //   dart run tool/release_manifest.dart \
 //     --windows build/installers/LangshenAgent-1.2.0-setup.exe \
@@ -51,12 +51,14 @@ import 'package:langshenagent/update/update_signature.dart';
 import 'package:langshenagent/update/version.dart';
 import 'package:crypto/crypto.dart' as crypto;
 
-/// Where the downloads go: `<base>/<1.2.0>/<file>`.
-const _releasesBase = 'https://dl.langshen.shop/releases';
+/// Where the downloads go: `<base>/<tag>/<file>` — the GitHub release's
+/// assets (`gh release create v<marketing>`).
+const _releasesBase =
+    'https://github.com/DuZunTianXia/baocode/releases/download';
 
 /// [name]'s link, for the file whose SHA-256 is [sha256].
 Uri _link(AppVersion version, String name, String sha256) => Uri.parse(
-  '$_releasesBase/${version.marketing}/$name?sha256=${sha256.substring(0, 16)}',
+  '$_releasesBase/v${version.marketing}/$name?sha256=${sha256.substring(0, 16)}',
 );
 
 /// The Macs built for, each its own download (tool/build_macos.dart), and

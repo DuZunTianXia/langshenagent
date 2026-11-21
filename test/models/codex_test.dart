@@ -534,7 +534,7 @@ void main() {
       );
     });
 
-    test("langshen.shop's Codex version, none where it has none", () {
+    test("langshenagent.dev's Codex version, none where it has none", () {
       expect(parseCodexVersion('{"clientVersion": " 0.170.0 "}'), '0.170.0');
       expect(parseCodexVersion('{"clientVersion": ""}'), isNull);
       expect(parseCodexVersion('{"clientVersion": 170}'), isNull);
@@ -851,7 +851,7 @@ void main() {
       expect(asked.headers['chatgpt-account-id'], 'ws-a');
       expect(asked.query['client_version'], codexClientVersion);
 
-      // A version langshen.shop says now: asked as that Codex CLI.
+      // A version langshenagent.dev says now: asked as that Codex CLI.
       codexFeed = (url) async {
         expect(url, codexVersionFeed);
         return '{"clientVersion": "0.170.0"}';

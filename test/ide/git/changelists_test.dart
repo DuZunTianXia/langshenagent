@@ -2,9 +2,9 @@
 // active, where a change first goes; a list's changes left unchecked while
 // it is not active.
 
-import 'package:baocode/ide/git/git_changelists.dart';
-import 'package:baocode/ide/git/ide_git_commit_panel.dart';
-import 'package:baocode/theme/codicons.dart';
+import 'package:langshenagent/ide/git/git_changelists.dart';
+import 'package:langshenagent/ide/git/ide_git_commit_panel.dart';
+import 'package:langshenagent/theme/codicons.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';

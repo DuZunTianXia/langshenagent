@@ -49,7 +49,7 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('去 GitHub 点 Star'), findsOneWidget);
-    expect(find.text('langshen.shop'), findsOneWidget);
+    expect(find.text('langshenagent.dev'), findsOneWidget);
     expect(find.text('更新日志'), findsOneWidget);
     expect(find.text('反馈问题'), findsOneWidget);
     expect(find.text('设备 ID'), findsNothing);

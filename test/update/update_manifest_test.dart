@@ -7,7 +7,7 @@ import 'package:langshenagent/update/version.dart';
 final _signature = base64.encode(List.filled(64, 7));
 
 Map<String, Object?> _asset({
-  String url = 'https://langshen.shop/releases/1.2.0/LangshenAgent-1.2.0-setup.exe',
+  String url = 'https://github.com/releases/1.2.0/LangshenAgent-1.2.0-setup.exe',
   Object? size = 1000,
   Object? sha256,
   Object? signature,
@@ -33,7 +33,7 @@ String _manifest({
       {
         'windows-x64': _asset(),
         'macos-arm64': _asset(
-          url: 'https://langshen.shop/releases/1.2.0/LangshenAgent-1.2.0-mac.zip',
+          url: 'https://github.com/releases/1.2.0/LangshenAgent-1.2.0-mac.zip',
         ),
       },
 });
@@ -74,14 +74,14 @@ void main() {
             platforms: {
               'windows-x64': _asset(
                 url:
-                    'https://dl.langshen.shop/releases/1.2.0/'
+                    'https://dl.github.com/releases/1.2.0/'
                     'LangshenAgent-1.2.0-setup.exe?sha256=0123456789abcdef',
               ),
             },
           ),
         ),
         'downloads': {
-          'macos': {'url': 'https://dl.langshen.shop/x.dmg', 'size': 1},
+          'macos': {'url': 'https://dl.github.com/x.dmg', 'size': 1},
         },
       });
       final asset = UpdateManifest.parse(text).assetFor('windows-x64')!;
@@ -131,7 +131,7 @@ void main() {
           platforms: {
             'windows-x64': _asset(size: null),
             'macos-arm64': _asset(
-              url: 'https://langshen.shop/releases/1.2.0/LangshenAgent-1.2.0-mac.zip',
+              url: 'https://github.com/releases/1.2.0/LangshenAgent-1.2.0-mac.zip',
             ),
           },
         ),
@@ -160,18 +160,18 @@ void main() {
       }
     });
 
-    test('downloads have to be https links on langshen.shop', () {
+    test('downloads have to be https links on github.com', () {
       UpdateManifest at(String url) => UpdateManifest.parse(
         _manifest(platforms: {'windows-x64': _asset(url: url)}),
       );
       for (final url in [
-        'http://langshen.shop/releases/x.exe',
+        'http://github.com/releases/x.exe',
         'https://evil.example/x.exe',
-        'https://langshen.shop.evil.example/x.exe',
-        'https://notlangshen.shop/x.exe',
-        'https://langshen.shop:8443/x.exe',
-        'https://user@langshen.shop/x.exe',
-        'ftp://langshen.shop/x.exe',
+        'https://github.com.evil.example/x.exe',
+        'https://notgithub.com/x.exe',
+        'https://github.com:8443/x.exe',
+        'https://user@github.com/x.exe',
+        'ftp://github.com/x.exe',
         'file:///tmp/x.exe',
         '/releases/x.exe',
       ]) {
@@ -182,9 +182,9 @@ void main() {
         );
       }
       for (final url in [
-        'https://langshen.shop/releases/x.exe',
-        'https://LANGSHEN.SHOP/releases/x.exe',
-        'https://cdn.langshen.shop/x.exe',
+        'https://github.com/releases/x.exe',
+        'https://GITHUB.COM/releases/x.exe',
+        'https://cdn.github.com/x.exe',
       ]) {
         expect(at(url).assetFor('windows-x64'), isNotNull, reason: url);
       }
@@ -203,7 +203,7 @@ void main() {
         isNotNull,
       );
       expect(
-        at('https://langshen.shop/x.exe').assetFor('windows-x64'),
+        at('https://github.com/x.exe').assetFor('windows-x64'),
         isNotNull,
       );
       expect(

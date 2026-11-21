@@ -1,9 +1,9 @@
 // BaoCode's own: in a file's diff in the commit panel, the changes an
 // agent made marked with what its turn was asked; the user's own not.
 
-import 'package:baocode/ide/git/git_partial.dart';
-import 'package:baocode/ide/ide_code_diff.dart';
-import 'package:baocode/l10n/app_localizations.dart';
+import 'package:langshenagent/ide/git/git_partial.dart';
+import 'package:langshenagent/ide/ide_code_diff.dart';
+import 'package:langshenagent/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

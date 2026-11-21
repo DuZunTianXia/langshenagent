@@ -11,7 +11,7 @@ import 'package:langshenagent/update/update_service.dart';
 import 'package:langshenagent/update/update_signature.dart';
 import 'package:langshenagent/update/version.dart';
 
-/// A local server, in place of langshen.shop: what it serves by path, what it
+/// A local server, in place of github.com: what it serves by path, what it
 /// was asked.
 class _Server {
   _Server._(this._server) {

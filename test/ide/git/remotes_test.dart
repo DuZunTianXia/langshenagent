@@ -3,10 +3,10 @@
 
 import 'dart:io';
 
-import 'package:baocode/ide/git/git_service.dart';
-import 'package:baocode/ide/git/ide_git_remotes_dialog.dart';
-import 'package:baocode/ide/ide_notifications.dart';
-import 'package:baocode/l10n/app_localizations.dart';
+import 'package:langshenagent/ide/git/git_service.dart';
+import 'package:langshenagent/ide/git/ide_git_remotes_dialog.dart';
+import 'package:langshenagent/ide/ide_notifications.dart';
+import 'package:langshenagent/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

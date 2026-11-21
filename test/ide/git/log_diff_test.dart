@@ -9,10 +9,10 @@ import 'package:bao_editor/monaco/flutter/editor_document_model.dart';
 import 'package:bao_editor/monaco/flutter/editor_surface.dart';
 import 'package:bao_editor/monaco/flutter/viewport_layout.dart'
     show HiddenLineRanges;
-import 'package:baocode/ide/ide_code_diff.dart';
-import 'package:baocode/ide/ide_diff_options.dart';
-import 'package:baocode/ide/ide_image_preview.dart';
-import 'package:baocode/ide/ide_list.dart';
+import 'package:langshenagent/ide/ide_code_diff.dart';
+import 'package:langshenagent/ide/ide_diff_options.dart';
+import 'package:langshenagent/ide/ide_image_preview.dart';
+import 'package:langshenagent/ide/ide_list.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart' show Opacity;

@@ -4,10 +4,10 @@
 
 import 'dart:io';
 
-import 'package:baocode/ide/git/git_model.dart';
-import 'package:baocode/ide/git/git_service.dart';
-import 'package:baocode/ide/git/ide_git_clone_dialog.dart';
-import 'package:baocode/l10n/app_localizations.dart';
+import 'package:langshenagent/ide/git/git_model.dart';
+import 'package:langshenagent/ide/git/git_service.dart';
+import 'package:langshenagent/ide/git/ide_git_clone_dialog.dart';
+import 'package:langshenagent/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;

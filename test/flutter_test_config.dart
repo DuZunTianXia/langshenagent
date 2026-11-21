@@ -38,7 +38,7 @@ import 'semantics_tree.dart';
 /// the context menu are stand-ins, never installed: none looks at the
 /// machine's own. No MCP server is started to see whether it answers, and
 /// neither the upstreams Settings → Models lists nor the Codex CLI's
-/// version is got from langshen.shop.
+/// version is got from langshenagent.dev.
 /// Sessions are the CLI's, with Claude Code as set up on the machine to
 /// pick, which the kernel's tests were written for: those of LangshenAgent's
 /// own core say so. Diffs show as they do by default. The projects in

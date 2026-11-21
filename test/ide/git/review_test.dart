@@ -3,9 +3,9 @@
 // asked for before each commit, the commit held back by a warning until
 // Commit Anyway, made at once where nothing is wrong.
 
-import 'package:baocode/ide/git/commit_message.dart';
-import 'package:baocode/ide/git/git_review.dart';
-import 'package:baocode/ide/git/ide_git_commit_panel.dart';
+import 'package:langshenagent/ide/git/commit_message.dart';
+import 'package:langshenagent/ide/git/git_review.dart';
+import 'package:langshenagent/ide/git/ide_git_commit_panel.dart';
 import 'package:flutter/material.dart' show TextField;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';

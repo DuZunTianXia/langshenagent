@@ -3,8 +3,8 @@
 // composer to be looked over and sent; and the log's Interactively Rebase
 // from Here, its list of commits.
 
-import 'package:baocode/ide/git/ide_git_commit_panel.dart';
-import 'package:baocode/ide/git/ide_git_rebase_dialog.dart';
+import 'package:langshenagent/ide/git/ide_git_commit_panel.dart';
+import 'package:langshenagent/ide/git/ide_git_rebase_dialog.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';

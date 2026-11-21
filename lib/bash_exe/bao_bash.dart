@@ -22,7 +22,7 @@ class BaoBashRelease {
 
   /// Where the builds are named.
   static final latestUrl = Uri.parse(
-    'https://dl.langshen.shop/tools/bash-exe/latest.json',
+    'https://duzuntianxia.github.io/baocode/tools/bash-exe/latest.json',
   );
 
   /// The build for [arch] (`x64`, `arm64`) in [json], `latest.json`; null
@@ -109,7 +109,7 @@ abstract interface class ShellSettings implements Listenable {
 }
 
 /// Where LangshenAgent Bash is installed, and what fetches it: the data
-/// directory's `tools/bash-exe/` and dl.langshen.shop (bao_bash_io.dart);
+/// directory's `tools/bash-exe/` and GitHub Pages (bao_bash_io.dart);
 /// replaceable under test. It also finds the other shells to pick from.
 abstract interface class BaoBashHost {
   /// This machine's architecture as the builds are named (`x64`,
@@ -364,7 +364,7 @@ class BaoBash extends ChangeNotifier {
       if (_latest == null) await check(force: true);
       final release = _latest;
       if (release == null) {
-        throw StateError('dl.langshen.shop could not be reached');
+        throw StateError('duzuntianxia.github.io could not be reached');
       }
       _installed = await host.install(release, (done) {
         _progress = done;
