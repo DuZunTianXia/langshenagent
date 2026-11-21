@@ -37,7 +37,7 @@ class StarPrompt {
   static const conversations = 3;
 
   /// Where the ask takes the user.
-  static final repository = Uri.parse('https://github.com/langshenagent-dev/langshenagent');
+  static final repository = Uri.parse('https://github.com/DuZunTianXia/langshenagent');
 
   final Workspace workspace;
   final TipStorage storage;

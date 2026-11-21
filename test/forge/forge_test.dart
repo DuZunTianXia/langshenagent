@@ -106,13 +106,13 @@ void main() {
   group('ForgeRef', () {
     test('GitHub and GitLab issues and pull requests, from their pages', () {
       final issue = ForgeRef.parse(
-        'https://github.com/langshenagent-dev/langshenagent/issues/92#issuecomment-1',
+        'https://github.com/DuZunTianXia/langshenagent/issues/92#issuecomment-1',
       )!;
       expect(issue.repo.kind, ForgeKind.github);
-      expect(issue.repo.path, 'langshenagent-dev/langshenagent');
+      expect(issue.repo.path, 'DuZunTianXia/langshenagent');
       expect(issue.kind, ForgeItemKind.issue);
       expect(issue.number, 92);
-      expect(issue.fullTag, 'langshenagent-dev/langshenagent#92');
+      expect(issue.fullTag, 'DuZunTianXia/langshenagent#92');
 
       final pull = ForgeRef.parse('https://github.com/o/r/pull/7/files')!;
       expect(pull.kind, ForgeItemKind.pull);
@@ -153,11 +153,11 @@ void main() {
 
     test('a repository from its Git remote', () {
       expect(
-        ForgeRepo.fromRemote('git@github.com:langshenagent-dev/langshenagent.git'),
+        ForgeRepo.fromRemote('git@github.com:DuZunTianXia/langshenagent.git'),
         const ForgeRepo(
           kind: ForgeKind.github,
           host: 'github.com',
-          path: 'langshenagent-dev/langshenagent',
+          path: 'DuZunTianXia/langshenagent',
         ),
       );
       expect(

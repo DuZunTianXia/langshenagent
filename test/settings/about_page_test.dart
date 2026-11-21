@@ -45,7 +45,7 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.text('github.com/langshenagent-dev/langshenagent · 免费开源，GPL-3.0 许可证'),
+      find.text('github.com/DuZunTianXia/langshenagent · 免费开源，GPL-3.0 许可证'),
       findsOneWidget,
     );
     expect(find.text('去 GitHub 点 Star'), findsOneWidget);
@@ -99,7 +99,7 @@ void main() {
   test('its links', () {
     expect(
       AboutSettingsPage.issues,
-      Uri.parse('https://github.com/langshenagent-dev/langshenagent/issues'),
+      Uri.parse('https://github.com/DuZunTianXia/langshenagent/issues'),
     );
   });
 }
