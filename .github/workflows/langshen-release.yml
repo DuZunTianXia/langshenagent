@@ -474,6 +474,9 @@ jobs:
               "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           fi
           mkdir -p pages-site/releases/remote
+      # The site itself too: every release keeps Pages current with it.
+      - name: Put the site on Pages
+        run: tool/pages_site.sh pages-site
       - name: Put the Rust toolchain's bin ahead on PATH
         run: echo "$HOME/.rustup/toolchains/1.97.1-aarch64-apple-darwin/bin" >> "$GITHUB_PATH"
       - name: Sign the release into latest.json
