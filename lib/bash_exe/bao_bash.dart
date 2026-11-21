@@ -7,7 +7,7 @@ import 'package:bao_agent/bao_agent.dart' show Shell;
 import '../tips/feature_tip.dart' show TipStorage;
 import 'bao_bash_stub.dart' if (dart.library.io) 'bao_bash_io.dart' as platform;
 
-/// The build of BaoCode Bash `latest.json` names for this machine
+/// The build of LangshenAgent Bash `latest.json` names for this machine
 /// (.github/workflows/bash-exe.yml publishes them): `bash.exe` gzipped,
 /// the size and SHA-256 (lowercase hex) of the download, and its size
 /// unpacked.
@@ -22,7 +22,7 @@ class BaoBashRelease {
 
   /// Where the builds are named.
   static final latestUrl = Uri.parse(
-    'https://dl.baocode.dev/tools/bash-exe/latest.json',
+    'https://dl.langshenagent.dev/tools/bash-exe/latest.json',
   );
 
   /// The build for [arch] (`x64`, `arm64`) in [json], `latest.json`; null
@@ -61,14 +61,14 @@ class BaoBashRelease {
   final int? unpacked;
 }
 
-/// BaoCode Bash as installed: its version, and its `bash.exe`.
+/// LangshenAgent Bash as installed: its version, and its `bash.exe`.
 typedef BaoBashInstall = ({String version, String executable});
 
 /// Settings → General → Command Line (Windows): what agents run their
 /// commands in (`commandLine.shell` in settings.json; [custom] the file
 /// `commandLine.shellPath` names).
 enum WindowsShell {
-  /// BaoCode Bash, downloaded the first time it is picked.
+  /// LangshenAgent Bash, downloaded the first time it is picked.
   baoBash,
 
   /// Git for Windows' bash, where it is installed.
@@ -108,8 +108,8 @@ abstract interface class ShellSettings implements Listenable {
   Future<void> update(String key, Object? value);
 }
 
-/// Where BaoCode Bash is installed, and what fetches it: the data
-/// directory's `tools/bash-exe/` and dl.baocode.dev (bao_bash_io.dart);
+/// Where LangshenAgent Bash is installed, and what fetches it: the data
+/// directory's `tools/bash-exe/` and dl.langshenagent.dev (bao_bash_io.dart);
 /// replaceable under test. It also finds the other shells to pick from.
 abstract interface class BaoBashHost {
   /// This machine's architecture as the builds are named (`x64`,
@@ -144,7 +144,7 @@ abstract interface class BaoBashHost {
   String powershell();
 }
 
-/// BaoCode Bash (github.com/baocode-dev/bash-exe), offered on Windows:
+/// LangshenAgent Bash (github.com/langshenagent-dev/bash-exe), offered on Windows:
 /// bash 5.3 with `rg`, `grep`, `sed`, `awk`, `find`, `jq` and the like
 /// built in, that takes `C:\x` and `/c/x` alike; and the pick of the shell
 /// agents run commands in ([inUse]). Both cores run their agents'
@@ -152,7 +152,7 @@ abstract interface class BaoBashHost {
 /// bao_agent), Claude Code's CLI ([cliEnvironment]) where it takes bash.
 ///
 /// Settings → General → Command Line picks the shell, and installs,
-/// updates and removes BaoCode Bash. Over the composer it is recommended
+/// updates and removes LangshenAgent Bash. Over the composer it is recommended
 /// ([showsHint]) to whoever runs commands in neither it nor Git Bash,
 /// until put off for good.
 class BaoBash extends ChangeNotifier {
@@ -174,8 +174,8 @@ class BaoBash extends ChangeNotifier {
   }
 
   /// What the built-in core's environment gets for its commands to run in
-  /// the shell in use (`BAOCODE_SHELL`), BaoCode Bash told as such
-  /// (`BAOCODE_BASH`); nothing where it is not offered.
+  /// the shell in use (`LANGSHENAGENT_SHELL`), LangshenAgent Bash told as such
+  /// (`LANGSHENAGENT_BASH`); nothing where it is not offered.
   static Map<String, String> coreEnvironment() {
     final bash = current;
     if (bash == null) return const {};
@@ -210,7 +210,7 @@ class BaoBash extends ChangeNotifier {
     return {cliBashVariable: executable};
   }
 
-  /// Whether [cliEnvironment] gave the CLI BaoCode Bash.
+  /// Whether [cliEnvironment] gave the CLI LangshenAgent Bash.
   static bool givesBaoBash(Map<String, String> cli) =>
       cli.isNotEmpty && cli[cliBashVariable] == current?.installed?.executable;
 
@@ -278,8 +278,8 @@ class BaoBash extends ChangeNotifier {
   late final String? gitBash = host.gitBash();
 
   /// The shell agents run commands in: the one picked, where it can run
-  /// (BaoCode Bash installed, Git Bash found, a custom file named); else,
-  /// as with none picked, BaoCode Bash where installed, else Git Bash, else
+  /// (LangshenAgent Bash installed, Git Bash found, a custom file named); else,
+  /// as with none picked, LangshenAgent Bash where installed, else Git Bash, else
   /// cmd.exe.
   WindowsShellInUse get inUse {
     final picked = switch (chosen) {
@@ -305,7 +305,7 @@ class BaoBash extends ChangeNotifier {
   /// What Settings shows picked: the pick, else the shell in use.
   WindowsShell get shown => chosen ?? inUse.shell;
 
-  /// Picks [shell], BaoCode Bash downloaded the first time.
+  /// Picks [shell], LangshenAgent Bash downloaded the first time.
   Future<void> choose(WindowsShell shell) async {
     final settings = this.settings;
     if (settings != null) {
@@ -333,7 +333,7 @@ class BaoBash extends ChangeNotifier {
     }
   }
 
-  // --- BaoCode Bash itself ----------------------------------------------------
+  // --- LangshenAgent Bash itself ----------------------------------------------------
 
   /// Looks for the latest build, at most once an hour unless [force]d.
   /// Offline, there is none to show.
@@ -348,7 +348,7 @@ class BaoBash extends ChangeNotifier {
     try {
       _latest = BaoBashRelease.parse(await host.fetchLatest(), host.arch!);
     } on Object catch (error) {
-      debugPrint('BaoCode Bash: no latest.json: $error');
+      debugPrint('LangshenAgent Bash: no latest.json: $error');
     }
     _notify();
   }
@@ -364,7 +364,7 @@ class BaoBash extends ChangeNotifier {
       if (_latest == null) await check(force: true);
       final release = _latest;
       if (release == null) {
-        throw StateError('dl.baocode.dev could not be reached');
+        throw StateError('dl.langshenagent.dev could not be reached');
       }
       _installed = await host.install(release, (done) {
         _progress = done;

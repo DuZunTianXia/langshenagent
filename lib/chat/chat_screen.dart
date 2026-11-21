@@ -1516,7 +1516,7 @@ class _ChatScreenState extends State<ChatScreen>
               // Claude Code being downloaded for this machine, or put on
               // a remote project's host.
               ClaudeInstallBanner(location: _session.kernelContext.cwd),
-              // Windows: BaoCode Bash recommended to whoever runs commands
+              // Windows: LangshenAgent Bash recommended to whoever runs commands
               // in neither it nor Git Bash, for a project on this machine.
               if (BaoBash.current case final bash?
                   when !RemoteLocation.isRemote(

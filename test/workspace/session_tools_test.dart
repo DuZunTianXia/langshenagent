@@ -1,15 +1,15 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/kernel/agent_kernel.dart';
-import 'package:baocode/kernel/claude_code/claude_code_kernel.dart';
-import 'package:baocode/kernel/claude_code/claude_code_transport.dart';
-import 'package:baocode/kernel/claude_code/claude_sdk_tools.dart';
-import 'package:baocode/kernel/claude_code/mock_claude_code_transport.dart';
-import 'package:baocode/workspace/session_tools.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:langshenagent/chat/chat_models.dart';
+import 'package:langshenagent/chat/chat_session.dart';
+import 'package:langshenagent/kernel/agent_kernel.dart';
+import 'package:langshenagent/kernel/claude_code/claude_code_kernel.dart';
+import 'package:langshenagent/kernel/claude_code/claude_code_transport.dart';
+import 'package:langshenagent/kernel/claude_code/claude_sdk_tools.dart';
+import 'package:langshenagent/kernel/claude_code/mock_claude_code_transport.dart';
+import 'package:langshenagent/workspace/session_tools.dart';
+import 'package:langshenagent/workspace/workspace.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;

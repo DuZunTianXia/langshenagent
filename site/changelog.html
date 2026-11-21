@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BaoCode Changelog</title>
-<meta name="description" content="What changed in each version of BaoCode.">
+<title>LangshenAgent Changelog</title>
+<meta name="description" content="What changed in each version of LangshenAgent.">
 <link rel="icon" href="/icon.png">
 <link rel="stylesheet" href="/style.css">
 <script src="/head.js"></script>
-<link rel="alternate" hreflang="en" href="https://baocode.dev/changelog">
-<link rel="alternate" hreflang="zh" href="https://baocode.dev/zh/changelog">
+<link rel="alternate" hreflang="en" href="https://langshenagent.dev/changelog">
+<link rel="alternate" hreflang="zh" href="https://langshenagent.dev/zh/changelog">
 </head>
 <body>
 <!-- Made by tool/build_changelog.dart from release-notes/: edit those, not this. -->
@@ -19,16 +19,16 @@
   <symbol id="ic-github" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5c.08-1.25-.27-2.48-1-3.5c.28-1.15.28-2.35 0-3.5c0 0-1 0-3 1.5c-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5c-.39.49-.68 1.05-.85 1.65S8.93 17.38 9 18v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></g></symbol>
 </svg>
 <header class="top">
-  <a class="brand" href="/"><img src="/icon.png" alt="">BaoCode</a>
+  <a class="brand" href="/"><img src="/icon.png" alt="">LangshenAgent</a>
   <a href="/download">Download</a>
   <a href="/changelog" aria-current="page">Changelog</a>
-  <a href="https://github.com/baocode-dev/baocode"><svg class="ic" aria-hidden="true"><use href="#ic-github"/></svg>GitHub</a>
+  <a href="https://github.com/langshenagent-dev/langshenagent"><svg class="ic" aria-hidden="true"><use href="#ic-github"/></svg>GitHub</a>
   <a class="lang" href="/zh/changelog" hreflang="zh" lang="zh-CN">中文</a>
 </header>
 
 <main class="page changelog">
   <h1>Changelog</h1>
-  <p class="subtitle">What changed in each version of BaoCode.</p>
+  <p class="subtitle">What changed in each version of LangshenAgent.</p>
 
   <section class="release" id="v2.0.3">
     <h2 class="plain"><a href="#v2.0.3">2.0.3</a></h2>
@@ -52,14 +52,14 @@
 
   <section class="release" id="v2.0.2">
     <h2 class="plain"><a href="#v2.0.2">2.0.2</a></h2>
-    <p>Mostly fixes in this one: the mouse wheel no longer stops working on Windows, and workspace windows are titled by their name, not an ID. New models of a ChatGPT subscription show up without waiting for a BaoCode release.</p>
+    <p>Mostly fixes in this one: the mouse wheel no longer stops working on Windows, and workspace windows are titled by their name, not an ID. New models of a ChatGPT subscription show up without waiting for a LangshenAgent release.</p>
     <p>New</p>
     <ul>
-    <li>New models of a ChatGPT subscription no longer wait for a BaoCode update: the model list asks baocode.dev for the latest Codex version first, so a new model shows up without a restart. The per-upstream &quot;Codex Version&quot; setting is gone.</li>
+    <li>New models of a ChatGPT subscription no longer wait for a LangshenAgent update: the model list asks langshenagent.dev for the latest Codex version first, so a new model shows up without a restart. The per-upstream &quot;Codex Version&quot; setting is gone.</li>
     </ul>
     <p>Phone (phone app 0.2.2)</p>
     <ul>
-    <li>Push your iPhone with curl: turn on Settings → Notifications → Push from scripts, and your scripts, shortcuts and CI can notify the phone; a tap can open a link or run a shortcut. See baocode.dev/push.</li>
+    <li>Push your iPhone with curl: turn on Settings → Notifications → Push from scripts, and your scripts, shortcuts and CI can notify the phone; a tap can open a link or run a shortcut. See langshenagent.dev/push.</li>
     </ul>
     <p>Fixed</p>
     <ul>
@@ -111,12 +111,12 @@
 
   <section class="release" id="v2.0.0">
     <h2 class="plain"><a href="#v2.0.0">2.0.0</a></h2>
-    <p>2.0 is a major release. Windows gets BaoCode Bash, and agents no longer fight PowerShell. One conversation can direct the others, a project can take in other folders, and your settings move to another computer in one file. The phone can send files to an agent, and an iPhone gets push notifications.</p>
-    <p>Windows: BaoCode Bash</p>
+    <p>2.0 is a major release. Windows gets LangshenAgent Bash, and agents no longer fight PowerShell. One conversation can direct the others, a project can take in other folders, and your settings move to another computer in one file. The phone can send files to an agent, and an iPhone gets push notifications.</p>
+    <p>Windows: LangshenAgent Bash</p>
     <ul>
-    <li>Agents no longer fight PowerShell. In most tasks, tool calls on BaoCode Bash respond 90% faster than on CMD or PowerShell, and the same work takes about a quarter of the steps.</li>
-    <li>BaoCode Bash is a bash made for Windows, with more than 80 commands built in (rg, grep, sed, awk, find, jq, tar, diff and more) and no Git needed. Chinese output from cmd, PowerShell and Python comes out intact on a Chinese Windows.</li>
-    <li>Settings → General → Command Line is now a list: BaoCode Bash (recommended, downloaded the first time you pick it), Git Bash, cmd, PowerShell or a program of your own. Both the built-in core and Claude Code use what you pick. With nothing picked, it works as before.</li>
+    <li>Agents no longer fight PowerShell. In most tasks, tool calls on LangshenAgent Bash respond 90% faster than on CMD or PowerShell, and the same work takes about a quarter of the steps.</li>
+    <li>LangshenAgent Bash is a bash made for Windows, with more than 80 commands built in (rg, grep, sed, awk, find, jq, tar, diff and more) and no Git needed. Chinese output from cmd, PowerShell and Python comes out intact on a Chinese Windows.</li>
+    <li>Settings → General → Command Line is now a list: LangshenAgent Bash (recommended, downloaded the first time you pick it), Git Bash, cmd, PowerShell or a program of your own. Both the built-in core and Claude Code use what you pick. With nothing picked, it works as before.</li>
     <li>If your commands run in neither bash, a note above the composer recommends it: install it in one click, or turn the note off for good.</li>
     <li>Agents are told to write paths as <code>C:/x</code>; <code>C:\x</code> and <code>/c/x</code> work too, <code>/tmp</code> is the system's temporary folder, and <code>cygpath</code> converts between them.</li>
     <li>With PowerShell picked, the built-in core writes PowerShell and reads its output as UTF-8.</li>
@@ -126,7 +126,7 @@
     <li>Conversations working together: with Settings → General → &quot;Agents can coordinate other conversations&quot; on, an agent can list and read your other conversations, send them messages and wait for them to finish, so one conversation can split work among the others.</li>
     <li>A project can take in other folders and stay as it is: its agents still start in its own folder and can read and write the added ones. Use &quot;Add Folder…&quot; in the sidebar's project menu or Edit Project; the side panel, terminals, @ mentions and the phone's file browser follow.</li>
     <li>Settings → Data Directory → &quot;Move to Another Computer&quot; exports your settings, upstreams and models, and keybindings to one file to import on another computer. API keys go only when ticked.</li>
-    <li>In SSH remote terminals, <code>code &lt;file&gt;</code> opens a remote file or folder in BaoCode. Uploads and downloads show their progress and can be cancelled, and the remote explorer's context menu downloads files and folders.</li>
+    <li>In SSH remote terminals, <code>code &lt;file&gt;</code> opens a remote file or folder in LangshenAgent. Uploads and downloads show their progress and can be cancelled, and the remote explorer's context menu downloads files and folders.</li>
     <li>When an agent uses the Workflow tool, its subagents show as cards with their progress. A running subagent shows how long it has been at work.</li>
     <li>Customize has a Memory page to read, edit and delete what Claude Code remembers of a project. A project with no CLAUDE.md shows its AGENTS.md under Rules.</li>
     <li>Settings → Git Accounts adds GitCode, with gitcode.com's issues and pull requests.</li>
@@ -146,10 +146,10 @@
     </ul>
     <p>Improved</p>
     <ul>
-    <li>Signed in with your own Claude account, BaoCode starts Claude Code under its own name rather than as an SDK caller when usage is counted.</li>
+    <li>Signed in with your own Claude account, LangshenAgent starts Claude Code under its own name rather than as an SDK caller when usage is counted.</li>
     <li>On a computer without ripgrep (most Windows ones), the built-in core uses the one in Claude Code's build, so it searches faster and finds more; under cmd it tells the model how to search there.</li>
     <li>A provider's model uses the context its upstream gives (such as 400K) rather than the 200K picked once for another model.</li>
-    <li>A conversation continued in a terminal is read again by itself when you come back to BaoCode, without the refresh button.</li>
+    <li>A conversation continued in a terminal is read again by itself when you come back to LangshenAgent, without the refresh button.</li>
     <li>Listing sessions takes far less memory: an 800 MB session took 2 GB, now about 50 MB. Remote hosts no longer run out of memory and get killed over it again and again.</li>
     <li>A remote terminal printing a lot no longer slows the whole SSH connection; files and the agent keep responding.</li>
     <li>The context meter follows each request's final usage, so it is right mid-turn as well.</li>
@@ -230,7 +230,7 @@
     <p>This release can put files back when you edit a message, shows and uses Claude subscription limit resets, runs on Kylin and UOS Linux, and fixes how context usage is counted along with a batch of chat problems.</p>
     <p>New</p>
     <ul>
-    <li>When you edit an earlier message and send it again, the files the agent changed from that message on can go back as they were; what you or another conversation changed since is kept. Settings → General → Edited Messages: Ask Each Time, Undo the Changes or Keep the Changes. For Claude Code and BaoCode Agent; changes made by commands (Bash) are not tracked.</li>
+    <li>When you edit an earlier message and send it again, the files the agent changed from that message on can go back as they were; what you or another conversation changed since is kept. Settings → General → Edited Messages: Ask Each Time, Undo the Changes or Keep the Changes. For Claude Code and LangshenAgent Agent; changes made by commands (Bash) are not tracked.</li>
     <li>Settings → Models shows, on the Claude Code row, the limit resets your subscription has: how many, what each clears, how much is used and until when. One is used only after you confirm.</li>
     <li>The Linux .deb runs on glibc 2.31 systems such as Kylin V10 SP1 and UOS 20.</li>
     <li>The phone app shows how full a conversation's context is (phone app 0.1.10).</li>
@@ -341,7 +341,7 @@
     </ul>
     <p>Improved</p>
     <ul>
-    <li>Without Claude Code installed, BaoCode's built-in core is used by default, and the official CLI is no longer suggested.</li>
+    <li>Without Claude Code installed, LangshenAgent's built-in core is used by default, and the official CLI is no longer suggested.</li>
     <li>Edit cards show their changes inline.</li>
     <li>A code block being written lays out and colors only what changed, so long replies no longer stutter.</li>
     <li>History reads only the part of a session shown, and a session file that grows is read on from where it was read. Large requests' JSON is handled off the UI thread, using less CPU.</li>
@@ -380,7 +380,7 @@
     <ul>
     <li>The mouse's side buttons go back and forward: out of a subagent, between changes and the Git log, out of the settings, or to the agent selected before. The IDE's title bar has Back and Forward beside its search box too.</li>
     <li>Formulas in the chat select whole and copy as their TeX.</li>
-    <li>baocode://file/ links open a file at a line, as vscode://file/ does.</li>
+    <li>langshenagent://file/ links open a file at a line, as vscode://file/ does.</li>
     <li>Go to definition in Vue files.</li>
     <li>Gitee is supported; a self-hosted GitLab works over http and with certificates you trust.</li>
     <li>Usage is priced the way upstreams price: bands by prompt length, hours of the week (DeepSeek's off-peak discount), service tiers, fees per call and per tool use. Calls under way show in the calls list too.</li>
@@ -456,7 +456,7 @@
     <p>Fixed</p>
     <ul>
     <li>With no phone paired, bots are no longer told what your agents do, and do not come back to what they meant to. Each such notice had a bot answer on your model, paid for and read by no one. Once a phone is paired, they carry on.</li>
-    <li>After BaoCode restarted, a bot sometimes went on in a new, empty conversation, its chat seemingly gone on the phone. It now goes on in its own.</li>
+    <li>After LangshenAgent restarted, a bot sometimes went on in a new, empty conversation, its chat seemingly gone on the phone. It now goes on in its own.</li>
     <li>A bot's conversation no longer shows in the desktop's notifications, the Dock badge or the tray, and a notification no longer opens it as an ordinary conversation.</li>
     <li>A bot skips what happens to agents that its chat does not need, instead of answering each one.</li>
     <li>Built-in core: once a plan is put to you, the turn ends, instead of some models putting it again and again in the same turn.</li>
@@ -517,7 +517,7 @@
   <section class="release" id="v1.7.0">
     <h2 class="plain"><a href="#v1.7.0">1.7.0</a></h2>
     <p>New Git View</p>
-    <p>This release is all about a new Git view. The old Changes panel is replaced by a JetBrains-style Git log and Commit panel. Your everyday Git work happens in BaoCode, with AI ready to help: committing, branches, rebases, conflicts, stashes and comparisons. Besides, Windows now has a native Arm64 build, projects in WSL open directly, and BaoCode uses much less CPU on macOS.</p>
+    <p>This release is all about a new Git view. The old Changes panel is replaced by a JetBrains-style Git log and Commit panel. Your everyday Git work happens in LangshenAgent, with AI ready to help: committing, branches, rebases, conflicts, stashes and comparisons. Besides, Windows now has a native Arm64 build, projects in WSL open directly, and LangshenAgent uses much less CPU on macOS.</p>
     <p>New Git view</p>
     <ul>
     <li>Git log: the commit graph and branch and tag labels look as they do in JetBrains IDEs. Filter by branch, path, user or date, select several commits, and see the history of a file, a folder or a few lines. A branch tree beside the log has the branch actions.</li>
@@ -553,9 +553,9 @@
     </ul>
     <p>Windows on Arm and WSL</p>
     <ul>
-    <li>A native Arm64 build for Windows (BaoCode-1.7.0-setup-arm64.exe) runs natively on Snapdragon and other Arm PCs. Its updates come as Arm64 too. The download page has an Arm64 button.</li>
+    <li>A native Arm64 build for Windows (LangshenAgent-1.7.0-setup-arm64.exe) runs natively on Snapdragon and other Arm PCs. Its updates come as Arm64 too. The download page has an Arm64 button.</li>
     <li>Open projects in WSL distributions. Open Remote Project lists this machine's distributions. Files, Git, terminals, language servers, Claude Code and reconnecting all run inside WSL, and the status bar says &quot;WSL: <distribution>&quot;.</li>
-    <li>Inside WSL, the Claude Code installed on Windows is no longer used by mistake. It failed with &quot;Settings file not found: E:\dev\shm\…&quot;; now BaoCode offers to install one in WSL.</li>
+    <li>Inside WSL, the Claude Code installed on Windows is no longer used by mistake. It failed with &quot;Settings file not found: E:\dev\shm\…&quot;; now LangshenAgent offers to install one in WSL.</li>
     </ul>
     <p>Performance</p>
     <ul>
@@ -604,7 +604,7 @@
     <li>A plan sent to you rather than written to a file now shows as a plan card, ready to start.</li>
     <li>A code block ends at its closing fence; the rest of the reply is no longer shown as code.</li>
     <li>Linux plays notification sounds and shows desktop notifications.</li>
-    <li>On Chinese Windows, the output of a failed MCP command is no longer garbled. MCP servers that refused BaoCode's connection check with HTTP 415 now accept it.</li>
+    <li>On Chinese Windows, the output of a failed MCP command is no longer garbled. MCP servers that refused LangshenAgent's connection check with HTTP 415 now accept it.</li>
     <li>Typing with an input method over selected text replaces the selection.</li>
     <li>On Windows, the title bar over Settings shows only the window's buttons.</li>
     <li>On macOS, the app launched from the Dock or Finder can hold more than 256 open files. With many agents, terminals and language servers open, Claude Code failed to start with &quot;Too many open files&quot;.</li>
@@ -664,7 +664,7 @@
   <section class="release" id="v1.5.0">
     <h2 class="plain"><a href="#v1.5.0">1.5.0</a></h2>
     <p>Easy SSH</p>
-    <p>Connecting to a server no longer starts with setting up ssh in a terminal: type its address in BaoCode and connect, with the password, key and jump host in one form, and no terminal to accept the server's key the first time. Settings has a new SSH Servers page, where all your servers are kept, each with the core it runs.</p>
+    <p>Connecting to a server no longer starts with setting up ssh in a terminal: type its address in LangshenAgent and connect, with the password, key and jump host in one form, and no terminal to accept the server's key the first time. Settings has a new SSH Servers page, where all your servers are kept, each with the core it runs.</p>
     <p>New</p>
     <ul>
     <li>Add an SSH server: Add SSH Server… in the list of remote projects asks for the host, port and user, and how to sign in: a password, a private key, or Automatic (as ssh does in a terminal). A pasted user@host:port is split up, the keys in ~/.ssh are offered, and a password is kept in the system keychain. Saved, it connects in one click; a failed connection's page and the sidebar edit it too.</li>
@@ -673,9 +673,9 @@
     <li>Settings → SSH Servers: the servers added in the app and the hosts the sidebar has used, to edit, connect, disconnect or remove; the hosts of ~/.ssh/config are listed apart, their file a click away.</li>
     <li>A core for each server: Automatic (the server's Claude Code CLI if it has one, else the built-in core), the built-in core, or the Claude Code CLI (installed there if missing). Remote hosts no longer follow this machine's core setting.</li>
     <li>Passwords on Windows 10: the installer carries a recent OpenSSH, used where the system's is too old or missing.</li>
-    <li>Settings → About: the version, the site, the changelog and the issues, and a way to star BaoCode on GitHub. Accounts is now Git Accounts.</li>
+    <li>Settings → About: the version, the site, the changelog and the issues, and a way to star LangshenAgent on GitHub. Accounts is now Git Accounts.</li>
     <li>The browser extension works on Linux, in Chrome, Chromium, Edge, Brave and Vivaldi.</li>
-    <li>A file another tool asks BaoCode to open as file:line:column (a front-end inspector's Open in Editor, say) opens at that line and column.</li>
+    <li>A file another tool asks LangshenAgent to open as file:line:column (a front-end inspector's Open in Editor, say) opens at that line and column.</li>
     </ul>
     <p>Improved</p>
     <ul>
@@ -700,12 +700,12 @@
   <section class="release" id="v1.4.0">
     <h2 class="plain"><a href="#v1.4.0">1.4.0</a></h2>
     <p>Hello, Linux</p>
-    <p>BaoCode runs on Linux now: a package for Ubuntu and other Debian-based distributions, x64 and arm64, that keeps itself up to date like the Mac and Windows apps. And setting up a model the first time is a welcome rather than an error.</p>
+    <p>LangshenAgent runs on Linux now: a package for Ubuntu and other Debian-based distributions, x64 and arm64, that keeps itself up to date like the Mac and Windows apps. And setting up a model the first time is a welcome rather than an error.</p>
     <p>New</p>
     <ul>
-    <li>Linux: download the .deb for your processor from baocode.dev/download (Ubuntu 22.04 or later, and other Debian-based distributions). It opens folders and files with the system's dialogs, has the system's right-click menus, and pastes text, files and pictures. Thanks to qyh1221, whose port this is.</li>
-    <li>Linux updates itself: a new version is downloaded and checked as on the other systems, then installed once you enter your password, and BaoCode opens again. A copy run from the tarball is pointed to the download page instead.</li>
-    <li>Setting up a model: with no model to run on yet (BaoCode's own core, before any upstream is added), a welcome explains what an upstream is and adds one in a click, opening its page in Settings → Models. The conversation starts by itself as soon as a model is there, with no retry. Until then, Set Up a Model sits in the model picker's place under the input, and in the command palette.</li>
+    <li>Linux: download the .deb for your processor from langshenagent.dev/download (Ubuntu 22.04 or later, and other Debian-based distributions). It opens folders and files with the system's dialogs, has the system's right-click menus, and pastes text, files and pictures. Thanks to qyh1221, whose port this is.</li>
+    <li>Linux updates itself: a new version is downloaded and checked as on the other systems, then installed once you enter your password, and LangshenAgent opens again. A copy run from the tarball is pointed to the download page instead.</li>
+    <li>Setting up a model: with no model to run on yet (LangshenAgent's own core, before any upstream is added), a welcome explains what an upstream is and adds one in a click, opening its page in Settings → Models. The conversation starts by itself as soon as a model is there, with no retry. Until then, Set Up a Model sits in the model picker's place under the input, and in the command palette.</li>
     <li>From your phone, Start on a plan the agent put to you starts it, as the desktop's button does.</li>
     </ul>
     <p>Improved</p>
@@ -717,16 +717,16 @@
   <section class="release" id="v1.3.0">
     <h2 class="plain"><a href="#v1.3.0">1.3.0</a></h2>
     <p>Good Friends with Chrome</p>
-    <p>This release is about the browser: agents can use your own Chrome now, opening pages, clicking, typing and debugging with your sign-ins, every step of it in view in the side panel. Agents can also make pictures with your upstreams' image models, and pictures show right in the chat. BaoCode has a core of its own; an agent's changes can be reviewed part by part beside the chat; long conversations open faster, and the mouse wheel keeps up with your hand. And a batch of problems is fixed.</p>
+    <p>This release is about the browser: agents can use your own Chrome now, opening pages, clicking, typing and debugging with your sign-ins, every step of it in view in the side panel. Agents can also make pictures with your upstreams' image models, and pictures show right in the chat. LangshenAgent has a core of its own; an agent's changes can be reviewed part by part beside the chat; long conversations open faster, and the mouse wheel keeps up with your hand. And a batch of problems is fixed.</p>
     <p>New</p>
     <ul>
-    <li>The browser: add the BaoCode extension (from the Chrome Web Store, or as a zip loaded unpacked) and agents can open pages, read them, click and type in your own Chrome, Edge, Brave or Arc, signed in as you are. They touch only the tabs you share with them (the BaoCode button in the browser's toolbar shares the tab you're on). The side panel shows the page they're working in as it happens, and you can work in it too. Turn it on or off and install it in Settings → Browser, on macOS and Windows.</li>
+    <li>The browser: add the LangshenAgent extension (from the Chrome Web Store, or as a zip loaded unpacked) and agents can open pages, read them, click and type in your own Chrome, Edge, Brave or Arc, signed in as you are. They touch only the tabs you share with them (the LangshenAgent button in the browser's toolbar shares the tab you're on). The side panel shows the page they're working in as it happens, and you can work in it too. Turn it on or off and install it in Settings → Browser, on macOS and Windows.</li>
     <li>Debugging in the browser: agents read the console and network requests, set breakpoints and step through code, see variables by their source-mapped names, find a page's React and Vue components and event handlers, look into performance, memory and unused CSS, block, mock and rewrite requests, and run a tab as on a phone or a slow network.</li>
     <li>A debugging history of the browser: the pages, requests and console errors and warnings of the tabs you share are kept as they happen, with no recording to start. Say &quot;saving just failed&quot; and the agent looks it up itself. Detailed history keeps request and response bodies too, and your clicks and typing (never passwords). It stays on this computer; Settings shows how much room it takes and clears it, and you're told once it passes 1 GB.</li>
     <li>Show the agent how: an agent can ask you to do something once in the browser, keep each step as a file in the project, and do it again in your browser later.</li>
     <li>Making pictures: agents generate images with your upstreams' image models (the Images API, chat interfaces such as OpenRouter's and Gemini's, Codex's gpt-image-2). Pick the default image model in Settings → Models, or Ask each time to choose in the chat; image models stay out of the chat's model picker.</li>
     <li>Pictures in the chat: what a tool returns as a picture (an image file read, a browser screenshot, an MCP tool's image) and local images in a message show in the conversation. Click one to see it whole, and ← → go through every picture in the chat; right-click to open it in the side panel or the IDE, copy its path or show it in Finder. Image files open in the side panel too.</li>
-    <li>The built-in core: BaoCode's own Claude Code core, with CLAUDE.md, skills, subagents, commands, hooks, plugins and MCP servers, on remote hosts too. Switch in Settings → General → Claude Code → Core: the CLI where Claude Code is installed, the built-in core otherwise. The built-in core uses only the upstreams added in Settings → Models; pick the CLI for a Claude subscription.</li>
+    <li>The built-in core: LangshenAgent's own Claude Code core, with CLAUDE.md, skills, subagents, commands, hooks, plugins and MCP servers, on remote hosts too. Switch in Settings → General → Claude Code → Core: the CLI where Claude Code is installed, the built-in core otherwise. The built-in core uses only the upstreams added in Settings → Models; pick the CLI for a Claude subscription.</li>
     <li>Reviewing changes beside the chat: the side panel's editor shows an agent's pending changes in the code, as the IDE does, each part to undo or keep on its own. The bar above goes to the previous and next change and keeps or undoes a file, or everything at once. The side panel's editor finds and replaces too.</li>
     <li>Live usage: while an agent works, the time so far, the writing speed and the tokens roll by under the status line; a finished turn shows its time, speed, cost and tokens, still there when the session is opened again.</li>
     <li>The status line's musings are now mostly about the step just done, its command or file by name.</li>
@@ -772,7 +772,7 @@
     <ul>
     <li>Stash: an inbox for whatever comes to mind. Set a global shortcut in Settings → Stash and press it in any app to bring up a floating panel and note something down (none is set by default, so as not to clash with other apps). Text, screenshots, files, links, code, tables and formulas all go in, and each note has its own number, like an issue.</li>
     <li>Keeping Stash tidy: pin notes, drag them into order, filter by time, project and status, and merge duplicates; search finds text inside images too, and AI search finds notes by meaning.</li>
-    <li>Handing a note to an agent: click Implement in BaoCode and choose a new git worktree or the current branch, or @ the note in a chat. The chat and the note are linked, and the note's card shows how the chat is going.</li>
+    <li>Handing a note to an agent: click Implement in LangshenAgent and choose a new git worktree or the current branch, or @ the note in a chat. The chat and the note are linked, and the note's card shows how the chat is going.</li>
     <li>AI to say it clearly: Polish smooths the selected text, and Clarify turns a one-liner into a full request, using its images and attachments; both can be undone.</li>
     <li>Accounts (Settings → Accounts): sign in to GitHub or GitLab, in the browser or with a token, GitHub Enterprise and self-hosted GitLab included. Issues and pull requests linked from Stash show their latest state and checks; import issues from your projects' repositories, and reply to or close an issue once you've confirmed, with a warning first if the text looks like it holds a local path or a secret. Tokens are kept only in this computer's keychain.</li>
     <li>The phone app (beta): download it for Android or iOS from the download page, pair it with your computer, and follow and steer its agents from your phone.</li>
@@ -812,10 +812,10 @@
   <section class="release" id="v1.1.0">
     <h2 class="plain"><a href="#v1.1.0">1.1.0</a></h2>
     <p>Nice and bouncy</p>
-    <p>This release lays the groundwork for your phone: BaoCode on a phone can pair with your computer, to see and steer its agents. The conversation also has a minimap, so a long one can be taken in at a glance and any part of it reached with a click; under each reply there is now a copy button and what the turn used.</p>
+    <p>This release lays the groundwork for your phone: LangshenAgent on a phone can pair with your computer, to see and steer its agents. The conversation also has a minimap, so a long one can be taken in at a glance and any part of it reached with a click; under each reply there is now a copy button and what the turn used.</p>
     <p>New</p>
     <ul>
-    <li>Phones (preview): a new Settings → Mobile page. Pair a phone by scanning a QR code, or let a phone on the same network find the computer; both sides show a security code to check, then they connect directly over the local network or the internet, end-to-end encrypted, and keep working when the computer's IP changes. Off until you show the QR code; the first time, macOS asks whether BaoCode may use the local network. The phone app is coming soon.</li>
+    <li>Phones (preview): a new Settings → Mobile page. Pair a phone by scanning a QR code, or let a phone on the same network find the computer; both sides show a security code to check, then they connect directly over the local network or the internet, end-to-end encrypted, and keep working when the computer's IP changes. Off until you show the QR code; the first time, macOS asks whether LangshenAgent may use the local network. The phone app is coming soon.</li>
     <li>Conversation minimap: a miniature of the whole conversation beside it, your messages, code, tables and changes each telling apart. While you scroll, a drop of liquid glass marks where you are, magnifying what is under it a little, like the macOS Dock; click or drag it to go anywhere.</li>
     <li>While the minimap shows, it takes the place of the scrollbar on the right, and the messages leave a little more room either side; in a narrow window it hides and the scrollbar is back.</li>
     <li>Settings → Appearance: turn off Conversation Minimap to keep the scrollbar on the right, as before; with it on, set how opaque its glass is (0% to 150%), and how much it stretches as it follows you scrolling (Off, Subtle, Medium, Bouncy).</li>
@@ -852,7 +852,7 @@
     <p>A wide-ranging release: import upstreams from a site in one click, manage SSH hosts from the sidebar, undo and drag files in and out of the explorer, get Claude Code downloaded for you on first use, and a batch of long-standing fixes.</p>
     <p>New</p>
     <ul>
-    <li>One-click upstream import: click the import button on a site that offers it and, once you confirm, the upstream is added with your own key (only its name, protocol, address and key are taken). Settings → Models lists the sites officially listed at the top, those you use first; the list follows baocode.dev, with no new release needed.</li>
+    <li>One-click upstream import: click the import button on a site that offers it and, once you confirm, the upstream is added with your own key (only its name, protocol, address and key are taken). Settings → Models lists the sites officially listed at the top, those you use first; the list follows langshenagent.dev, with no new release needed.</li>
     <li>The model picker shows each model's maker logo, and each upstream's heading has an icon. Pick one yourself (a maker's logo, the site's icon, an emoji, a built-in icon or an image you upload); unset, the maker is told from the address, or the site's icon is fetched.</li>
     <li>Queued messages: what you send while the agent works no longer lands in the conversation. It waits above the input, sent in turn, and each can be taken back to edit, sent now (stopping the current task), or removed.</li>
     <li>Open Project in the sidebar, and SSH hosts managed there: switch between this machine and a host, add, rename, disconnect or remove hosts. The new chat's folder menu lists SSH hosts and their projects too, and picks a folder on a host directly.</li>
@@ -861,7 +861,7 @@
     <li>Auto save: turn on Auto Save in the File menu, or set files.autoSave (after a pause in editing, on switching editors or on leaving the window), as in VS Code.</li>
     <li>The Skills page (formerly Customize) works for remote projects, managing the skills, subagents, commands, rules and MCP servers on the remote host. New ones can have Chinese names.</li>
     <li>Each MCP server is checked for whether it connects: one that doesn't says why (its exit code, a timeout, a sign-in it needs) with its output log, and can be checked again, one or all.</li>
-    <li>Claude Code installed for you: with none on this machine, your first conversation downloads it, showing progress. By default the newest of those installed and downloaded by BaoCode is used; set a path in Settings → General to use one of your own.</li>
+    <li>Claude Code installed for you: with none on this machine, your first conversation downloads it, showing progress. By default the newest of those installed and downloaded by LangshenAgent is used; set a path in Settings → General to use one of your own.</li>
     <li>Settings → Updates → Diagnostic Logs: when something goes wrong, upload the error logs to the developer with a note, and get a report ID back. Nothing is sent until you click Upload, and your home folder shows as ~ in the logs.</li>
     <li>The settings' page list can be resized by dragging and hidden with ⌘B; in a narrow window it becomes a drawer.</li>
     <li>Models that summarize their thinking, such as GPT, show a thought by its summary's title, its text when opened.</li>
@@ -881,7 +881,7 @@
     <ul>
     <li>After stopping a task, tools, commands and subagents still running no longer spin forever: they show as failed (Claude Code and Codex).</li>
     <li>A long conversation's scrollbar is to scale and no longer jumps as you drag it. A turn the agent takes up on its own (a background task's report, say) no longer jumps to the bottom or folds away what you are reading.</li>
-    <li>Tools running code --version and the like no longer open an empty BaoCode window.</li>
+    <li>Tools running code --version and the like no longer open an empty LangshenAgent window.</li>
     <li>Cancelling an SSH sign-in, or a wrong password, no longer brings the password prompt back again and again; remote projects restored at launch no longer each ask.</li>
     <li>On Windows, opening the changed files of an SSH project no longer shows a grey error box.</li>
     <li>On macOS, commands the agent runs can send Apple Events to other apps (e.g. with osascript); they were refused outright before.</li>
@@ -914,7 +914,7 @@
     </ul>
     <p>Interface</p>
     <ul>
-    <li>An empty conversation shows the BaoCode logo.</li>
+    <li>An empty conversation shows the LangshenAgent logo.</li>
     <li>Message bubbles and the input share one fill and border; the focused input shows a shadow instead of changing its border color.</li>
     <li>With several conversations side by side, the current one has a faint outline, inset from the window's edges.</li>
     <li>Conversations fade out at their top and bottom edges as they scroll.</li>
@@ -939,7 +939,7 @@
     </ul>
     <p>Changed</p>
     <ul>
-    <li>Removed six themes: Monokai, Abyss, Quiet Light, Dark (Visual Studio), Dark 2026 and Light 2026. If you were using one, BaoCode switches you to Bao Dark or Bao Light.</li>
+    <li>Removed six themes: Monokai, Abyss, Quiet Light, Dark (Visual Studio), Dark 2026 and Light 2026. If you were using one, LangshenAgent switches you to Bao Dark or Bao Light.</li>
     </ul>
   </section>
 
@@ -1006,11 +1006,11 @@
     <h2 class="plain"><a href="#v1.0.3">1.0.3</a></h2>
     <p>1.0.2 won't open on Windows?</p>
     <ul>
-    <li>If 1.0.2 quits as soon as it starts, without a window, its built-in update can't run either: download 1.0.3 from <a href="https://baocode.dev/download">https://baocode.dev/download</a> and install it over the old version. Your settings and conversations are kept.</li>
+    <li>If 1.0.2 quits as soon as it starts, without a window, its built-in update can't run either: download 1.0.3 from <a href="https://langshenagent.dev/download">https://langshenagent.dev/download</a> and install it over the old version. Your settings and conversations are kept.</li>
     </ul>
     <p>Fixed</p>
     <ul>
-    <li>Windows: on some PCs 1.0.2 quit right after starting, without showing a window (when the Visual C++ runtime installed was an older one). BaoCode now carries the runtime it needs instead of using the system's</li>
+    <li>Windows: on some PCs 1.0.2 quit right after starting, without showing a window (when the Visual C++ runtime installed was an older one). LangshenAgent now carries the runtime it needs instead of using the system's</li>
     <li>Windows: Claude Code installed with Volta failed to start, reported as not recognized</li>
     </ul>
   </section>
@@ -1019,7 +1019,7 @@
     <h2 class="plain"><a href="#v1.0.2">1.0.2</a></h2>
     <p>Update didn’t install?</p>
     <ul>
-    <li>If after Restart to Update the app closed and opened again on the old version (1.0.0 and the first 1.0.1 build may do this), please download 1.0.2 from <a href="https://baocode.dev/download">https://baocode.dev/download</a> and install it over your current version; your settings and conversations are kept.</li>
+    <li>If after Restart to Update the app closed and opened again on the old version (1.0.0 and the first 1.0.1 build may do this), please download 1.0.2 from <a href="https://langshenagent.dev/download">https://langshenagent.dev/download</a> and install it over your current version; your settings and conversations are kept.</li>
     </ul>
     <p>New</p>
     <ul>
@@ -1068,7 +1068,7 @@
     <p>To 1.0.0 users</p>
     <ul>
     <li>Our mistake: 1.0.0 can’t install updates. After Restart to Update the app closes, and opens again as 1.0.0. We’re sorry.</li>
-    <li>Please download 1.0.1 from <a href="https://baocode.dev/download">https://baocode.dev/download</a> and install it over your current version; your settings and conversations are kept. From 1.0.1 on, updates install by themselves.</li>
+    <li>Please download 1.0.1 from <a href="https://langshenagent.dev/download">https://langshenagent.dev/download</a> and install it over your current version; your settings and conversations are kept. From 1.0.1 on, updates install by themselves.</li>
     </ul>
     <p>New</p>
     <ul>
@@ -1109,7 +1109,7 @@
 
   <section class="release" id="v1.0.0">
     <h2 class="plain"><a href="#v1.0.0">1.0.0</a></h2>
-    <p>The first release of BaoCode: a desktop app for Claude Code, with a fast IDE built in. For macOS (Apple silicon and Intel) and Windows.</p>
+    <p>The first release of LangshenAgent: a desktop app for Claude Code, with a fast IDE built in. For macOS (Apple silicon and Intel) and Windows.</p>
     <p>Chat</p>
     <ul>
     <li>Steps fold into single lines, and the current task and its progress stay above the input</li>
@@ -1143,7 +1143,7 @@
     <p>Around the app</p>
     <ul>
     <li>Notifications, a sound and a count on the app’s icon when an agent needs you; agents keep running in the menu bar or tray when the window is closed</li>
-    <li>Open a folder in BaoCode from Finder or Explorer, and keep a window on top of others</li>
+    <li>Open a folder in LangshenAgent from Finder or Explorer, and keep a window on top of others</li>
     <li>In English and Chinese</li>
     <li>Updates itself in the background, and asks before restarting</li>
     </ul>

@@ -119,7 +119,7 @@ class AppSettings {
     null => null,
   };
 
-  /// BaoCode Bash and the shell agents run commands in, where they are
+  /// LangshenAgent Bash and the shell agents run commands in, where they are
   /// offered (Windows, with settings files); main() makes it the app's
   /// ([BaoBash.current]).
   late final BaoBash? bash = switch (files) {

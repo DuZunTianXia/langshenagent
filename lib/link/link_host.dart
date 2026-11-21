@@ -149,10 +149,10 @@ class PendingPairing {
 
 /// How the relays to keep to are chosen (Settings → Mobile).
 enum LinkRelayMode {
-  /// BaoCode's, the nearest that answers.
+  /// LangshenAgent's, the nearest that answers.
   auto,
 
-  /// Only the one picked: one of BaoCode's, or one at an address given.
+  /// Only the one picked: one of LangshenAgent's, or one at an address given.
   pinned,
 
   /// None: phones reach this computer directly, at [LinkHost.linkPort].
@@ -574,7 +574,7 @@ class LinkHost extends ChangeNotifier {
     });
   }
 
-  /// Keeps to [url] alone: one of BaoCode's relays, or one of the user's
+  /// Keeps to [url] alone: one of LangshenAgent's relays, or one of the user's
   /// own.
   Future<void> pinRelay(String url) async {
     if (!_loaded) return;

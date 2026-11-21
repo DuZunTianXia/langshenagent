@@ -1,7 +1,7 @@
 import 'package:bao_remote/claude.dart';
 import 'package:bao_remote/client.dart';
-import 'package:baocode/remote/remote_claude.dart';
-import 'package:baocode/remote/ssh_host.dart';
+import 'package:langshenagent/remote/remote_claude.dart';
+import 'package:langshenagent/remote/ssh_host.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _Process implements RemoteProcess {
@@ -10,7 +10,7 @@ class _Process implements RemoteProcess {
 }
 
 /// What runs Claude Code on a remote host, as its server saved in the app
-/// says: the CLI where the host has one, else BaoCode's own core.
+/// says: the CLI where the host has one, else LangshenAgent's own core.
 void main() {
   final previous = SshHosts.instance;
   late SshHosts hosts;

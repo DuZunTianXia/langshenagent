@@ -13,7 +13,7 @@ import '../terminal/uuid.dart';
 /// files and folders typed there open in the app (#249).
 ///
 /// A script on the terminals' PATH ([directory]) runs the server's own
-/// binary ([cliArgument]: `baocode-server code <cwd> <args…>`, see
+/// binary ([cliArgument]: `langshenagent-server code <cwd> <args…>`, see
 /// [runCodeCommand]), which hands what it was given to the server that
 /// started the terminal over a port of this machine's loopback, with a
 /// secret ([hookVariable] holds both): no other user's process gets in.
@@ -28,11 +28,11 @@ class ServerCli {
 
   /// The variable of the terminals' environment that tells the command
   /// where the server is: `<port>:<secret>`.
-  static const hookVariable = 'BAOCODE_IPC_HOOK_CLI';
+  static const hookVariable = 'LANGSHENAGENT_IPC_HOOK_CLI';
 
   /// The variable that tells the script which binary to run: the server's
   /// own, the script being the same for all versions of it.
-  static const executableVariable = 'BAOCODE_CLI';
+  static const executableVariable = 'LANGSHENAGENT_CLI';
 
   /// How long the app has to answer before the command gives up on it
   /// (its connection lost, say).
@@ -97,9 +97,9 @@ class ServerCli {
   /// The script on Linux and macOS.
   static const posixScript =
       '#!/bin/sh\n'
-      '# Opens files and folders in BaoCode, from its terminals.\n'
+      '# Opens files and folders in LangshenAgent, from its terminals.\n'
       'if [ -z "\$$executableVariable" ] || [ -z "\$$hookVariable" ]; then\n'
-      '  echo "code: run it in a terminal of BaoCode" >&2\n'
+      '  echo "code: run it in a terminal of LangshenAgent" >&2\n'
       '  exit 1\n'
       'fi\n'
       'exec "\$$executableVariable" $cliArgument "\$PWD" "\$@"\n';
@@ -108,13 +108,13 @@ class ServerCli {
   /// drive's own (`C:\`) would end in a backslash that escapes the quote.
   static const windowsScript =
       '@echo off\r\n'
-      'REM Opens files and folders in BaoCode, from its terminals.\r\n'
+      'REM Opens files and folders in LangshenAgent, from its terminals.\r\n'
       'if not defined $executableVariable goto outside\r\n'
       'if not defined $hookVariable goto outside\r\n'
       '"%$executableVariable%" $cliArgument "%CD%\\." %*\r\n'
       'exit /b %ERRORLEVEL%\r\n'
       ':outside\r\n'
-      'echo code: run it in a terminal of BaoCode 1>&2\r\n'
+      'echo code: run it in a terminal of LangshenAgent 1>&2\r\n'
       'exit /b 1\r\n';
 
   /// One command's request: `{secret, cwd, args}` on a line, answered with
@@ -139,9 +139,9 @@ class ServerCli {
           .timeout(answerTimeout);
       if (answer case {'error': final String message}) error = message;
     } on TimeoutException {
-      error = 'BaoCode did not answer: is it still connected to this host?';
+      error = 'LangshenAgent did not answer: is it still connected to this host?';
     } on RpcClosed {
-      error = 'BaoCode is not connected to this host.';
+      error = 'LangshenAgent is not connected to this host.';
     } on Object catch (failure) {
       error = '$failure';
     }
@@ -161,7 +161,7 @@ class ServerCli {
   }
 }
 
-/// The `code` command (`baocode-server code <cwd> <args…>`, run by the
+/// The `code` command (`langshenagent-server code <cwd> <args…>`, run by the
 /// script of [ServerCli]): hands [arguments] to the server [environment]
 /// names, and prints to [errors] what went wrong. Its exit code.
 Future<int> runCodeCommand(
@@ -173,7 +173,7 @@ Future<int> runCodeCommand(
   final colon = hook.indexOf(':');
   final port = colon < 0 ? null : int.tryParse(hook.substring(0, colon));
   if (port == null || arguments.isEmpty) {
-    errors.writeln('code: run it in a terminal of BaoCode');
+    errors.writeln('code: run it in a terminal of LangshenAgent');
     return 1;
   }
   try {
@@ -200,8 +200,8 @@ Future<int> runCodeCommand(
     return 0;
   } on Object {
     errors.writeln(
-      'code: BaoCode is not connected to this host: '
-      'run it in a terminal of BaoCode.',
+      'code: LangshenAgent is not connected to this host: '
+      'run it in a terminal of LangshenAgent.',
     );
     return 1;
   }

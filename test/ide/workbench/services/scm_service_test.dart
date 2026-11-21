@@ -1,13 +1,13 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/git/git_model.dart';
-import 'package:baocode/ide/ide_notifications.dart';
-import 'package:baocode/ide/ide_workspace.dart';
-import 'package:baocode/ide/services/git_changes.dart';
-import 'package:baocode/ide/services/scm_service.dart';
-import 'package:baocode/ide/workbench/storage.dart';
-import 'package:baocode/ide/workbench/views.dart';
-import 'package:baocode/l10n/l10n.dart';
+import 'package:langshenagent/ide/git/git_model.dart';
+import 'package:langshenagent/ide/ide_notifications.dart';
+import 'package:langshenagent/ide/ide_workspace.dart';
+import 'package:langshenagent/ide/services/git_changes.dart';
+import 'package:langshenagent/ide/services/scm_service.dart';
+import 'package:langshenagent/ide/workbench/storage.dart';
+import 'package:langshenagent/ide/workbench/views.dart';
+import 'package:langshenagent/l10n/l10n.dart';
 
 import '../../git/fake_git.dart';
 import '../fake_files.dart';

@@ -7,15 +7,15 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/chat/panels/activity_strip.dart';
-import 'package:baocode/chat/session_links.dart';
-import 'package:baocode/chat/widgets/chat_item_view.dart';
-import 'package:baocode/l10n/app_localizations.dart';
-import 'package:baocode/theme/app_theme.dart';
-import 'package:baocode/theme/code_font.dart';
-import 'package:baocode/theme/workbench_theme.dart';
+import 'package:langshenagent/chat/chat_models.dart';
+import 'package:langshenagent/chat/chat_session.dart';
+import 'package:langshenagent/chat/panels/activity_strip.dart';
+import 'package:langshenagent/chat/session_links.dart';
+import 'package:langshenagent/chat/widgets/chat_item_view.dart';
+import 'package:langshenagent/l10n/app_localizations.dart';
+import 'package:langshenagent/theme/app_theme.dart';
+import 'package:langshenagent/theme/code_font.dart';
+import 'package:langshenagent/theme/workbench_theme.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';

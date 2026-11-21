@@ -7,37 +7,37 @@ import 'package:flutter/material.dart' show ChangeNotifier, Icons;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bao_remote/claude.dart'
     show ClaudeHistoryPage, ClaudeNotInstalled;
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/compaction_text.dart';
-import 'package:baocode/l10n/app_localizations_zh.dart';
-import 'package:baocode/chat/widgets/agent_step.dart' show AgentStep;
-import 'package:baocode/models/model_provider.dart' show ModelProvider;
-import 'package:baocode/models/model_providers.dart' show ModelProviders;
-import 'package:baocode/chat/widgets/tool_call_row.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/kernel/agent_kernel.dart';
-import 'package:baocode/kernel/claude_code/claude_code_kernel.dart';
-import 'package:baocode/kernel/claude_code/claude_code_transport.dart';
-import 'package:baocode/kernel/claude_code/claude_code_translator.dart';
-import 'package:baocode/kernel/claude_code/claude_environment.dart';
-import 'package:baocode/kernel/claude_code/claude_goal.dart';
-import 'package:baocode/kernel/claude_code/claude_sdk_tools.dart';
-import 'package:baocode/kernel/claude_code/claude_storage_io.dart';
-import 'package:baocode/kernel/claude_code/cli_locator.dart';
-import 'package:baocode/kernel/claude_code/control_channel.dart';
-import 'package:baocode/kernel/claude_code/turn_stats.dart';
-import 'package:baocode/kernel/codex/codex_kernel.dart';
-import 'package:baocode/kernel/codex/codex_transport.dart';
-import 'package:baocode/kernel/commit_attribution.dart';
-import 'package:baocode/kernel/extension_switches.dart';
-import 'package:baocode/kernel/kernel_event.dart';
-import 'package:baocode/kernel/kernel_types.dart';
-import 'package:baocode/kernel/mock/mock_kernels.dart';
-import 'package:baocode/kernel/queued_messages.dart';
-import 'package:baocode/kernel/transcript.dart';
-import 'package:baocode/link/chat_codec.dart' show ChatCodec;
-import 'package:baocode/usage/usage_ledger.dart';
-import 'package:baocode/usage/usage_prices.dart';
+import 'package:langshenagent/chat/chat_models.dart';
+import 'package:langshenagent/chat/compaction_text.dart';
+import 'package:langshenagent/l10n/app_localizations_zh.dart';
+import 'package:langshenagent/chat/widgets/agent_step.dart' show AgentStep;
+import 'package:langshenagent/models/model_provider.dart' show ModelProvider;
+import 'package:langshenagent/models/model_providers.dart' show ModelProviders;
+import 'package:langshenagent/chat/widgets/tool_call_row.dart';
+import 'package:langshenagent/chat/chat_session.dart';
+import 'package:langshenagent/kernel/agent_kernel.dart';
+import 'package:langshenagent/kernel/claude_code/claude_code_kernel.dart';
+import 'package:langshenagent/kernel/claude_code/claude_code_transport.dart';
+import 'package:langshenagent/kernel/claude_code/claude_code_translator.dart';
+import 'package:langshenagent/kernel/claude_code/claude_environment.dart';
+import 'package:langshenagent/kernel/claude_code/claude_goal.dart';
+import 'package:langshenagent/kernel/claude_code/claude_sdk_tools.dart';
+import 'package:langshenagent/kernel/claude_code/claude_storage_io.dart';
+import 'package:langshenagent/kernel/claude_code/cli_locator.dart';
+import 'package:langshenagent/kernel/claude_code/control_channel.dart';
+import 'package:langshenagent/kernel/claude_code/turn_stats.dart';
+import 'package:langshenagent/kernel/codex/codex_kernel.dart';
+import 'package:langshenagent/kernel/codex/codex_transport.dart';
+import 'package:langshenagent/kernel/commit_attribution.dart';
+import 'package:langshenagent/kernel/extension_switches.dart';
+import 'package:langshenagent/kernel/kernel_event.dart';
+import 'package:langshenagent/kernel/kernel_types.dart';
+import 'package:langshenagent/kernel/mock/mock_kernels.dart';
+import 'package:langshenagent/kernel/queued_messages.dart';
+import 'package:langshenagent/kernel/transcript.dart';
+import 'package:langshenagent/link/chat_codec.dart' show ChatCodec;
+import 'package:langshenagent/usage/usage_ledger.dart';
+import 'package:langshenagent/usage/usage_prices.dart';
 
 /// Lines Claude Code 2.1.281 printed (recorded, with paths and account
 /// details replaced).
@@ -527,7 +527,7 @@ void main() {
         containsPair('question', 'Do you prefer red or blue?'),
       );
 
-      // Only in its words (BaoCode's own core's, a result not kept).
+      // Only in its words (LangshenAgent's own core's, a result not kept).
       expect(
         questionAnswers(
           null,
@@ -2268,7 +2268,7 @@ void main() {
           inputSchema: const {'type': 'object'},
           asksItself: true,
           run: (input, call) async =>
-              '${await call.ask!(const ApprovalRequest(id: '', title: 'Run it here?', toolName: 'mcp__baocode__ask_me', alwaysAllowLabel: 'Always for this host'))}',
+              '${await call.ask!(const ApprovalRequest(id: '', title: 'Run it here?', toolName: 'mcp__langshenagent__ask_me', alwaysAllowLabel: 'Always for this host'))}',
         ),
       );
       addTearDown(() => ClaudeSdkTools.unregister('ask_me'));
@@ -2281,7 +2281,7 @@ void main() {
         'request_id': 'p1',
         'request': {
           'subtype': 'can_use_tool',
-          'tool_name': 'mcp__baocode__ask_me',
+          'tool_name': 'mcp__langshenagent__ask_me',
           'input': <String, Object?>{},
         },
       });
@@ -2297,7 +2297,7 @@ void main() {
         'request_id': 'm1',
         'request': {
           'subtype': 'mcp_message',
-          'server_name': 'baocode',
+          'server_name': 'langshenagent',
           'message': {
             'jsonrpc': '2.0',
             'id': 5,
@@ -2333,7 +2333,7 @@ void main() {
           inputSchema: const {'type': 'object'},
           asksItself: true,
           run: (input, call) async =>
-              '${await call.ask!(const ApprovalRequest(id: '', title: 'Run it here?', toolName: 'mcp__baocode__ask_me'))}',
+              '${await call.ask!(const ApprovalRequest(id: '', title: 'Run it here?', toolName: 'mcp__langshenagent__ask_me'))}',
         ),
       );
       addTearDown(() => ClaudeSdkTools.unregister('ask_me'));
@@ -2352,7 +2352,7 @@ void main() {
         'request_id': 'm1',
         'request': {
           'subtype': 'mcp_message',
-          'server_name': 'baocode',
+          'server_name': 'langshenagent',
           'message': {
             'jsonrpc': '2.0',
             'id': 5,
@@ -5391,7 +5391,7 @@ void main() {
       );
       await pumpEventQueue();
       expect(kernel.health.status, KernelHealthStatus.failed);
-      expect(kernel.health.message, contains('older than BaoCode needs'));
+      expect(kernel.health.message, contains('older than LangshenAgent needs'));
       expect(kernel.health.detail, contains('--prompt-suggestions'));
       expect(
         kernel.health.detail,
@@ -5459,7 +5459,7 @@ void main() {
       await pumpEventQueue();
       expect(starts, 1);
       expect(kernel.health.status, KernelHealthStatus.failed);
-      expect(kernel.health.message, contains('older than BaoCode needs'));
+      expect(kernel.health.message, contains('older than LangshenAgent needs'));
       expect(kernel.health.detail, contains('/usr/local/bin/claude'));
       kernel.dispose();
     });
@@ -6835,22 +6835,22 @@ void main() {
       return settings.isEmpty ? null : settings;
     }
 
-    test('is the setting\'s, BaoCode when unset or unknown', () {
-      expect(CommitAttribution.parse(null), CommitAttribution.baocode);
+    test('is the setting\'s, LangshenAgent when unset or unknown', () {
+      expect(CommitAttribution.parse(null), CommitAttribution.langshenagent);
       expect(CommitAttribution.parse('none'), CommitAttribution.none);
       expect(CommitAttribution.parse('agent'), CommitAttribution.agent);
-      expect(CommitAttribution.parse('claude'), CommitAttribution.baocode);
-      expect(CommitAttribution.parse(1), CommitAttribution.baocode);
+      expect(CommitAttribution.parse('claude'), CommitAttribution.langshenagent);
+      expect(CommitAttribution.parse(1), CommitAttribution.langshenagent);
     });
 
     test('is passed as Claude Code\'s attribution setting, but for the '
         'agent\'s own', () {
       ClaudeLaunch launch(CommitAttribution attribution) =>
           ClaudeLaunch(cwd: '/p', attribution: attribution);
-      expect(flagSettings(launch(CommitAttribution.baocode)), {
+      expect(flagSettings(launch(CommitAttribution.langshenagent)), {
         'attribution': {
-          'commit': 'Co-Authored-By: BaoCode <noreply@baocode.dev>',
-          'pr': '🤖 Generated with [BaoCode](https://baocode.dev)',
+          'commit': 'Co-Authored-By: LangshenAgent <noreply@langshenagent.dev>',
+          'pr': '🤖 Generated with [LangshenAgent](https://langshenagent.dev)',
         },
       });
       expect(flagSettings(launch(CommitAttribution.none)), {
@@ -6906,9 +6906,9 @@ void main() {
   group('claude locator', () {
     tearDown(() => CliLocator.use(null));
 
-    test('BAOCODE_CLAUDE_PATH in the environment is not read: the build '
+    test('LANGSHENAGENT_CLAUDE_PATH in the environment is not read: the build '
         'to run is a setting now', () async {
-      final root = await Directory.systemTemp.createTemp('baocode-locator-');
+      final root = await Directory.systemTemp.createTemp('langshenagent-locator-');
       addTearDown(() => root.delete(recursive: true));
       final variant = File('${root.path}/claude-variant')
         ..writeAsStringSync('#!/bin/sh\n');
@@ -6916,7 +6916,7 @@ void main() {
         ..createSync(recursive: true)
         ..writeAsStringSync('#!/bin/sh\n');
       CliLocator.use({
-        'BAOCODE_CLAUDE_PATH': variant.path,
+        'LANGSHENAGENT_CLAUDE_PATH': variant.path,
         'PATH': '${root.path}/bin',
       });
 
@@ -6931,7 +6931,7 @@ void main() {
     group('on the PATH', () {
       late Directory root;
       setUp(() async {
-        root = await Directory.systemTemp.createTemp('baocode-locator-');
+        root = await Directory.systemTemp.createTemp('langshenagent-locator-');
         for (final dir in ['first', 'second']) {
           Directory('${root.path}/$dir').createSync();
         }
@@ -6997,7 +6997,7 @@ void main() {
     test(
       'none that runs: not installed, naming the ones that do not',
       () async {
-        final root = await Directory.systemTemp.createTemp('baocode-locator-');
+        final root = await Directory.systemTemp.createTemp('langshenagent-locator-');
         addTearDown(() => root.delete(recursive: true));
         addTearDown(() => CliLocator.candidatesOverride = null);
         final broken = File('${root.path}/claude')
@@ -7019,7 +7019,7 @@ void main() {
     );
 
     test('Volta\'s shim is passed over for its package\'s build', () async {
-      final root = await Directory.systemTemp.createTemp('baocode-locator-');
+      final root = await Directory.systemTemp.createTemp('langshenagent-locator-');
       addTearDown(() => root.delete(recursive: true));
       final volta = '${root.path}/Volta';
       final bin = '$volta/bin';
@@ -7039,7 +7039,7 @@ void main() {
     });
 
     test('a program is told from a script left in its place', () async {
-      final root = await Directory.systemTemp.createTemp('baocode-locator-');
+      final root = await Directory.systemTemp.createTemp('langshenagent-locator-');
       addTearDown(() => root.delete(recursive: true));
       File file(String name, List<int> bytes) =>
           File('${root.path}/$name')..writeAsBytesSync(bytes);
@@ -7126,7 +7126,7 @@ void main() {
   group('the shell environment', () {
     late Directory root;
     setUp(() async {
-      root = await Directory.systemTemp.createTemp('baocode-shell-');
+      root = await Directory.systemTemp.createTemp('langshenagent-shell-');
       ClaudeEnvironment.use(null);
     });
     tearDown(() async {
@@ -7203,7 +7203,7 @@ exec /usr/bin/env "\$@"
 
   group('Claude Code storage', () {
     test('reads the sessions where the login shell keeps them', () async {
-      final root = await Directory.systemTemp.createTemp('baocode-storage-');
+      final root = await Directory.systemTemp.createTemp('langshenagent-storage-');
       addTearDown(() => root.delete(recursive: true));
       addTearDown(() => ClaudeEnvironment.use(null));
       final config = '${root.path}/config';
@@ -7228,7 +7228,7 @@ exec /usr/bin/env "\$@"
 
     test('a session is titled as the user named it, else as Claude Code '
         'did, else after its first message', () async {
-      final root = await Directory.systemTemp.createTemp('baocode-storage-');
+      final root = await Directory.systemTemp.createTemp('langshenagent-storage-');
       addTearDown(() => root.delete(recursive: true));
       final config = '${root.path}/config';
       final cwd = '${root.path}/project';
@@ -7275,7 +7275,7 @@ exec /usr/bin/env "\$@"
 
     test('a session is dated by its last message, and titled past the '
         'placeholders its images are sent with', () async {
-      final root = await Directory.systemTemp.createTemp('baocode-storage-');
+      final root = await Directory.systemTemp.createTemp('langshenagent-storage-');
       addTearDown(() => root.delete(recursive: true));
       final config = '${root.path}/config';
       final cwd = '${root.path}/project';
@@ -7331,7 +7331,7 @@ exec /usr/bin/env "\$@"
 
     test('a session is listed past the notes sent ahead of what was typed, '
         'and by a command typed with what it is to do', () async {
-      final root = await Directory.systemTemp.createTemp('baocode-storage-');
+      final root = await Directory.systemTemp.createTemp('langshenagent-storage-');
       addTearDown(() => root.delete(recursive: true));
       final config = '${root.path}/config';
       final cwd = '${root.path}/project';
@@ -7368,7 +7368,7 @@ exec /usr/bin/env "\$@"
           'type': 'text',
           'text':
               '<system-reminder>The user is now writing to you from the '
-              'BaoCode app on their phone.</system-reminder>',
+              'LangshenAgent app on their phone.</system-reminder>',
         },
         {'type': 'text', 'text': 'why is this red\n[Image #1]'},
       ]);
@@ -7429,7 +7429,7 @@ exec /usr/bin/env "\$@"
 
     test('a session file is read again only once it changes, and the cache '
         'keeps only the files still there', () async {
-      final root = await Directory.systemTemp.createTemp('baocode-storage-');
+      final root = await Directory.systemTemp.createTemp('langshenagent-storage-');
       addTearDown(() => root.delete(recursive: true));
       final config = '${root.path}/config';
       final cwd = '${root.path}/project';
@@ -7475,7 +7475,7 @@ exec /usr/bin/env "\$@"
 
     test('a session file appended to is read on from where it was read, '
         'its titles and last message taken from what came', () async {
-      final root = await Directory.systemTemp.createTemp('baocode-storage-');
+      final root = await Directory.systemTemp.createTemp('langshenagent-storage-');
       addTearDown(() => root.delete(recursive: true));
       final config = '${root.path}/config';
       final cwd = '${root.path}/project';
@@ -7552,7 +7552,7 @@ exec /usr/bin/env "\$@"
     test(
       'the app\'s data path wins, and the CLI is told to keep state there',
       () async {
-        final root = await Directory.systemTemp.createTemp('baocode-storage-');
+        final root = await Directory.systemTemp.createTemp('langshenagent-storage-');
         addTearDown(() => root.delete(recursive: true));
         addTearDown(() => ClaudeEnvironment.use(null));
         final mine = '${root.path}/mine';
@@ -7570,7 +7570,7 @@ exec /usr/bin/env "\$@"
             })}\n',
           );
         final environment = {
-          'BAOCODE_CLAUDE_DATA_PATH': mine,
+          'LANGSHENAGENT_CLAUDE_DATA_PATH': mine,
           'CLAUDE_CONFIG_DIR': theirs,
         };
         ClaudeEnvironment.use(environment);
@@ -7587,7 +7587,7 @@ exec /usr/bin/env "\$@"
     test(
       'deleting a session removes all of it, and only it, idempotently',
       () async {
-        final root = await Directory.systemTemp.createTemp('baocode-storage-');
+        final root = await Directory.systemTemp.createTemp('langshenagent-storage-');
         addTearDown(() => root.delete(recursive: true));
         final config = '${root.path}/config';
         final temp = '${root.path}/tmp';
@@ -7624,7 +7624,7 @@ exec /usr/bin/env "\$@"
     );
 
     test('a fork copies the conversation up to a message, apart', () async {
-      final root = await Directory.systemTemp.createTemp('baocode-storage-');
+      final root = await Directory.systemTemp.createTemp('langshenagent-storage-');
       addTearDown(() => root.delete(recursive: true));
       final config = '${root.path}/config';
       const id = 'aaaaaaaa-1111-4111-8111-111111111111';
@@ -7680,7 +7680,7 @@ exec /usr/bin/env "\$@"
     });
 
     test('a fork keeps tools called at once, each with its result', () async {
-      final root = await Directory.systemTemp.createTemp('baocode-storage-');
+      final root = await Directory.systemTemp.createTemp('langshenagent-storage-');
       addTearDown(() => root.delete(recursive: true));
       final config = '${root.path}/config';
       const id = 'aaaaaaaa-1111-4111-8111-111111111111';
@@ -7756,7 +7756,7 @@ exec /usr/bin/env "\$@"
 
     test('a folder\'s sessions move to another\'s, with what is kept beside '
         'them and its memory; a folder dashed alike keeps its own', () async {
-      final root = await Directory.systemTemp.createTemp('baocode-move-');
+      final root = await Directory.systemTemp.createTemp('langshenagent-move-');
       addTearDown(() => root.delete(recursive: true));
       final config = '${root.path}/config';
       final from = '${root.path}/old/app';

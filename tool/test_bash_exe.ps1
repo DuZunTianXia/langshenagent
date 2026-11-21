@@ -1,4 +1,4 @@
-# Runs a build of BaoCode Bash (bash.exe, github.com/baocode-dev/bash-exe)
+# Runs a build of LangshenAgent Bash (bash.exe, github.com/langshenagent-dev/bash-exe)
 # as the app's agents do, `bash -c COMMAND`: its built-in tools, both kinds
 # of path, Windows programs, exit statuses, stdin.
 #
@@ -60,7 +60,7 @@ function Test-Bash([string] $Name, [string] $Command, [string] $Expected, [int] 
 try {
   $version = Invoke-Bash @('--version')
   Write-Host $version.Out
-  if ($version.Status -ne 0 -or $version.Out -notmatch '(?m)^GNU bash, version 5\.' -or $version.Out -notmatch 'BaoCode Bash \d') {
+  if ($version.Status -ne 0 -or $version.Out -notmatch '(?m)^GNU bash, version 5\.' -or $version.Out -notmatch 'LangshenAgent Bash \d') {
     Write-Host "FAIL --version: $($version.Status) $($version.Err)"
     $failed++
   }

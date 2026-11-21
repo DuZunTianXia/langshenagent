@@ -1,6 +1,6 @@
-# baocode.dev
+# langshenagent.dev
 
-The BaoCode website, hosted on Cloudflare, with no build step: `site/` is
+The LangshenAgent website, hosted on Cloudflare, with no build step: `site/` is
 served as it is, `/download` being `download.html`.
 
 - English at the root, Chinese under `zh/` (`/zh/`, `/zh/download`,
@@ -11,7 +11,7 @@ served as it is, `/download` being `download.html`.
   `dart run tool/build_changelog.dart` from `release-notes/`. Edit those.
 
 - `import.html`, `import.js`: a site's one-click import of an upstream,
-  handed on to the app (`baocode://provider/import`); `upstreams.html`, how
+  handed on to the app (`langshenagent://provider/import`); `upstreams.html`, how
   a site adds it. See `docs/upstream-import.md`.
 - `site.js` keeps, on any page, where a visitor came from (`?abc` after
   any page's address, the site linking here, or direct); `head.js`,
@@ -29,12 +29,12 @@ served as it is, `/download` being `download.html`.
 - `sounds/`: the notification sound the page plays.
 - `reviews/`: the avatars on the home page's reel of what users say (the
   words are in the pages, translated on the English one). "Say a word"
-  under it sends a visitor's to stats.baocode.dev (`/v1/review`, in the
-  private baocode.dev repository), seen on its dashboard. The README's
+  under it sends a visitor's to stats.langshenagent.dev (`/v1/review`, in the
+  private langshenagent.dev repository), seen on its dashboard. The README's
   picture of them, `docs/readme/reviews*.png`, is drawn as HTML and
   screenshot.
 - `push.html`, `zh/push.html`: pushing the iPhone app from the user's own
-  scripts (`push.baocode.dev/v1/notify/<key>`, in the private baocode.dev
+  scripts (`push.langshenagent.dev/v1/notify/<key>`, in the private langshenagent.dev
   repository), linked from the app's notification settings.
 - `qr/`: the phone cards' QR codes, made by
   `dart run tool/make_download_qr.dart`.

@@ -1,16 +1,16 @@
 import 'package:bao_editor/monaco/vs/editor/common/core/position.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/ide_workspace.dart';
-import 'package:baocode/ide/markdown/markdown_paste.dart';
-import 'package:baocode/ide/services/markdown_preview.dart';
-import 'package:baocode/ide/workbench/actions.dart';
-import 'package:baocode/ide/workbench/contributions.dart';
-import 'package:baocode/ide/workbench/contributions/editor_panes.dart';
-import 'package:baocode/ide/workbench/contributions/markdown.dart';
-import 'package:baocode/ide/workbench/editor_panes.dart';
-import 'package:baocode/ide/workbench/services.dart';
-import 'package:baocode/ide/workbench/storage.dart';
+import 'package:langshenagent/ide/ide_workspace.dart';
+import 'package:langshenagent/ide/markdown/markdown_paste.dart';
+import 'package:langshenagent/ide/services/markdown_preview.dart';
+import 'package:langshenagent/ide/workbench/actions.dart';
+import 'package:langshenagent/ide/workbench/contributions.dart';
+import 'package:langshenagent/ide/workbench/contributions/editor_panes.dart';
+import 'package:langshenagent/ide/workbench/contributions/markdown.dart';
+import 'package:langshenagent/ide/workbench/editor_panes.dart';
+import 'package:langshenagent/ide/workbench/services.dart';
+import 'package:langshenagent/ide/workbench/storage.dart';
 
 import '../fake_files.dart';
 import 'fake_host.dart';

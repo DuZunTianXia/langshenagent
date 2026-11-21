@@ -6,24 +6,24 @@ import 'dart:typed_data';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/chat_screen.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/chat/chat_find.dart';
-import 'package:baocode/chat/composer/composer_embeds.dart';
-import 'package:baocode/kernel/agent_kernel.dart';
-import 'package:baocode/kernel/claude_code/claude_code_kernel.dart';
-import 'package:baocode/kernel/claude_code/mock_claude_code_transport.dart';
-import 'package:baocode/main.dart';
-import 'package:baocode/models/model_provider.dart';
-import 'package:baocode/models/model_providers.dart';
-import 'package:baocode/sidebar/sidebar.dart';
-import 'package:baocode/kernel/claude_code/claude_code_transport.dart';
-import 'package:baocode/workspace/agent_title.dart';
-import 'package:baocode/workspace/chat_grid.dart';
-import 'package:baocode/workspace/editor_launcher.dart';
-import 'package:baocode/workspace/preference_store.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:langshenagent/chat/chat_models.dart';
+import 'package:langshenagent/chat/chat_screen.dart';
+import 'package:langshenagent/chat/chat_session.dart';
+import 'package:langshenagent/chat/chat_find.dart';
+import 'package:langshenagent/chat/composer/composer_embeds.dart';
+import 'package:langshenagent/kernel/agent_kernel.dart';
+import 'package:langshenagent/kernel/claude_code/claude_code_kernel.dart';
+import 'package:langshenagent/kernel/claude_code/mock_claude_code_transport.dart';
+import 'package:langshenagent/main.dart';
+import 'package:langshenagent/models/model_provider.dart';
+import 'package:langshenagent/models/model_providers.dart';
+import 'package:langshenagent/sidebar/sidebar.dart';
+import 'package:langshenagent/kernel/claude_code/claude_code_transport.dart';
+import 'package:langshenagent/workspace/agent_title.dart';
+import 'package:langshenagent/workspace/chat_grid.dart';
+import 'package:langshenagent/workspace/editor_launcher.dart';
+import 'package:langshenagent/workspace/preference_store.dart';
+import 'package:langshenagent/workspace/workspace.dart';
 
 /// Sessions as Claude Code keeps them: one recorded, in one project, and
 /// any [started] since (e.g. in a terminal).
@@ -98,7 +98,7 @@ Future<Workspace> pumpLoaded(
     drafts: drafts,
     titler: titler,
   );
-  await tester.pumpWidget(BaoCodeApp(workspace: workspace));
+  await tester.pumpWidget(LangshenAgentApp(workspace: workspace));
   await tester.runAsync(workspace.load);
   await tester.pump();
   return workspace;

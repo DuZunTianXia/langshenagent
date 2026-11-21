@@ -1,4 +1,4 @@
-//! BaoCode's link transport for Dart: iroh endpoints, their connections,
+//! LangshenAgent's link transport for Dart: iroh endpoints, their connections,
 //! and the framed streams on them, behind a small C interface.
 //!
 //! Dart holds integer handles; the objects are kept here. A call that

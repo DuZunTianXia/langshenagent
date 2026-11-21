@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/link/chat_codec.dart';
+import 'package:langshenagent/chat/chat_models.dart';
+import 'package:langshenagent/link/chat_codec.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

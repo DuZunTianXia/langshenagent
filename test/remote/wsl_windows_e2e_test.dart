@@ -4,9 +4,9 @@
 // to and opened, then its files, Git and the status bar. Real WSL, real
 // server: opt in with
 //
-//   $env:BAOCODE_REMOTE_SERVER_DIR = '<a folder with VERSION and
-//       baocode-server-linux-x64>'
-//   $env:BAOCODE_WSL_DISTRO = 'Ubuntu-24.04'
+//   $env:LANGSHENAGENT_REMOTE_SERVER_DIR = '<a folder with VERSION and
+//       langshenagent-server-linux-x64>'
+//   $env:LANGSHENAGENT_WSL_DISTRO = 'Ubuntu-24.04'
 //   flutter test --run-skipped -t wsl-e2e test/remote/wsl_windows_e2e_test.dart
 //
 // The host pick is drawn to build/wsl_e2e/hosts.png too, to look at.
@@ -18,13 +18,13 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:baocode/ide/ide_quick_input.dart';
-import 'package:baocode/l10n/l10n.dart';
-import 'package:baocode/remote/open_remote.dart';
-import 'package:baocode/remote/remote_browser.dart';
-import 'package:baocode/remote/remote_location.dart';
-import 'package:baocode/remote/remote_status.dart';
-import 'package:baocode/remote/ssh_host.dart';
+import 'package:langshenagent/ide/ide_quick_input.dart';
+import 'package:langshenagent/l10n/l10n.dart';
+import 'package:langshenagent/remote/open_remote.dart';
+import 'package:langshenagent/remote/remote_browser.dart';
+import 'package:langshenagent/remote/remote_location.dart';
+import 'package:langshenagent/remote/remote_status.dart';
+import 'package:langshenagent/remote/ssh_host.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -34,7 +34,7 @@ import 'package:path/path.dart' as p;
 import 'remote_harness.dart' show until;
 
 void main() {
-  final distro = Platform.environment['BAOCODE_WSL_DISTRO'] ?? 'Ubuntu-24.04';
+  final distro = Platform.environment['LANGSHENAGENT_WSL_DISTRO'] ?? 'Ubuntu-24.04';
   final host = 'wsl+$distro';
   final previous = SshHosts.instance;
   late SshHosts hosts;

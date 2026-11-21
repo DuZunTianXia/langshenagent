@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:baocode/ide/file_index_store.dart';
-import 'package:baocode/ide/file_service.dart';
-import 'package:baocode/ide/ide_quick_open.dart';
+import 'package:langshenagent/ide/file_index_store.dart';
+import 'package:langshenagent/ide/file_service.dart';
+import 'package:langshenagent/ide/ide_quick_open.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
@@ -191,7 +191,7 @@ void main() {
 
     test('a local project is listed off the UI isolate, kept there when '
         'large, here when not', () async {
-      final dir = await Directory.systemTemp.createTemp('baocode-file-index-');
+      final dir = await Directory.systemTemp.createTemp('langshenagent-file-index-');
       addTearDown(() => dir.delete(recursive: true));
       final root = dir.path;
       Future<void> write(String relative) async {

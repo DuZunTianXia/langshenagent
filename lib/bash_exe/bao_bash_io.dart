@@ -17,7 +17,7 @@ BaoBashHost? baoBashHost() => Platform.isWindows
     ? IoBaoBashHost(p.join(DataDirectory.current.path, 'tools', 'bash-exe'))
     : null;
 
-/// BaoCode Bash in [root]: each version in a folder of its own
+/// LangshenAgent Bash in [root]: each version in a folder of its own
 /// (`<version>/bash.exe`, so that one an agent is running need not be
 /// overwritten), and `installed.json` naming the one installed.
 class IoBaoBashHost implements BaoBashHost {
@@ -186,7 +186,7 @@ class IoBaoBashHost implements BaoBashHost {
       try {
         await entry.delete(recursive: true);
       } on FileSystemException catch (error) {
-        debugPrint('BaoCode Bash: ${entry.path} stays: ${error.message}');
+        debugPrint('LangshenAgent Bash: ${entry.path} stays: ${error.message}');
       }
     }
   }

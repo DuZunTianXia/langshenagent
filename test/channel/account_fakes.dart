@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:baocode/channel/account/account_api.dart';
-import 'package:baocode/channel/account/login_window.dart';
+import 'package:langshenagent/channel/account/account_api.dart';
+import 'package:langshenagent/channel/account/login_window.dart';
 
 /// A request the fake site was sent.
 typedef Sent = ({

@@ -4,27 +4,27 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
-import 'package:baocode/ide/ide_color_theme_picker.dart';
-import 'package:baocode/ide/ide_commands.dart';
-import 'package:baocode/ide/ide_workspace.dart';
-import 'package:baocode/ide/services/auto_save.dart';
-import 'package:baocode/ide/services/chat.dart';
-import 'package:baocode/ide/services/commands.dart';
-import 'package:baocode/ide/services/configuration.dart';
-import 'package:baocode/ide/services/editors.dart';
-import 'package:baocode/ide/services/layout.dart';
-import 'package:baocode/ide/services/quick_input.dart';
-import 'package:baocode/ide/workbench/actions.dart';
-import 'package:baocode/ide/workbench/contributions.dart';
-import 'package:baocode/ide/workbench/contributions/editor_commands.dart';
-import 'package:baocode/ide/workbench/contributions/window.dart';
-import 'package:baocode/ide/workbench/editor_panes.dart';
-import 'package:baocode/ide/workbench/environment.dart';
-import 'package:baocode/ide/workbench/quick_access.dart';
-import 'package:baocode/ide/workbench/services.dart';
-import 'package:baocode/ide/workbench/statusbar.dart';
-import 'package:baocode/l10n/app_localizations.dart';
-import 'package:baocode/settings/user_settings.dart';
+import 'package:langshenagent/ide/ide_color_theme_picker.dart';
+import 'package:langshenagent/ide/ide_commands.dart';
+import 'package:langshenagent/ide/ide_workspace.dart';
+import 'package:langshenagent/ide/services/auto_save.dart';
+import 'package:langshenagent/ide/services/chat.dart';
+import 'package:langshenagent/ide/services/commands.dart';
+import 'package:langshenagent/ide/services/configuration.dart';
+import 'package:langshenagent/ide/services/editors.dart';
+import 'package:langshenagent/ide/services/layout.dart';
+import 'package:langshenagent/ide/services/quick_input.dart';
+import 'package:langshenagent/ide/workbench/actions.dart';
+import 'package:langshenagent/ide/workbench/contributions.dart';
+import 'package:langshenagent/ide/workbench/contributions/editor_commands.dart';
+import 'package:langshenagent/ide/workbench/contributions/window.dart';
+import 'package:langshenagent/ide/workbench/editor_panes.dart';
+import 'package:langshenagent/ide/workbench/environment.dart';
+import 'package:langshenagent/ide/workbench/quick_access.dart';
+import 'package:langshenagent/ide/workbench/services.dart';
+import 'package:langshenagent/ide/workbench/statusbar.dart';
+import 'package:langshenagent/l10n/app_localizations.dart';
+import 'package:langshenagent/settings/user_settings.dart';
 
 import '../fake_files.dart';
 import 'fake_host.dart';
@@ -184,12 +184,12 @@ void main() {
     config.addListener(() => changes++);
     expect(config.formatOnSave, isFalse);
     expect(
-      command('baocode.ide.toggleFormatOnSave').label,
+      command('langshenagent.ide.toggleFormatOnSave').label,
       'Turn On Format on Save',
     );
     config.formatOnSave = true;
     expect(
-      command('baocode.ide.toggleFormatOnSave').label,
+      command('langshenagent.ide.toggleFormatOnSave').label,
       'Turn Off Format on Save',
     );
     // Without a repository, no blame to toggle.
@@ -210,7 +210,7 @@ void main() {
     services.get<ChatService>().ask('why?');
     expect(sent, ['why?']);
     expect(workspace.layout.chat, isTrue);
-    command('baocode.ide.backToChat').run();
+    command('langshenagent.ide.backToChat').run();
     await tester.pump();
     expect(backs, 1);
 

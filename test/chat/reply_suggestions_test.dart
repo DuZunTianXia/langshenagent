@@ -1,11 +1,11 @@
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/chat/reply_suggestions.dart';
-import 'package:baocode/kernel/agent_kernel.dart';
-import 'package:baocode/kernel/claude_code/claude_code_kernel.dart';
-import 'package:baocode/kernel/claude_code/claude_code_transport.dart';
-import 'package:baocode/kernel/prompt_suggestions.dart';
-import 'package:baocode/link/chat_codec.dart';
+import 'package:langshenagent/chat/chat_models.dart';
+import 'package:langshenagent/chat/chat_session.dart';
+import 'package:langshenagent/chat/reply_suggestions.dart';
+import 'package:langshenagent/kernel/agent_kernel.dart';
+import 'package:langshenagent/kernel/claude_code/claude_code_kernel.dart';
+import 'package:langshenagent/kernel/claude_code/claude_code_transport.dart';
+import 'package:langshenagent/kernel/prompt_suggestions.dart';
+import 'package:langshenagent/link/chat_codec.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

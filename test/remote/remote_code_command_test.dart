@@ -21,7 +21,7 @@ void main() {
   late File received;
 
   setUp(() async {
-    scratch = Directory.systemTemp.createTempSync('baocode-code-command-');
+    scratch = Directory.systemTemp.createTempSync('langshenagent-code-command-');
     root = scratch.resolveSymbolicLinksSync();
     received = File(p.join(root, 'received'));
     // The server's binary as the script runs it: what it was given, kept.
@@ -105,7 +105,7 @@ void main() {
         ['/srv/app', '-g', 'a.dart:3'],
       ]);
 
-      answer = "BaoCode's code command only opens files and folders.";
+      answer = "LangshenAgent's code command only opens files and folders.";
       final (exit, errors) = await code(['/srv/app', '--version'], hook);
       expect(exit, 1);
       expect(errors, contains('code: $answer'));

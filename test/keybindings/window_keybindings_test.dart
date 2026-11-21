@@ -1,8 +1,8 @@
-import 'package:baocode/keybindings/chat_keybindings.dart';
-import 'package:baocode/keybindings/default_keybindings.dart';
-import 'package:baocode/keybindings/key_chord.dart';
-import 'package:baocode/keybindings/keybinding_service.dart';
-import 'package:baocode/keybindings/window_keybindings.dart';
+import 'package:langshenagent/keybindings/chat_keybindings.dart';
+import 'package:langshenagent/keybindings/default_keybindings.dart';
+import 'package:langshenagent/keybindings/key_chord.dart';
+import 'package:langshenagent/keybindings/keybinding_service.dart';
+import 'package:langshenagent/keybindings/window_keybindings.dart';
 import 'package:bao_editor/monaco/flutter/keybinding_entry.dart';
 import 'package:flutter_test/flutter_test.dart';
 

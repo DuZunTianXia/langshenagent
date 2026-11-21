@@ -1,4 +1,4 @@
-// What BaoCode asks a forge, signed in as the user (see forge_accounts):
+// What LangshenAgent asks a forge, signed in as the user (see forge_accounts):
 // GitHub's REST API (api.github.com, a GitHub Enterprise's /api/v3),
 // GitLab's (/api/v4), Gitee's (/api/v5) and GitCode's (Gitee's, at
 // api.gitcode.com). Over [ForgeHttp], which tests
@@ -662,7 +662,7 @@ class GitHubApi extends ForgeApi {
 
   /// The branch the pictures go in: one of their own, with no history of
   /// the code's, made the first time.
-  static const assetsBranch = 'baocode-stash-assets';
+  static const assetsBranch = 'langshenagent-stash-assets';
 
   /// GitHub has no API for an issue's attachments: the picture is a file
   /// of [assetsBranch] (`stash/<its hash>.png`), shown from there.
@@ -679,7 +679,7 @@ class GitHubApi extends ForgeApi {
         'PUT',
         '/repos/${repo.path}/contents/$path',
         json: {
-          'message': 'Add a picture from BaoCode Stash',
+          'message': 'Add a picture from LangshenAgent Stash',
           'content': base64Encode(bytes),
           'branch': assetsBranch,
         },
@@ -715,8 +715,8 @@ class GitHubApi extends ForgeApi {
               'mode': '100644',
               'type': 'blob',
               'content':
-                  'Pictures of the issues opened from BaoCode\'s '
-                  'Stash (https://baocode.dev).\n',
+                  'Pictures of the issues opened from LangshenAgent\'s '
+                  'Stash (https://langshenagent.dev).\n',
             },
           ],
         },
@@ -725,7 +725,7 @@ class GitHubApi extends ForgeApi {
         'POST',
         '$at/git/commits',
         json: {
-          'message': 'BaoCode Stash pictures',
+          'message': 'LangshenAgent Stash pictures',
           'tree': tree['sha'],
           'parents': const <String>[],
         },
@@ -985,7 +985,7 @@ class GitLabApi extends ForgeApi {
   ) async {
     final file = ForgeApi._assetName(name, bytes);
     final boundary =
-        'baocode-${math.Random().nextInt(1 << 32).toRadixString(16)}';
+        'langshenagent-${math.Random().nextInt(1 << 32).toRadixString(16)}';
     final body = <int>[
       ...utf8.encode(
         '--$boundary\r\n'
@@ -1323,7 +1323,7 @@ class GiteeApi extends ForgeApi {
         'POST',
         '/repos/${repo.path}/contents/$path',
         form: {
-          'message': 'Add a picture from BaoCode Stash',
+          'message': 'Add a picture from LangshenAgent Stash',
           'content': base64Encode(bytes),
           'branch': branch,
         },

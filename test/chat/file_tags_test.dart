@@ -5,17 +5,17 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/chat/chat_feed.dart';
-import 'package:baocode/chat/chat_history_view.dart';
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/chat/composer/composer_draft.dart';
-import 'package:baocode/chat/composer/composer_embeds.dart';
-import 'package:baocode/chat/side_panel/file_open.dart';
-import 'package:baocode/chat/side_panel/web_page_opener.dart';
-import 'package:baocode/ide/file_views.dart';
-import 'package:baocode/theme/app_theme.dart';
-import 'package:baocode/theme/material_file_icons.dart';
+import 'package:langshenagent/chat/chat_feed.dart';
+import 'package:langshenagent/chat/chat_history_view.dart';
+import 'package:langshenagent/chat/chat_models.dart';
+import 'package:langshenagent/chat/chat_session.dart';
+import 'package:langshenagent/chat/composer/composer_draft.dart';
+import 'package:langshenagent/chat/composer/composer_embeds.dart';
+import 'package:langshenagent/chat/side_panel/file_open.dart';
+import 'package:langshenagent/chat/side_panel/web_page_opener.dart';
+import 'package:langshenagent/ide/file_views.dart';
+import 'package:langshenagent/theme/app_theme.dart';
+import 'package:langshenagent/theme/material_file_icons.dart';
 
 class _Feed extends ChangeNotifier implements ChatFeed {
   _Feed(this.items);

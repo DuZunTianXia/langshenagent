@@ -2,7 +2,7 @@
 /// every model the user has in it (API keys, subscriptions, routing groups
 /// that fail over between them) at one local gateway, Anthropic's Messages
 /// API among the ones it speaks. An upstream that follows it takes its
-/// address and its models as magpie has them; BaoCode never writes
+/// address and its models as magpie has them; LangshenAgent never writes
 /// magpie's files (docs/integrating.md in its repository).
 library;
 
@@ -21,9 +21,9 @@ abstract final class Magpie {
   /// Where the gateway listens unless its settings.json names a `port`.
   static const defaultPort = 3425;
 
-  /// The key BaoCode's calls go with: on this machine the gateway takes
+  /// The key LangshenAgent's calls go with: on this machine the gateway takes
   /// any, and counts the calls of `magpie-<app>` under that app.
-  static const key = 'magpie-baocode';
+  static const key = 'magpie-langshenagent';
 
   static String baseUrl(int port) => 'http://127.0.0.1:$port';
 
@@ -70,7 +70,7 @@ abstract final class Magpie {
 
   /// The id magpie lists model [id] by to Claude Code's model discovery
   /// when the id says neither claude nor anthropic, as it listed them to
-  /// BaoCode while BaoCode asked with Claude Code's user agent:
+  /// LangshenAgent while LangshenAgent asked with Claude Code's user agent:
   /// `anthropic/magpie-` and ten digits, FNV-1a 64 of [id] (its gateway's
   /// aliasFor). It still serves a model asked for by it.
   static String alias(String id) {

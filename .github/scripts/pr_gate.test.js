@@ -4,7 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const gate = require('./pr_gate.js');
 
-const repo = { owner: 'baocode-dev', repo: 'baocode' };
+const repo = { owner: 'langshenagent-dev', repo: 'langshenagent' };
 const file = (filename, additions = 10, deletions = 0) => ({ filename, additions, deletions });
 const commit = (parents = 1) => ({ parents: Array.from({ length: parents }, () => ({})) });
 const accepted = { labels: [{ name: 'accepted' }] };
@@ -31,11 +31,11 @@ test('the issues a description links, the template comment left out', () => {
     '<!-- Issue: #1 in the template comment -->',
     'Issue: #12',
     'Fixes #13, closes: #14',
-    'See https://github.com/baocode-dev/baocode/issues/15 and #16',
+    'See https://github.com/langshenagent-dev/langshenagent/issues/15 and #16',
   ].join('\n');
-  assert.deepEqual(gate.linkedIssues(body, 'baocode-dev', 'baocode').sort(), [12, 13, 14, 15]);
-  assert.deepEqual(gate.linkedIssues('Issue: #', 'baocode-dev', 'baocode'), []);
-  assert.deepEqual(gate.linkedIssues(null, 'baocode-dev', 'baocode'), []);
+  assert.deepEqual(gate.linkedIssues(body, 'langshenagent-dev', 'langshenagent').sort(), [12, 13, 14, 15]);
+  assert.deepEqual(gate.linkedIssues('Issue: #', 'langshenagent-dev', 'langshenagent'), []);
+  assert.deepEqual(gate.linkedIssues(null, 'langshenagent-dev', 'langshenagent'), []);
 });
 
 test('an accepted issue, a small change, a good title: nothing missing', () => {

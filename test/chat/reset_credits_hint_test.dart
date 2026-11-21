@@ -1,9 +1,9 @@
-import 'package:baocode/chat/panels/reset_credits_hint.dart';
-import 'package:baocode/l10n/app_localizations.dart';
-import 'package:baocode/models/codex/codex_service.dart';
-import 'package:baocode/models/codex/codex_usage.dart';
-import 'package:baocode/models/model_provider.dart';
-import 'package:baocode/models/model_providers.dart';
+import 'package:langshenagent/chat/panels/reset_credits_hint.dart';
+import 'package:langshenagent/l10n/app_localizations.dart';
+import 'package:langshenagent/models/codex/codex_service.dart';
+import 'package:langshenagent/models/codex/codex_usage.dart';
+import 'package:langshenagent/models/model_provider.dart';
+import 'package:langshenagent/models/model_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

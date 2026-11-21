@@ -1,13 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:baocode/kernel/claude_code/claude_environment.dart';
-import 'package:baocode/models/magpie.dart';
-import 'package:baocode/models/magpie_follow.dart';
-import 'package:baocode/models/magpie_io.dart';
-import 'package:baocode/models/model_provider.dart';
-import 'package:baocode/models/model_providers.dart';
-import 'package:baocode/models/upstream.dart';
+import 'package:langshenagent/kernel/claude_code/claude_environment.dart';
+import 'package:langshenagent/models/magpie.dart';
+import 'package:langshenagent/models/magpie_follow.dart';
+import 'package:langshenagent/models/magpie_io.dart';
+import 'package:langshenagent/models/model_provider.dart';
+import 'package:langshenagent/models/model_providers.dart';
+import 'package:langshenagent/models/upstream.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
@@ -313,7 +313,7 @@ void main() {
     });
 
     test(
-      'joined: an upstream with magpie\'s models, under BaoCode\'s key',
+      'joined: an upstream with magpie\'s models, under LangshenAgent\'s key',
       () async {
         final store = ModelProviders.memory();
         final follow = MagpieFollow(providers: store);

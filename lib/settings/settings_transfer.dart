@@ -13,11 +13,11 @@ import 'user_settings.dart';
 /// (otherwise in the system's keychain, not in any file).
 abstract final class SettingsTransfer {
   /// What the file says it is, and the shape it has.
-  static const kind = 'baocode-settings';
+  static const kind = 'langshenagent-settings';
   static const version = 1;
 
   /// The name a file is offered under.
-  static const fileName = 'baocode-settings.json';
+  static const fileName = 'langshenagent-settings.json';
 
   /// Settings of this computer's alone: not carried.
   static const machineKeys = {ClaudePathSetting.settingKey};

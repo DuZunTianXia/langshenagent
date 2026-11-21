@@ -1,17 +1,17 @@
 import 'dart:async';
 
 import 'package:bao_editor/monaco/flutter/editor_surface.dart';
-import 'package:baocode/chat/chat_models.dart' show FileChange;
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/chat/review/change_review.dart';
-import 'package:baocode/chat/review/review_store.dart';
-import 'package:baocode/ide/file_service.dart';
-import 'package:baocode/ide/ide_agent_edits.dart';
-import 'package:baocode/ide/ide_editor.dart';
-import 'package:baocode/ide/ide_workspace.dart';
-import 'package:baocode/kernel/agent_kernel.dart' show KernelContext;
-import 'package:baocode/kernel/mock/mock_kernels.dart';
-import 'package:baocode/theme/codicons.dart';
+import 'package:langshenagent/chat/chat_models.dart' show FileChange;
+import 'package:langshenagent/chat/chat_session.dart';
+import 'package:langshenagent/chat/review/change_review.dart';
+import 'package:langshenagent/chat/review/review_store.dart';
+import 'package:langshenagent/ide/file_service.dart';
+import 'package:langshenagent/ide/ide_agent_edits.dart';
+import 'package:langshenagent/ide/ide_editor.dart';
+import 'package:langshenagent/ide/ide_workspace.dart';
+import 'package:langshenagent/kernel/agent_kernel.dart' show KernelContext;
+import 'package:langshenagent/kernel/mock/mock_kernels.dart';
+import 'package:langshenagent/theme/codicons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;

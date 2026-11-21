@@ -8,10 +8,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:bao_remote/search.dart' show IdeTextQuery;
-import 'package:baocode/chat/composer/file_drop.dart';
-import 'package:baocode/ide/file_service.dart';
-import 'package:baocode/ide/ide_explorer.dart';
-import 'package:baocode/ide/ide_notifications.dart';
+import 'package:langshenagent/chat/composer/file_drop.dart';
+import 'package:langshenagent/ide/file_service.dart';
+import 'package:langshenagent/ide/ide_explorer.dart';
+import 'package:langshenagent/ide/ide_notifications.dart';
 
 import 'fake_files.dart';
 
@@ -55,7 +55,7 @@ void main() {
   List<String> clipboard(WidgetTester tester) {
     final held = <String>[];
     final messenger = tester.binding.defaultBinaryMessenger;
-    const channel = MethodChannel('baocode/window');
+    const channel = MethodChannel('langshenagent/window');
     messenger.setMockMethodCallHandler(channel, (call) async {
       switch (call.method) {
         case 'writePasteboardFiles':
@@ -252,7 +252,7 @@ void main() {
     ))!;
     addTearDown(() => into.deleteSync(recursive: true));
     final messenger = tester.binding.defaultBinaryMessenger;
-    const channel = MethodChannel('baocode/window');
+    const channel = MethodChannel('langshenagent/window');
     messenger.setMockMethodCallHandler(
       channel,
       (call) async => call.method == 'pickDirectory' ? into.path : null,
@@ -291,7 +291,7 @@ void main() {
   ) async {
     final calls = <MethodCall>[];
     final messenger = tester.binding.defaultBinaryMessenger;
-    const channel = MethodChannel('baocode/window');
+    const channel = MethodChannel('langshenagent/window');
     messenger.setMockMethodCallHandler(channel, (call) async {
       calls.add(call);
       return true;

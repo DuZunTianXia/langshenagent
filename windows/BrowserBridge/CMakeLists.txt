@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 3.14)
 project(browser_bridge LANGUAGES CXX)
 
-# baocode-browser-host.exe, the browsers' native messaging host (host.cpp).
-# It goes beside baocode.exe with dev.baocode.browser.json, the manifest
+# langshenagent-browser-host.exe, the browsers' native messaging host (host.cpp).
+# It goes beside langshenagent.exe with dev.langshenagent.browser.json, the manifest
 # the browsers find it by: the installer's keys point there (see
-# tool/baocode.iss), and its "path", relative, is the host beside it.
-add_executable(baocode-browser-host "host.cpp")
-apply_standard_settings(baocode-browser-host)
-target_compile_options(baocode-browser-host PRIVATE /utf-8)
-target_compile_definitions(baocode-browser-host PRIVATE
+# tool/langshenagent.iss), and its "path", relative, is the host beside it.
+add_executable(langshenagent-browser-host "host.cpp")
+apply_standard_settings(langshenagent-browser-host)
+target_compile_options(langshenagent-browser-host PRIVATE /utf-8)
+target_compile_definitions(langshenagent-browser-host PRIVATE
   "NOMINMAX" "WIN32_LEAN_AND_MEAN" "_WIN32_WINNT=0x0600")
-target_link_libraries(baocode-browser-host PRIVATE "ws2_32.lib")
+target_link_libraries(langshenagent-browser-host PRIVATE "ws2_32.lib")

@@ -5,16 +5,16 @@
 // contribution). `getBreakpointMessageAndIcon` is
 // `breakpointPresentation` from lib/debug/ui/debug_icons.dart.
 
-import 'package:baocode/base/uri.dart' show VsUri;
-import 'package:baocode/debug/base/event.dart';
-import 'package:baocode/debug/common/debug_model.dart';
-import 'package:baocode/debug/common/debug_storage.dart';
-import 'package:baocode/debug/common/debug_types.dart';
-import 'package:baocode/debug/service/debug_service.dart';
-import 'package:baocode/debug/session/debug_session.dart';
-import 'package:baocode/debug/ui/debug_icons.dart';
-import 'package:baocode/debug/ui/debug_strings.dart';
-import 'package:baocode/theme/codicons.dart';
+import 'package:langshenagent/base/uri.dart' show VsUri;
+import 'package:langshenagent/debug/base/event.dart';
+import 'package:langshenagent/debug/common/debug_model.dart';
+import 'package:langshenagent/debug/common/debug_storage.dart';
+import 'package:langshenagent/debug/common/debug_types.dart';
+import 'package:langshenagent/debug/service/debug_service.dart';
+import 'package:langshenagent/debug/session/debug_session.dart';
+import 'package:langshenagent/debug/ui/debug_icons.dart';
+import 'package:langshenagent/debug/ui/debug_strings.dart';
+import 'package:langshenagent/theme/codicons.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'mock_debug.dart';

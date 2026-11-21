@@ -1,7 +1,7 @@
-import 'package:baocode/chat/review/change_review.dart';
-import 'package:baocode/chat/rewind_files_prompt.dart';
-import 'package:baocode/chat/rewind_files_setting.dart';
-import 'package:baocode/l10n/l10n.dart';
+import 'package:langshenagent/chat/review/change_review.dart';
+import 'package:langshenagent/chat/rewind_files_prompt.dart';
+import 'package:langshenagent/chat/rewind_files_setting.dart';
+import 'package:langshenagent/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

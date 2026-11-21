@@ -26,11 +26,11 @@ import 'package:bao_editor/monaco/flutter/editor_surface.dart';
 import 'package:bao_editor/monaco/flutter/monaco_syntax.dart';
 import 'package:bao_editor/textmate/textmate_syntax.dart';
 import 'package:bao_editor/textmate/textmate_worker.dart';
-import 'package:baocode/ide/file_service.dart';
-import 'package:baocode/ide/ide_editor.dart';
-import 'package:baocode/ide/ide_workspace.dart';
-import 'package:baocode/ide/lsp/lsp_protocol.dart';
-import 'package:baocode/theme/workbench_theme.dart';
+import 'package:langshenagent/ide/file_service.dart';
+import 'package:langshenagent/ide/ide_editor.dart';
+import 'package:langshenagent/ide/ide_workspace.dart';
+import 'package:langshenagent/ide/lsp/lsp_protocol.dart';
+import 'package:langshenagent/theme/workbench_theme.dart';
 
 /// The app does not run in the repository: pass the absolute path with
 /// `--dart-define=TEXTMATE_PERF_SAMPLE=...`.

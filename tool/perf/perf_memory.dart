@@ -142,12 +142,12 @@ abstract final class PerfProcess {
           vm += dirty;
         }
       }
-      // BAOCODE_PERF_FOOTPRINT set: every category, for finding what to
+      // LANGSHENAGENT_PERF_FOOTPRINT set: every category, for finding what to
       // make smaller.
-      if (Platform.environment.containsKey('BAOCODE_PERF_FOOTPRINT')) {
+      if (Platform.environment.containsKey('LANGSHENAGENT_PERF_FOOTPRINT')) {
         all.sort((a, b) => b.$1.compareTo(a.$1));
         stderr.writeln(
-          'BAOCODE_PERF_LOG footprint: ${[for (final (bytes, name) in all.take(14)) '$name ${(bytes / 1048576).toStringAsFixed(1)}MB'].join(', ')}',
+          'LANGSHENAGENT_PERF_LOG footprint: ${[for (final (bytes, name) in all.take(14)) '$name ${(bytes / 1048576).toStringAsFixed(1)}MB'].join(', ')}',
         );
       }
       return {'gpu': gpu, 'malloc': malloc, 'vmAllocate': vm};

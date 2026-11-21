@@ -4,38 +4,38 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/workspace/islands.dart';
-import 'package:baocode/chat/chat_screen.dart';
-import 'package:baocode/chat/side_panel/side_panel_view.dart';
-import 'package:baocode/chat/composer/composer.dart';
-import 'package:baocode/chat/panels/context_usage_panel.dart';
-import 'package:baocode/ide/ide_command_center.dart';
-import 'package:baocode/ide/ide_hover.dart';
-import 'package:baocode/ide/ide_layout.dart';
-import 'package:baocode/ide/ide_quick_input.dart';
-import 'package:baocode/ide/ide_workbench.dart';
-import 'package:baocode/ide/lsp_ui/problems_panel.dart';
-import 'package:baocode/ide/terminal/terminal_instance.dart';
-import 'package:baocode/main.dart';
-import 'package:baocode/settings/settings_dialog.dart';
-import 'package:baocode/sidebar/sidebar.dart';
-import 'package:baocode/theme/code_font.dart';
-import 'package:baocode/theme/codicons.dart';
-import 'package:baocode/theme/app_theme.dart';
-import 'package:baocode/workspace/back_to_chat_button.dart';
-import 'package:baocode/workspace/editor_launcher.dart';
-import 'package:baocode/workspace/open_in_editor_button.dart';
-import 'package:baocode/workspace/pin_window_button.dart';
-import 'package:baocode/workspace/window_header/about_dialog.dart';
-import 'package:baocode/workspace/window_header/header_menu_bar.dart';
-import 'package:baocode/workspace/window_header/window_header.dart';
-import 'package:baocode/workspace/workspace.dart';
-import 'package:baocode/update/version.dart';
+import 'package:langshenagent/workspace/islands.dart';
+import 'package:langshenagent/chat/chat_screen.dart';
+import 'package:langshenagent/chat/side_panel/side_panel_view.dart';
+import 'package:langshenagent/chat/composer/composer.dart';
+import 'package:langshenagent/chat/panels/context_usage_panel.dart';
+import 'package:langshenagent/ide/ide_command_center.dart';
+import 'package:langshenagent/ide/ide_hover.dart';
+import 'package:langshenagent/ide/ide_layout.dart';
+import 'package:langshenagent/ide/ide_quick_input.dart';
+import 'package:langshenagent/ide/ide_workbench.dart';
+import 'package:langshenagent/ide/lsp_ui/problems_panel.dart';
+import 'package:langshenagent/ide/terminal/terminal_instance.dart';
+import 'package:langshenagent/main.dart';
+import 'package:langshenagent/settings/settings_dialog.dart';
+import 'package:langshenagent/sidebar/sidebar.dart';
+import 'package:langshenagent/theme/code_font.dart';
+import 'package:langshenagent/theme/codicons.dart';
+import 'package:langshenagent/theme/app_theme.dart';
+import 'package:langshenagent/workspace/back_to_chat_button.dart';
+import 'package:langshenagent/workspace/editor_launcher.dart';
+import 'package:langshenagent/workspace/open_in_editor_button.dart';
+import 'package:langshenagent/workspace/pin_window_button.dart';
+import 'package:langshenagent/workspace/window_header/about_dialog.dart';
+import 'package:langshenagent/workspace/window_header/header_menu_bar.dart';
+import 'package:langshenagent/workspace/window_header/window_header.dart';
+import 'package:langshenagent/workspace/workspace.dart';
+import 'package:langshenagent/update/version.dart';
 
 import 'ide/terminal/fake_pty.dart';
 import 'ide/terminal/fake_terminal.dart';
 
-const _window = MethodChannel('baocode/window');
+const _window = MethodChannel('langshenagent/window');
 
 /// The app with the header Windows draws, and what it tells the window.
 Future<(Workspace, List<MethodCall>)> pumpWindowsApp(
@@ -60,7 +60,7 @@ Future<(Workspace, List<MethodCall>)> pumpWindowsApp(
   );
   final workspace = Workspace.mock();
   await tester.pumpWidget(
-    BaoCodeApp(workspace: workspace, terminalBackend: terminalBackend),
+    LangshenAgentApp(workspace: workspace, terminalBackend: terminalBackend),
   );
   await tester.pump();
   return (workspace, calls);
@@ -785,7 +785,7 @@ void main() {
     tester.view.physicalSize = const Size(1400, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(BaoCodeApp(workspace: Workspace.mock()));
+    await tester.pumpWidget(LangshenAgentApp(workspace: Workspace.mock()));
     await tester.pump();
     Rect rectOf(Type type) => tester.getRect(
       find.descendant(of: find.byType(ChatScreen), matching: find.byType(type)),
@@ -825,7 +825,7 @@ void main() {
         theme: buildAppTheme(),
         home: Builder(
           builder: (context) => TextButton(
-            onPressed: () => showAboutBaoCode(context),
+            onPressed: () => showAboutLangshenAgent(context),
             child: const Text('About'),
           ),
         ),

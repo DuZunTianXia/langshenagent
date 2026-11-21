@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:baocode/forge/forge_accounts.dart';
-import 'package:baocode/forge/forge_api.dart';
-import 'package:baocode/forge/forge_ref.dart';
-import 'package:baocode/models/secret_store.dart';
+import 'package:langshenagent/forge/forge_accounts.dart';
+import 'package:langshenagent/forge/forge_api.dart';
+import 'package:langshenagent/forge/forge_ref.dart';
+import 'package:langshenagent/models/secret_store.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Answers requests by method and URL (its path and query), and keeps
@@ -106,13 +106,13 @@ void main() {
   group('ForgeRef', () {
     test('GitHub and GitLab issues and pull requests, from their pages', () {
       final issue = ForgeRef.parse(
-        'https://github.com/baocode-dev/baocode/issues/92#issuecomment-1',
+        'https://github.com/langshenagent-dev/langshenagent/issues/92#issuecomment-1',
       )!;
       expect(issue.repo.kind, ForgeKind.github);
-      expect(issue.repo.path, 'baocode-dev/baocode');
+      expect(issue.repo.path, 'langshenagent-dev/langshenagent');
       expect(issue.kind, ForgeItemKind.issue);
       expect(issue.number, 92);
-      expect(issue.fullTag, 'baocode-dev/baocode#92');
+      expect(issue.fullTag, 'langshenagent-dev/langshenagent#92');
 
       final pull = ForgeRef.parse('https://github.com/o/r/pull/7/files')!;
       expect(pull.kind, ForgeItemKind.pull);
@@ -153,11 +153,11 @@ void main() {
 
     test('a repository from its Git remote', () {
       expect(
-        ForgeRepo.fromRemote('git@github.com:baocode-dev/baocode.git'),
+        ForgeRepo.fromRemote('git@github.com:langshenagent-dev/langshenagent.git'),
         const ForgeRepo(
           kind: ForgeKind.github,
           host: 'github.com',
-          path: 'baocode-dev/baocode',
+          path: 'langshenagent-dev/langshenagent',
         ),
       );
       expect(
@@ -193,21 +193,21 @@ void main() {
 
     test('Gitee issues (their numbers letters) and pull requests', () {
       final issue = ForgeRef.parse(
-        'https://gitee.com/baocode/app/issues/I8ABCD?from=project-issue',
+        'https://gitee.com/langshenagent/app/issues/I8ABCD?from=project-issue',
       )!;
       expect(issue.repo.kind, ForgeKind.gitee);
-      expect(issue.repo.path, 'baocode/app');
+      expect(issue.repo.path, 'langshenagent/app');
       expect(issue.kind, ForgeItemKind.issue);
       expect(issue.code, 'I8ABCD');
-      expect(issue.fullTag, 'baocode/app#I8ABCD');
+      expect(issue.fullTag, 'langshenagent/app#I8ABCD');
       expect(
         issue.url.toString(),
-        'https://gitee.com/baocode/app/issues/I8ABCD',
+        'https://gitee.com/langshenagent/app/issues/I8ABCD',
       );
       // Its case matters.
       expect(
         issue,
-        isNot(ForgeRef.parse('https://gitee.com/baocode/app/issues/i8abcd')),
+        isNot(ForgeRef.parse('https://gitee.com/langshenagent/app/issues/i8abcd')),
       );
 
       final pull = ForgeRef.parse('https://gitee.com/o/r/pulls/12/files')!;
@@ -218,11 +218,11 @@ void main() {
 
       expect(ForgeRef.parse('https://gitee.com/o/r/tree/master'), isNull);
       expect(
-        ForgeRepo.fromRemote('git@gitee.com:baocode/app.git'),
+        ForgeRepo.fromRemote('git@gitee.com:langshenagent/app.git'),
         const ForgeRepo(
           kind: ForgeKind.gitee,
           host: 'gitee.com',
-          path: 'baocode/app',
+          path: 'langshenagent/app',
         ),
       );
       expect(ForgeRepo.fromRemote('https://gitee.com/a/b/c.git'), isNull);
@@ -231,23 +231,23 @@ void main() {
 
   test('GitCode issues and pull requests, its older merge requests too '
       '(#825)', () {
-    final issue = ForgeRef.parse('https://gitcode.com/baocode/app/issues/7')!;
+    final issue = ForgeRef.parse('https://gitcode.com/langshenagent/app/issues/7')!;
     expect(issue.repo.kind, ForgeKind.gitcode);
-    expect(issue.repo.path, 'baocode/app');
+    expect(issue.repo.path, 'langshenagent/app');
     expect(issue.kind, ForgeItemKind.issue);
     expect(issue.number, 7);
-    expect(issue.url.toString(), 'https://gitcode.com/baocode/app/issues/7');
+    expect(issue.url.toString(), 'https://gitcode.com/langshenagent/app/issues/7');
     final pull = ForgeRef.parse('https://gitcode.com/o/r/pull/12')!;
     expect(pull.kind, ForgeItemKind.pull);
     expect(pull.url.toString(), 'https://gitcode.com/o/r/pull/12');
     expect(ForgeRef.parse('https://gitcode.com/o/r/merge_requests/12'), pull);
     expect(ForgeRef.parse('https://gitcode.com/o/r/tree/main'), isNull);
     expect(
-      ForgeRepo.fromRemote('git@gitcode.com:baocode/app.git'),
+      ForgeRepo.fromRemote('git@gitcode.com:langshenagent/app.git'),
       const ForgeRepo(
         kind: ForgeKind.gitcode,
         host: 'gitcode.com',
-        path: 'baocode/app',
+        path: 'langshenagent/app',
       ),
     );
   });

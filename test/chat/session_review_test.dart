@@ -1,14 +1,14 @@
 import 'dart:async';
 
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/chat_screen.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/chat/review/change_review.dart';
-import 'package:baocode/chat/review/review_store.dart';
-import 'package:baocode/kernel/agent_kernel.dart';
-import 'package:baocode/kernel/kernel_types.dart';
-import 'package:baocode/kernel/mock/mock_kernels.dart';
-import 'package:baocode/theme/app_theme.dart';
+import 'package:langshenagent/chat/chat_models.dart';
+import 'package:langshenagent/chat/chat_screen.dart';
+import 'package:langshenagent/chat/chat_session.dart';
+import 'package:langshenagent/chat/review/change_review.dart';
+import 'package:langshenagent/chat/review/review_store.dart';
+import 'package:langshenagent/kernel/agent_kernel.dart';
+import 'package:langshenagent/kernel/kernel_types.dart';
+import 'package:langshenagent/kernel/mock/mock_kernels.dart';
+import 'package:langshenagent/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

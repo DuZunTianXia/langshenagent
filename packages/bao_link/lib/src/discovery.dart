@@ -12,7 +12,7 @@ import 'identity.dart';
 abstract final class LinkDiscovery {
   /// The DNS-SD service type. The port is the desktop's UDP one (QUIC);
   /// the type keeps its old name, as the phones' app manifests list it.
-  static const type = '_baocode._tcp';
+  static const type = '_langshenagent._tcp';
 
   static const version = '2';
 }
@@ -29,7 +29,7 @@ class LinkAdvert {
   });
 
   /// The advert found as [name] at [port], with [attributes]; null for
-  /// one of another version, or not one of BaoCode's.
+  /// one of another version, or not one of LangshenAgent's.
   static LinkAdvert? parse({
     required String name,
     required int port,

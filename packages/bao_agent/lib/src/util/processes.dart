@@ -136,7 +136,7 @@ enum ShellKind {
 /// The shell commands are run in: the user's, when it is bash or zsh;
 /// else bash; on Windows, the one the app's settings name
 /// ([chosenVariable]), else the one set by `CLAUDE_CODE_GIT_BASH_PATH`,
-/// else BaoCode Bash where the app installed it ([baoBashVariable]), else
+/// else LangshenAgent Bash where the app installed it ([baoBashVariable]), else
 /// Git's bash where it is installed, else cmd.exe.
 class Shell {
   const Shell(
@@ -145,22 +145,22 @@ class Shell {
     this.baoBash = false,
   });
 
-  /// The variable the app names BaoCode Bash's `bash.exe` in
-  /// (github.com/baocode-dev/bash-exe): bash 5.3 with `rg`, `grep`, `sed`,
+  /// The variable the app names LangshenAgent Bash's `bash.exe` in
+  /// (github.com/langshenagent-dev/bash-exe): bash 5.3 with `rg`, `grep`, `sed`,
   /// `awk`, `find`, `jq` and the like built in, that takes `C:\x` and
   /// `/c/x` alike.
-  static const baoBashVariable = 'BAOCODE_BASH';
+  static const baoBashVariable = 'LANGSHENAGENT_BASH';
 
   /// The variable the app names the shell picked in its settings in
   /// (Windows): bash, cmd.exe or PowerShell, told apart by the file's
   /// name ([ShellKind.of]).
-  static const chosenVariable = 'BAOCODE_SHELL';
+  static const chosenVariable = 'LANGSHENAGENT_SHELL';
 
-  /// What a model is told of BaoCode Bash, which it would not expect of
+  /// What a model is told of LangshenAgent Bash, which it would not expect of
   /// Windows: the tools it has, and the paths it takes. Short, the tools it
   /// might doubt named, and how to ask of any other.
   static const baoBashNote =
-      'The shell is bash (BaoCode Bash), with the usual Unix tools built in: '
+      'The shell is bash (LangshenAgent Bash), with the usual Unix tools built in: '
       '`rg`, `grep`, `sed`, `awk`, `find`, `xargs`, `jq`, `tar`, `diff`, '
       '`timeout`, `sha256sum`, the coreutils and more (`type -t NAME` says '
       '`builtin` for one). Paths print as `C:/x` (`pwd`, `\$PWD`, `\$HOME`, '
@@ -183,7 +183,7 @@ class Shell {
   /// Whether it takes POSIX shell commands (not cmd.exe or PowerShell).
   bool get posix => kind == ShellKind.posix;
 
-  /// Whether it is BaoCode Bash, its tools there whatever is installed.
+  /// Whether it is LangshenAgent Bash, its tools there whatever is installed.
   final bool baoBash;
 
   /// The shell for [environment]'s user, on Windows when [windows] (where

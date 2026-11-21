@@ -30,7 +30,7 @@ class ModelRequest {
 /// The headers that tell a gateway what a request is for, as the CLI sends
 /// them: a subagent's id always; what it is for (`main`, `subagent`,
 /// `compaction`, `auxiliary`) and the subagent's kind where [environment]
-/// asks for them (`CLAUDE_CODE_GATEWAY_HINT_HEADERS`, which BaoCode's
+/// asks for them (`CLAUDE_CODE_GATEWAY_HINT_HEADERS`, which LangshenAgent's
 /// model proxy sets to keep the calls).
 Map<String, String> requestHints(
   Map<String, String> environment, {

@@ -3,23 +3,23 @@ import 'dart:async';
 import 'package:bao_editor/monaco/vs/editor/common/core/position.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/ide_layout.dart';
-import 'package:baocode/ide/ide_notifications.dart';
-import 'package:baocode/ide/ide_workspace.dart';
-import 'package:baocode/ide/lsp/language_features.dart';
-import 'package:baocode/ide/lsp/lsp_protocol.dart';
-import 'package:baocode/ide/lsp_ui/lsp_convert.dart';
-import 'package:baocode/ide/lsp_ui/problems_panel.dart';
-import 'package:baocode/ide/services/language.dart';
-import 'package:baocode/ide/services/problems.dart';
-import 'package:baocode/ide/services/references.dart';
-import 'package:baocode/ide/workbench/actions.dart';
-import 'package:baocode/ide/workbench/context_keys.dart';
-import 'package:baocode/ide/workbench/contributions.dart';
-import 'package:baocode/ide/workbench/contributions/language.dart';
-import 'package:baocode/ide/workbench/services.dart';
-import 'package:baocode/ide/workbench/statusbar.dart';
-import 'package:baocode/l10n/app_localizations.dart';
+import 'package:langshenagent/ide/ide_layout.dart';
+import 'package:langshenagent/ide/ide_notifications.dart';
+import 'package:langshenagent/ide/ide_workspace.dart';
+import 'package:langshenagent/ide/lsp/language_features.dart';
+import 'package:langshenagent/ide/lsp/lsp_protocol.dart';
+import 'package:langshenagent/ide/lsp_ui/lsp_convert.dart';
+import 'package:langshenagent/ide/lsp_ui/problems_panel.dart';
+import 'package:langshenagent/ide/services/language.dart';
+import 'package:langshenagent/ide/services/problems.dart';
+import 'package:langshenagent/ide/services/references.dart';
+import 'package:langshenagent/ide/workbench/actions.dart';
+import 'package:langshenagent/ide/workbench/context_keys.dart';
+import 'package:langshenagent/ide/workbench/contributions.dart';
+import 'package:langshenagent/ide/workbench/contributions/language.dart';
+import 'package:langshenagent/ide/workbench/services.dart';
+import 'package:langshenagent/ide/workbench/statusbar.dart';
+import 'package:langshenagent/l10n/app_localizations.dart';
 
 import '../../lsp_ui/fake_language_features.dart';
 import '../fake_files.dart';
@@ -245,7 +245,7 @@ void main() {
       notice.primary[1].run();
       expect(
         host.calls,
-        contains('executeCommand baocode.openLspSettings null'),
+        contains('executeCommand langshenagent.openLspSettings null'),
       );
 
       languages.emitServerMessage(

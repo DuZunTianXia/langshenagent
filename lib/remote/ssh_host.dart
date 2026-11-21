@@ -136,7 +136,7 @@ class SshHost extends ChangeNotifier implements ProjectHost {
   SshHostState get state => _state;
   SshHostState _state = SshHostState.idle;
 
-  /// What connecting is at (`Installing the BaoCode server…`).
+  /// What connecting is at (`Installing the LangshenAgent server…`).
   String? get progress => _progress;
   String? _progress;
 
@@ -533,7 +533,7 @@ class SshHosts extends ChangeNotifier {
       onCode: (host, client, cwd, args) async {
         final open = onCode;
         return open == null
-            ? 'BaoCode cannot open files from here.'
+            ? 'LangshenAgent cannot open files from here.'
             : open(host, client, cwd, args);
       },
     )..addListener(notifyListeners);

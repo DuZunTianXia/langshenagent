@@ -3,10 +3,10 @@ import 'package:flutter/material.dart' show TextField;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/git/ide_git_commit_panel.dart';
-import 'package:baocode/ide/git/repository_scan.dart';
-import 'package:baocode/ide/ide_workbench.dart';
-import 'package:baocode/ide/ide_workspace.dart';
+import 'package:langshenagent/ide/git/ide_git_commit_panel.dart';
+import 'package:langshenagent/ide/git/repository_scan.dart';
+import 'package:langshenagent/ide/ide_workbench.dart';
+import 'package:langshenagent/ide/ide_workspace.dart';
 
 import '../git/fake_git.dart';
 import 'fake_files.dart';

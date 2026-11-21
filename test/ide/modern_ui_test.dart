@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/ide_commands.dart';
-import 'package:baocode/ide/ide_hover.dart';
-import 'package:baocode/ide/ide_modern_ui.dart';
-import 'package:baocode/ide/ide_status_bar.dart';
-import 'package:baocode/ide/ide_workbench.dart';
-import 'package:baocode/ide/lsp_ui/hover_markdown.dart';
-import 'package:baocode/keybindings/default_keybindings.dart'
+import 'package:langshenagent/ide/ide_commands.dart';
+import 'package:langshenagent/ide/ide_hover.dart';
+import 'package:langshenagent/ide/ide_modern_ui.dart';
+import 'package:langshenagent/ide/ide_status_bar.dart';
+import 'package:langshenagent/ide/ide_workbench.dart';
+import 'package:langshenagent/ide/lsp_ui/hover_markdown.dart';
+import 'package:langshenagent/keybindings/default_keybindings.dart'
     show openSettingsCommandId;
-import 'package:baocode/theme/app_theme.dart';
-import 'package:baocode/theme/codicons.dart';
-import 'package:baocode/theme/window_blur.dart';
-import 'package:baocode/theme/workbench_theme.dart';
-import 'package:baocode/workspace/islands.dart';
+import 'package:langshenagent/theme/app_theme.dart';
+import 'package:langshenagent/theme/codicons.dart';
+import 'package:langshenagent/theme/window_blur.dart';
+import 'package:langshenagent/theme/workbench_theme.dart';
+import 'package:langshenagent/workspace/islands.dart';
 
 import 'workbench/fake_files.dart';
 

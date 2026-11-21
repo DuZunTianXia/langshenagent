@@ -231,7 +231,7 @@ class ClaudeLaunch {
   );
 
   Map<String, String>? get _attribution => switch (attribution) {
-    CommitAttribution.baocode => const {
+    CommitAttribution.langshenagent => const {
       'commit': CommitAttribution.baoCodeCommit,
       'pr': CommitAttribution.baoCodePullRequest,
     },

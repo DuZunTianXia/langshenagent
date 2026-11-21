@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/icons/project_icon.dart';
-import 'package:baocode/kernel/agent_kernel.dart';
-import 'package:baocode/main.dart';
-import 'package:baocode/models/secret_store.dart';
-import 'package:baocode/remote/remote_files.dart';
-import 'package:baocode/sidebar/sidebar.dart';
-import 'package:baocode/workspace/preference_store.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:langshenagent/icons/project_icon.dart';
+import 'package:langshenagent/kernel/agent_kernel.dart';
+import 'package:langshenagent/main.dart';
+import 'package:langshenagent/models/secret_store.dart';
+import 'package:langshenagent/remote/remote_files.dart';
+import 'package:langshenagent/sidebar/sidebar.dart';
+import 'package:langshenagent/workspace/preference_store.dart';
+import 'package:langshenagent/workspace/workspace.dart';
 
 import 'workspace_test.dart' show claude;
 
@@ -23,7 +23,7 @@ Future<Workspace> pumpLoaded(
     kernels: [kernel ?? claude],
     preferences: preferences,
   );
-  await tester.pumpWidget(BaoCodeApp(workspace: workspace));
+  await tester.pumpWidget(LangshenAgentApp(workspace: workspace));
   await tester.runAsync(workspace.load);
   await tester.pump();
   return workspace;

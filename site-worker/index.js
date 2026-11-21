@@ -1,4 +1,4 @@
-// baocode.dev's Worker: site/ is served as static assets, and this runs only
+// langshenagent.dev's Worker: site/ is served as static assets, and this runs only
 // for /dl/* (run_worker_first in wrangler.jsonc). /dl/windows,
 // /dl/windows-arm64, /dl/macos-arm64,
 // /dl/macos-x64, /dl/linux-x64 and /dl/linux-arm64 redirect to that build of
@@ -15,13 +15,13 @@
 // /dl/chrome-web-store to its page in the store (releases/extension/
 // latest.json's store), or, that not read, to the page its id makes.
 // A desktop build's with ?ch=<channel> (site.js, from a page in another
-// site's frame): the channel kept in a cookie of baocode.dev's own, which
+// site's frame): the channel kept in a cookie of langshenagent.dev's own, which
 // /activate reads, and a channel listed with its account site gets the
 // channel build, as on the page.
 
-const MANIFEST = 'https://dl.baocode.dev/releases/latest.json';
-const MOBILE_MANIFEST = 'https://dl.baocode.dev/releases/mobile/latest.json';
-const EXTENSION_MANIFEST = 'https://dl.baocode.dev/releases/extension/latest.json';
+const MANIFEST = 'https://dl.langshenagent.dev/releases/latest.json';
+const MOBILE_MANIFEST = 'https://dl.langshenagent.dev/releases/mobile/latest.json';
+const EXTENSION_MANIFEST = 'https://dl.langshenagent.dev/releases/extension/latest.json';
 const MOBILE = new Set(['android', 'android-universal', 'ios']);
 // A link's file in its manifest's downloads, where the names differ.
 const MANIFEST_KEYS = { android: ['androidArm64', 'android'], 'android-universal': ['android'] };
@@ -29,7 +29,7 @@ const MANIFEST_KEYS = { android: ['androidArm64', 'android'], 'android-universal
 // to a build. None now.
 const MOBILE_OFFLINE = new Set();
 // iOS is on TestFlight, not in the manifest: /dl/ios is its public beta's
-// link (App Store Connect → BaoCode → TestFlight → Public beta), the same
+// link (App Store Connect → LangshenAgent → TestFlight → Public beta), the same
 // for every build.
 const TESTFLIGHT = 'https://testflight.apple.com/join/KWwGgyhv';
 const EXTENSION = new Set(['browser-extension', 'chrome-web-store']);

@@ -9,17 +9,17 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:baocode/browser/browser_bridge.dart';
-import 'package:baocode/browser/browser_tools.dart';
-import 'package:baocode/kernel/claude_code/claude_sdk_tools.dart';
+import 'package:langshenagent/browser/browser_bridge.dart';
+import 'package:langshenagent/browser/browser_tools.dart';
+import 'package:langshenagent/kernel/claude_code/claude_sdk_tools.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
 void main() {
   final chrome = Platform.environment['BAO_BROWSER_LIVE'];
   final host = p.absolute(
-    'build/macos/Build/Products/Debug/BaoCode.app/Contents/MacOS/'
-    'baocode-browser-host',
+    'build/macos/Build/Products/Debug/LangshenAgent.app/Contents/MacOS/'
+    'langshenagent-browser-host',
   );
 
   test(
@@ -33,7 +33,7 @@ void main() {
           .writeAsStringSync(
             jsonEncode({
               'name': BrowserBridge.hostName,
-              'description': 'BaoCode',
+              'description': 'LangshenAgent',
               'path': host,
               'type': 'stdio',
               'allowed_origins': [

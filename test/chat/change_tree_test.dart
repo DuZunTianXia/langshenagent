@@ -1,9 +1,9 @@
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/panels/activity_strip.dart';
-import 'package:baocode/chat/panels/change_tree.dart';
-import 'package:baocode/ide/ide_list.dart';
-import 'package:baocode/ide/ide_menu.dart';
-import 'package:baocode/theme/codicons.dart';
+import 'package:langshenagent/chat/chat_models.dart';
+import 'package:langshenagent/chat/panels/activity_strip.dart';
+import 'package:langshenagent/chat/panels/change_tree.dart';
+import 'package:langshenagent/ide/ide_list.dart';
+import 'package:langshenagent/ide/ide_menu.dart';
+import 'package:langshenagent/theme/codicons.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

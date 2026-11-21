@@ -96,7 +96,7 @@ class IdeWorkbench extends StatefulWidget implements WorkbenchOptions {
     this.backLabel,
     this.editorBuilder,
     this.nativeEditorEnabled = const bool.fromEnvironment(
-      'BAOCODE_NATIVE_EDITOR',
+      'LANGSHENAGENT_NATIVE_EDITOR',
       defaultValue: true,
     ),
     this.commands = const [],

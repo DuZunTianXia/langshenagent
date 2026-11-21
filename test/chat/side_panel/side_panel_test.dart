@@ -2,60 +2,60 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:baocode/chat/composer/composer_embeds.dart';
+import 'package:langshenagent/chat/composer/composer_embeds.dart';
 import 'package:bao_markdown/bao_markdown.dart';
 import 'package:bao_editor/monaco/flutter/diff_editor.dart';
 import 'package:bao_editor/monaco/flutter/editor_surface.dart';
 
-import 'package:baocode/ide/ide_notifications.dart';
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/kernel/kernel_types.dart';
-import 'package:baocode/chat/chat_screen.dart';
-import 'package:baocode/chat/composer/composer.dart';
-import 'package:baocode/chat/composer/composer_files.dart';
-import 'package:baocode/chat/composer/file_drop.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/chat/side_panel/file_edit.dart';
-import 'package:baocode/chat/side_panel/file_link.dart';
-import 'package:baocode/chat/side_panel/file_open.dart';
-import 'package:baocode/chat/side_panel/file_preview.dart';
-import 'package:baocode/chat/side_panel/side_panel_controller.dart';
-import 'package:baocode/chat/chat_column.dart';
-import 'package:baocode/chat/side_panel/side_panel_view.dart';
-import 'package:baocode/chat/widgets/edit_step.dart';
-import 'package:baocode/chat/widgets/step_header.dart' show StepBody;
-import 'package:baocode/chat/widgets/fold_line.dart';
-import 'package:baocode/chat/widgets/markdown_view.dart';
-import 'package:baocode/chat/widgets/tool_call_row.dart';
-import 'package:baocode/ide/file_service.dart';
-import 'package:baocode/ide/git/ide_git_commit_panel.dart';
-import 'package:baocode/ide/ide_diff_options.dart';
-import 'package:baocode/ide/git/commit_message.dart';
-import 'package:baocode/ide/git/git_model.dart';
-import 'package:baocode/ide/git/git_repository.dart';
-import 'package:baocode/ide/git/ide_git_log_view.dart';
-import 'package:baocode/ide/ide_code_diff.dart';
-import 'package:baocode/ide/editor_word_wrap.dart';
-import 'package:baocode/ide/ide_code_editor.dart';
-import 'package:baocode/ide/ide_explorer.dart';
-import 'package:baocode/ide/ide_hover.dart';
-import 'package:baocode/ide/ide_list.dart';
-import 'package:baocode/ide/terminal/terminal_instance.dart';
-import 'package:baocode/ide/terminal/terminal_service.dart';
-import 'package:baocode/ide/terminal/terminal_view.dart';
-import 'package:baocode/ide/tab_reorder.dart';
-import 'package:baocode/ide/tab_strip_scroll.dart';
-import 'package:baocode/chat/side_panel/terminal_preview.dart';
-import 'package:baocode/chat/panels/activity_strip.dart';
-import 'package:baocode/kernel/agent_kernel.dart';
-import 'package:baocode/theme/app_theme.dart';
-import 'package:baocode/theme/code_font.dart';
-import 'package:baocode/theme/codicons.dart';
-import 'package:baocode/theme/material_file_icons.dart';
-import 'package:baocode/usage/usage_ledger.dart';
-import 'package:baocode/usage/usage_record.dart';
-import 'package:baocode/workspace/islands.dart';
-import 'package:baocode/workspace/preference_store.dart';
+import 'package:langshenagent/ide/ide_notifications.dart';
+import 'package:langshenagent/chat/chat_models.dart';
+import 'package:langshenagent/kernel/kernel_types.dart';
+import 'package:langshenagent/chat/chat_screen.dart';
+import 'package:langshenagent/chat/composer/composer.dart';
+import 'package:langshenagent/chat/composer/composer_files.dart';
+import 'package:langshenagent/chat/composer/file_drop.dart';
+import 'package:langshenagent/chat/chat_session.dart';
+import 'package:langshenagent/chat/side_panel/file_edit.dart';
+import 'package:langshenagent/chat/side_panel/file_link.dart';
+import 'package:langshenagent/chat/side_panel/file_open.dart';
+import 'package:langshenagent/chat/side_panel/file_preview.dart';
+import 'package:langshenagent/chat/side_panel/side_panel_controller.dart';
+import 'package:langshenagent/chat/chat_column.dart';
+import 'package:langshenagent/chat/side_panel/side_panel_view.dart';
+import 'package:langshenagent/chat/widgets/edit_step.dart';
+import 'package:langshenagent/chat/widgets/step_header.dart' show StepBody;
+import 'package:langshenagent/chat/widgets/fold_line.dart';
+import 'package:langshenagent/chat/widgets/markdown_view.dart';
+import 'package:langshenagent/chat/widgets/tool_call_row.dart';
+import 'package:langshenagent/ide/file_service.dart';
+import 'package:langshenagent/ide/git/ide_git_commit_panel.dart';
+import 'package:langshenagent/ide/ide_diff_options.dart';
+import 'package:langshenagent/ide/git/commit_message.dart';
+import 'package:langshenagent/ide/git/git_model.dart';
+import 'package:langshenagent/ide/git/git_repository.dart';
+import 'package:langshenagent/ide/git/ide_git_log_view.dart';
+import 'package:langshenagent/ide/ide_code_diff.dart';
+import 'package:langshenagent/ide/editor_word_wrap.dart';
+import 'package:langshenagent/ide/ide_code_editor.dart';
+import 'package:langshenagent/ide/ide_explorer.dart';
+import 'package:langshenagent/ide/ide_hover.dart';
+import 'package:langshenagent/ide/ide_list.dart';
+import 'package:langshenagent/ide/terminal/terminal_instance.dart';
+import 'package:langshenagent/ide/terminal/terminal_service.dart';
+import 'package:langshenagent/ide/terminal/terminal_view.dart';
+import 'package:langshenagent/ide/tab_reorder.dart';
+import 'package:langshenagent/ide/tab_strip_scroll.dart';
+import 'package:langshenagent/chat/side_panel/terminal_preview.dart';
+import 'package:langshenagent/chat/panels/activity_strip.dart';
+import 'package:langshenagent/kernel/agent_kernel.dart';
+import 'package:langshenagent/theme/app_theme.dart';
+import 'package:langshenagent/theme/code_font.dart';
+import 'package:langshenagent/theme/codicons.dart';
+import 'package:langshenagent/theme/material_file_icons.dart';
+import 'package:langshenagent/usage/usage_ledger.dart';
+import 'package:langshenagent/usage/usage_record.dart';
+import 'package:langshenagent/workspace/islands.dart';
+import 'package:langshenagent/workspace/preference_store.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -70,8 +70,8 @@ import '../../workspace/chat_window_keys_test.dart' show press;
 import '../../workspace_test.dart' show pumpLoaded;
 import '../../kernel_ui_test.dart' show pumpScripted;
 
-import 'package:baocode/theme/svg_icons.dart';
-import 'package:baocode/chat/side_panel/chat_layout_picker.dart';
+import 'package:langshenagent/theme/svg_icons.dart';
+import 'package:langshenagent/chat/side_panel/chat_layout_picker.dart';
 
 /// A project's files, in memory.
 class _Files implements IdeFileService {
@@ -2522,7 +2522,7 @@ void main() {
     final (:panel, :session) = await _pumpReply(
       tester,
       '[key](../outside/key.pem), [passwd](/etc/passwd), '
-      '`/etc/hosts` and [the site](https://baocode.dev).',
+      '`/etc/hosts` and [the site](https://langshenagent.dev).',
       texts: {'/etc/hosts': 'x', '/outside/key.pem': 'x'},
     );
     expect(_span(tester, 'key')?.recognizer, isNotNull);
@@ -2532,7 +2532,7 @@ void main() {
     expect(_span(tester, 'the site')?.recognizer, isA<TapGestureRecognizer>());
     final scope = tester.element(find.byType(MarkdownView));
     expect(
-      FileOpenScope.maybeOf(scope)!.linkRecognizer('https://baocode.dev'),
+      FileOpenScope.maybeOf(scope)!.linkRecognizer('https://langshenagent.dev'),
       isNull,
     );
     expect(panel.shown, isFalse);
@@ -3054,7 +3054,7 @@ void main() {
   testWidgets('the pages\' bar is the window\'s title bar on macOS: its '
       'empty part drags the window, its tabs do not', (tester) async {
     _bigWindow(tester);
-    const window = MethodChannel('baocode/window');
+    const window = MethodChannel('langshenagent/window');
     final messenger = tester.binding.defaultBinaryMessenger;
     var drags = 0;
     messenger.setMockMethodCallHandler(window, (call) async {

@@ -277,7 +277,7 @@ class EditorCommandsContribution extends WorkbenchRegistrations {
               _revealPath(services) != null,
         ),
         WorkbenchAction(
-          id: 'baocode.ide.toggleFormatOnSave',
+          id: 'langshenagent.ide.toggleFormatOnSave',
           category: 'Preferences',
           title: 'Turn On Format on Save',
           titleFor: (_) => config.formatOnSave
@@ -288,7 +288,7 @@ class EditorCommandsContribution extends WorkbenchRegistrations {
           run: (_, _) => config.formatOnSave = !config.formatOnSave,
         ),
         git(
-          'baocode.git.toggleAnnotations',
+          'langshenagent.git.toggleAnnotations',
           'Annotate with Git Blame',
           () => editors.editor?.toggleAnnotations(),
           titleFor: () => editors.editor?.annotated ?? false
@@ -297,13 +297,13 @@ class EditorCommandsContribution extends WorkbenchRegistrations {
           enabled: () => editors.editor?.canAnnotate ?? false,
         ),
         git(
-          'baocode.git.showFileHistory',
+          'langshenagent.git.showFileHistory',
           'Show History',
           () => editors.editor?.showHistory(),
           enabled: () => editors.editor?.canShowHistory ?? false,
         ),
         git(
-          'baocode.git.showSelectionHistory',
+          'langshenagent.git.showSelectionHistory',
           'Show History for Selection',
           () => editors.editor?.showHistory(selection: true),
           enabled: () => editors.editor?.selectionHistoryLines != null,
@@ -314,7 +314,7 @@ class EditorCommandsContribution extends WorkbenchRegistrations {
           run: (_, _) => config.gitBlame = !config.gitBlame,
         ),
         command(
-          'baocode.ide.retryLanguageServices',
+          'langshenagent.ide.retryLanguageServices',
           'Developer',
           'Retry Language Services',
           () => unawaited(editors.editor?.retryLanguageServer()),

@@ -31,7 +31,7 @@ import 'window_settings.dart';
 
 /// The kinds of window: the chat's, the app's main one (there is one);
 /// the IDE's, one per folder (or none: its welcome); an agent's, its
-/// conversation alone (Explorer's Open with BaoCode, a new one each time);
+/// conversation alone (Explorer's Open with LangshenAgent, a new one each time);
 /// and the stash's panel (see lib/stash/), none of the app's windows to the
 /// system: not listed, never in front of the others as they are.
 enum AppWindowKind { chat, ide, agent, stash }
@@ -151,10 +151,10 @@ class AppWindow {
     (_, null) => l10n.windowWelcomeTitle,
   };
 
-  /// The title the system shows: `name — BaoCode` ([label] when [name] is
+  /// The title the system shows: `name — LangshenAgent` ([label] when [name] is
   /// null).
   String title(AppLocalizations l10n, {String? name}) =>
-      '${name ?? label(l10n)} — BaoCode';
+      '${name ?? label(l10n)} — LangshenAgent';
 
   /// The folder's name; a remote one's with its host, as VS Code shows
   /// one (`app [SSH: dev]`, `app [WSL: Ubuntu]`).
@@ -200,7 +200,7 @@ class _KeptWindow {
 /// the same in all; each window has its own navigator, dialogs and focus.
 ///
 /// Where the system cannot open more windows (the web, a host without the
-/// `baocode/windows` channel), or `window.ideWindows` says so, the IDE
+/// `langshenagent/windows` channel), or `window.ideWindows` says so, the IDE
 /// shows in the main window, as it did before: [multi] is false and the
 /// IDE's entries go to its workbench. The setting changed, the IDE moves
 /// at once (see [settingsChanged]).
@@ -425,7 +425,7 @@ class AppWindows extends ChangeNotifier implements WindowHostEvents {
   /// With the IDE in the main window, only it shows; the IDE's window last
   /// in front, if any were left, gives it its folder.
   ///
-  /// Started for a [request] (Explorer's Open with BaoCode or Fast Ide, the
+  /// Started for a [request] (Explorer's Open with LangshenAgent or Fast Ide, the
   /// `code` command), it opens to that alone, at once, in a window of its
   /// own: the agent's (see [openAgent]), else what the request opens;
   /// nothing of the last run, the chat's window hidden.
@@ -786,7 +786,7 @@ class AppWindows extends ChangeNotifier implements WindowHostEvents {
   }) async {
     final args = CodeArgs.parse(arguments, cwd: cwd);
     if (args.opensNothing) {
-      return "BaoCode's code command only opens files and folders.";
+      return "LangshenAgent's code command only opens files and folders.";
     }
     Future<String?> typeOf(String path) =>
         stat(path).then((type) => type, onError: (Object _) => null);
@@ -858,7 +858,7 @@ class AppWindows extends ChangeNotifier implements WindowHostEvents {
 
   /// What the system asks to open: a request of the `code` command (on
   /// Windows, its arguments; on macOS, the file its script left), Open
-  /// with BaoCode's ([openAgent]), or paths (Finder's Open With, the Dock's
+  /// with LangshenAgent's ([openAgent]), or paths (Finder's Open With, the Dock's
   /// icon, the File menu's Open Recent), as `code` would open them.
   Future<void> openRequested(List<String> paths) async {
     if (paths.firstOrNull == CodeArgs.agentRequestMarker) {
@@ -888,7 +888,7 @@ class AppWindows extends ChangeNotifier implements WindowHostEvents {
   /// conversation alone.
   static const agentWidth = 520.0;
 
-  /// Explorer's Open with BaoCode: a new agent, ready to type to, in a new
+  /// Explorer's Open with LangshenAgent: a new agent, ready to type to, in a new
   /// window of its own each time ([agentWidth] wide; without windows, in
   /// the chat's). A folder is its project (opened as one if it was not); a
   /// file goes in the composer as if pasted, the agent in the project it is
@@ -975,7 +975,7 @@ class AppWindows extends ChangeNotifier implements WindowHostEvents {
   String _label(AppWindow window) =>
       _workspaceName(window) ?? window.label(_l10n());
 
-  /// What the system shows of [window]: `<name> — BaoCode`.
+  /// What the system shows of [window]: `<name> — LangshenAgent`.
   String _title(AppWindow window) =>
       window.title(_l10n(), name: _workspaceName(window));
 

@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:baocode/network/connection_test.dart';
-import 'package:baocode/network/network_proxy_io.dart';
-import 'package:baocode/network/proxy_settings.dart';
+import 'package:langshenagent/network/connection_test.dart';
+import 'package:langshenagent/network/network_proxy_io.dart';
+import 'package:langshenagent/network/proxy_settings.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 

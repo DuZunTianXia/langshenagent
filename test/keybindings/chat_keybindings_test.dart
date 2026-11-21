@@ -1,12 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/keybindings/chat_keybindings.dart';
-import 'package:baocode/keybindings/default_keybindings.dart';
-import 'package:baocode/keybindings/key_chord.dart';
+import 'package:langshenagent/keybindings/chat_keybindings.dart';
+import 'package:langshenagent/keybindings/default_keybindings.dart';
+import 'package:langshenagent/keybindings/key_chord.dart';
 import 'package:bao_editor/monaco/flutter/keybinding_entry.dart';
-import 'package:baocode/keybindings/keybinding_service.dart';
-import 'package:baocode/l10n/app_localizations_zh.dart';
-import 'package:baocode/l10n/command_titles.dart';
-import 'package:baocode/l10n/l10n.dart';
+import 'package:langshenagent/keybindings/keybinding_service.dart';
+import 'package:langshenagent/l10n/app_localizations_zh.dart';
+import 'package:langshenagent/l10n/command_titles.dart';
+import 'package:langshenagent/l10n/l10n.dart';
 
 void main() {
   test('the chat\'s commands are in the catalog, under Chat', () {

@@ -5,16 +5,16 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bao_editor/monaco/flutter/document_snapshot.dart';
-import 'package:baocode/ide/file_service.dart';
-import 'package:baocode/ide/host_paths.dart';
-import 'package:baocode/ide/ide_commands.dart';
-import 'package:baocode/ide/ide_find_widget.dart';
-import 'package:baocode/ide/ide_fuzzy.dart';
-import 'package:baocode/ide/ide_quick_open.dart';
-import 'package:baocode/ide/ide_status_bar.dart';
-import 'package:baocode/ide/ide_tab_bar.dart';
-import 'package:baocode/ide/ide_workspace.dart' show IdeDocument;
-import 'package:baocode/ide/project_tools.dart';
+import 'package:langshenagent/ide/file_service.dart';
+import 'package:langshenagent/ide/host_paths.dart';
+import 'package:langshenagent/ide/ide_commands.dart';
+import 'package:langshenagent/ide/ide_find_widget.dart';
+import 'package:langshenagent/ide/ide_fuzzy.dart';
+import 'package:langshenagent/ide/ide_quick_open.dart';
+import 'package:langshenagent/ide/ide_status_bar.dart';
+import 'package:langshenagent/ide/ide_tab_bar.dart';
+import 'package:langshenagent/ide/ide_workspace.dart' show IdeDocument;
+import 'package:langshenagent/ide/project_tools.dart';
 import 'package:bao_editor/monaco/flutter/keybinding_entry.dart';
 import 'package:path/path.dart' as p;
 
@@ -279,7 +279,7 @@ void main() {
   });
 
   test('local listing skips excluded folders and reads the branch', () async {
-    final dir = await Directory.systemTemp.createTemp('baocode-ide-index-');
+    final dir = await Directory.systemTemp.createTemp('langshenagent-ide-index-');
     addTearDown(() => dir.delete(recursive: true));
     final root = dir.path;
     Future<void> write(String relative, String text) async {
@@ -324,7 +324,7 @@ void main() {
 
   test('a repository inside the project is listed by its own Git, unless '
       'the project ignores it (#68)', () async {
-    final dir = await Directory.systemTemp.createTemp('baocode-ide-nested-');
+    final dir = await Directory.systemTemp.createTemp('langshenagent-ide-nested-');
     addTearDown(() => dir.delete(recursive: true));
     final root = dir.path;
     Future<void> write(String relative, String text) async {

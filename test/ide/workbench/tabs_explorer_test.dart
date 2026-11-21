@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
-import 'package:baocode/ide/ide_breadcrumbs.dart';
-import 'package:baocode/ide/ide_explorer.dart';
-import 'package:baocode/ide/ide_hover.dart';
-import 'package:baocode/ide/ide_tab_bar.dart';
-import 'package:baocode/ide/ide_welcome.dart';
+import 'package:langshenagent/ide/ide_breadcrumbs.dart';
+import 'package:langshenagent/ide/ide_explorer.dart';
+import 'package:langshenagent/ide/ide_hover.dart';
+import 'package:langshenagent/ide/ide_tab_bar.dart';
+import 'package:langshenagent/ide/ide_welcome.dart';
 
 import 'fake_files.dart';
 

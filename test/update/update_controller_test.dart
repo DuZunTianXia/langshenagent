@@ -1,10 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/ide_notifications.dart';
-import 'package:baocode/l10n/l10n.dart';
-import 'package:baocode/update/update_controller.dart';
-import 'package:baocode/update/update_service.dart';
-import 'package:baocode/update/update_settings.dart';
-import 'package:baocode/update/version.dart';
+import 'package:langshenagent/ide/ide_notifications.dart';
+import 'package:langshenagent/l10n/l10n.dart';
+import 'package:langshenagent/update/update_controller.dart';
+import 'package:langshenagent/update/update_service.dart';
+import 'package:langshenagent/update/update_settings.dart';
+import 'package:langshenagent/update/version.dart';
 
 import 'update_fakes.dart';
 
@@ -85,7 +85,7 @@ void main() {
       ]);
       expect(offer.secondary.single.label, l10n.updateReleaseNotes);
       offer.secondary.single.run();
-      expect(opened, [Uri.parse('https://baocode.dev/changelog#v1.2.0')]);
+      expect(opened, [Uri.parse('https://langshenagent.dev/changelog#v1.2.0')]);
 
       offer.primary[2].run();
       expect(service.skippedVersion, '1.2.0');
@@ -96,11 +96,11 @@ void main() {
       final version = AppVersion.parse('1.2.0+13');
       expect(
         UpdateController.changelogUrl(version, 'zh'),
-        Uri.parse('https://baocode.dev/zh/changelog#v1.2.0'),
+        Uri.parse('https://langshenagent.dev/zh/changelog#v1.2.0'),
       );
       expect(
         UpdateController.changelogUrl(version, 'en'),
-        Uri.parse('https://baocode.dev/changelog#v1.2.0'),
+        Uri.parse('https://langshenagent.dev/changelog#v1.2.0'),
       );
     });
 
@@ -140,14 +140,14 @@ void main() {
       expect(opened, [ManualUpdateRequired.downloadPage]);
       expect(
         '${ManualUpdateRequired.downloadPage}',
-        'https://baocode.dev/download',
+        'https://langshenagent.dev/download',
       );
     });
 
     test('a download that fails its checks is told, not installed', () async {
       make(manifest: manifestOf('1.2.0'));
       backend.downloadError = const UpdateVerificationException(
-        'The download is not signed by BaoCode',
+        'The download is not signed by LangshenAgent',
       );
       await controller.checkNow(notifications, l10n);
       notifications.clearAll();

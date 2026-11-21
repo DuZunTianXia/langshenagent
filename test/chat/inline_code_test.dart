@@ -1,6 +1,6 @@
-import 'package:baocode/chat/widgets/inline_code.dart';
-import 'package:baocode/chat/widgets/markdown_view.dart';
-import 'package:baocode/theme/app_theme.dart';
+import 'package:langshenagent/chat/widgets/inline_code.dart';
+import 'package:langshenagent/chat/widgets/markdown_view.dart';
+import 'package:langshenagent/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';

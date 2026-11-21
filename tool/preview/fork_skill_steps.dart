@@ -7,21 +7,21 @@
 // Two turns: `/code-review` typed (the CLI says nothing of the subagent's
 // work until it is done, then gives all of it), then the model calling a
 // skill (the subagent's messages come as it works). With
-// BAOCODE_PREVIEW_OUT set, it saves a picture of the chat at each step
+// LANGSHENAGENT_PREVIEW_OUT set, it saves a picture of the chat at each step
 // there.
 
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:baocode/chat/chat_screen.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/kernel/agent_kernel.dart';
-import 'package:baocode/kernel/claude_code/claude_code_kernel.dart';
-import 'package:baocode/kernel/claude_code/claude_code_transport.dart';
-import 'package:baocode/kernel/claude_code/mock_claude_code_transport.dart';
-import 'package:baocode/l10n/l10n.dart';
-import 'package:baocode/theme/app_theme.dart';
+import 'package:langshenagent/chat/chat_screen.dart';
+import 'package:langshenagent/chat/chat_session.dart';
+import 'package:langshenagent/kernel/agent_kernel.dart';
+import 'package:langshenagent/kernel/claude_code/claude_code_kernel.dart';
+import 'package:langshenagent/kernel/claude_code/claude_code_transport.dart';
+import 'package:langshenagent/kernel/claude_code/mock_claude_code_transport.dart';
+import 'package:langshenagent/l10n/l10n.dart';
+import 'package:langshenagent/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -69,7 +69,7 @@ void main() {
 
 /// Saves the chat as it shows now, as [name].png, when asked to.
 Future<void> _shot(String name) async {
-  final out = Platform.environment['BAOCODE_PREVIEW_OUT'];
+  final out = Platform.environment['LANGSHENAGENT_PREVIEW_OUT'];
   if (out == null) return;
   await Future<void>.delayed(const Duration(milliseconds: 400));
   final boundary =

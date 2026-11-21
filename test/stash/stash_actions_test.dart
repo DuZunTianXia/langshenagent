@@ -1,5 +1,5 @@
-import 'package:baocode/stash/stash_actions.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:langshenagent/stash/stash_actions.dart';
+import 'package:langshenagent/workspace/workspace.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -11,15 +11,15 @@ void main() {
       Project at(String path) =>
           workspace.projects.firstWhere((project) => project.path == path);
       final local = workspace.projects.firstWhere(
-        (project) => project.name == 'baocode',
+        (project) => project.name == 'langshenagent',
       );
-      await workspace.openFolder('ssh://home-imac/work/baocode');
+      await workspace.openFolder('ssh://home-imac/work/langshenagent');
       await workspace.openFolder('ssh://home-imac/work/alone');
 
-      expect(stashProjectLabel(workspace, local), 'baocode');
+      expect(stashProjectLabel(workspace, local), 'langshenagent');
       expect(
-        stashProjectLabel(workspace, at('ssh://home-imac/work/baocode')),
-        'baocode · home-imac',
+        stashProjectLabel(workspace, at('ssh://home-imac/work/langshenagent')),
+        'langshenagent · home-imac',
       );
       expect(
         stashProjectLabel(workspace, at('ssh://home-imac/work/alone')),

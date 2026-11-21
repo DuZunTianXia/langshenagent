@@ -18,8 +18,8 @@ import 'bao_bash.dart';
 /// [size] bytes, as a download's size reads: `13 MB`.
 String _megabytes(int size) => '${(size / (1024 * 1024)).round()} MB';
 
-/// Where BaoCode Bash's source is.
-final _repository = Uri.parse('https://github.com/baocode-dev/bash-exe');
+/// Where LangshenAgent Bash's source is.
+final _repository = Uri.parse('https://github.com/langshenagent-dev/bash-exe');
 
 /// [shell]'s name in the list.
 String windowsShellName(BuildContext context, WindowsShell shell) =>
@@ -33,7 +33,7 @@ String windowsShellName(BuildContext context, WindowsShell shell) =>
 
 /// Settings → General → Command Line (Windows): the shell agents run
 /// commands in, picked from a list (Git Bash where it is installed); under
-/// it BaoCode Bash's version, download and updates when it is the one
+/// it LangshenAgent Bash's version, download and updates when it is the one
 /// picked, or the file of a custom one.
 class CommandLineSettings extends StatefulWidget {
   const CommandLineSettings({super.key, required this.bash, this.open});
@@ -119,7 +119,7 @@ class _CommandLineSettingsState extends State<CommandLineSettings> {
     final progress = bash.progress;
     final error = bash.error;
     return SettingsRow(
-      label: 'BaoCode Bash',
+      label: 'LangshenAgent Bash',
       description: l10n.baoBashDescription,
       below: [
         Text(switch ((installed, progress)) {
@@ -204,7 +204,7 @@ class _Link extends StatelessWidget {
   );
 }
 
-/// Over the composer, on Windows: BaoCode Bash recommended to whoever
+/// Over the composer, on Windows: LangshenAgent Bash recommended to whoever
 /// runs commands in neither it nor Git Bash ([BaoBash.showsHint]).
 /// Install and Use picks it and downloads it, the progress shown here;
 /// Not Now puts it off for good (Settings → General still picks it).

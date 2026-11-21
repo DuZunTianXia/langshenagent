@@ -679,7 +679,7 @@ Future<List<String>> _box(
 Future<String> _sheetName(BrowserTab tab, String id) async {
   final sheet = BrowserRecords.instance.styleSheets(tab)[id];
   if (sheet == null) return '<style> in the page';
-  if (sheet['baocodeName'] case final String name) return name;
+  if (sheet['langshenagentName'] case final String name) return name;
   final url = sheet['sourceURL'] as String? ?? '';
   var name = url.isNotEmpty && sheet['isInline'] != true
       ? url
@@ -701,7 +701,7 @@ Future<String> _sheetName(BrowserTab tab, String id) async {
       // Gone: as it is.
     }
   }
-  sheet['baocodeName'] = name;
+  sheet['langshenagentName'] = name;
   return name;
 }
 

@@ -349,7 +349,7 @@ Future<void> main(List<String> arguments) async {
       cacheDir: DataDirectory.current.cacheDir,
       storage: files.storage,
       // Claude Code's skills are the installed app's: a build run from the
-      // source, often on a data folder of its own (`BAOCODE_DATA_DIR`),
+      // source, often on a data folder of its own (`LANGSHENAGENT_DATA_DIR`),
       // would point the user's agents at its stashes.
       installSkill: !kDebugMode,
       // The user's GitHub and GitLab accounts: their tokens in the
@@ -370,7 +370,7 @@ Future<void> main(List<String> arguments) async {
   // What shows at launch (settings.json's `workbench.mainWindow`): with
   // windows of the IDE's own, the chat's and those to open again; with
   // the IDE in the main window, its layout. Started for something (Open
-  // with BaoCode or Fast Ide, the `code` command), that alone.
+  // with LangshenAgent or Fast Ide, the `code` command), that alone.
   final request = AppPlatform.isMacOS
       ? await OpenRequests.launchRequest()
       : LaunchRequest.of(arguments);
@@ -448,7 +448,7 @@ Future<void> main(List<String> arguments) async {
     unawaited(themeExtensions.apply());
     themeExtensions.followIconThemeSetting(files!.settings);
   }
-  final app = BaoCodeApp(
+  final app = LangshenAgentApp(
     windows: windows,
     workspace: workspace,
     appLocale: locale,
@@ -474,7 +474,7 @@ Future<void> main(List<String> arguments) async {
     conversations: ClaudeConversationSearch(),
     customizations: customizations,
   );
-  // With windows, each is a view of its own (see [BaoCodeApp.build]).
+  // With windows, each is a view of its own (see [LangshenAgentApp.build]).
   if (windows.started) {
     runWidget(app);
   } else {
@@ -557,7 +557,7 @@ void followSettingsFiles(SettingsFiles files) {
   // agent starts.
   ClaudePathSetting.current = () =>
       ClaudePathSetting.parse(files.settings[ClaudePathSetting.settingKey]);
-  // Settings → General → Claude Code: the core sessions run on (BaoCode's
+  // Settings → General → Claude Code: the core sessions run on (LangshenAgent's
   // own, or the CLI), read as each agent starts. Unset, the CLI where it
   // is installed (looked for on the app's PATH, then the shell's), else
   // the built-in core.
@@ -675,7 +675,7 @@ void followSettingsFiles(SettingsFiles files) {
 }
 
 /// The app's updates (lib/update/): looked for as settings.json's
-/// `update.mode` says, from baocode.dev, installed as the app quits. None
+/// `update.mode` says, from langshenagent.dev, installed as the app quits. None
 /// where the build does not update itself.
 UpdateController? _startUpdates(SettingsFiles files) {
   final platform = platformUpdates(
@@ -793,8 +793,8 @@ void _startTelemetry(SettingsFiles files, LinkHost? link) {
   AppLifecycleListener(onResume: telemetry.markActive);
 }
 
-class BaoCodeApp extends StatefulWidget {
-  const BaoCodeApp({
+class LangshenAgentApp extends StatefulWidget {
+  const LangshenAgentApp({
     super.key,
     this.workspace,
     this.themeExtensions,
@@ -846,16 +846,16 @@ class BaoCodeApp extends StatefulWidget {
   final TerminalBackend? terminalBackend;
 
   /// Whether each window's app has no semantics (see
-  /// _BaoCodeAppState._withoutSemantics): on Windows itself and in the
+  /// _LangshenAgentAppState._withoutSemantics): on Windows itself and in the
   /// macOS app, unless a test says. Tests keep theirs, to find widgets by.
   @visibleForTesting
   static bool? debugWithoutSemantics;
 
   @override
-  State<BaoCodeApp> createState() => _BaoCodeAppState();
+  State<LangshenAgentApp> createState() => _LangshenAgentAppState();
 }
 
-class _BaoCodeAppState extends State<BaoCodeApp>
+class _LangshenAgentAppState extends State<LangshenAgentApp>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late final Workspace _workspace =
       widget.workspace ??
@@ -1064,7 +1064,7 @@ class _BaoCodeAppState extends State<BaoCodeApp>
   /// it shows built anew as its folder changes.
   Widget _app(AppWindow window) => _withoutSemantics(
     MaterialApp(
-      title: 'BaoCode',
+      title: 'LangshenAgent',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
       themeAnimationDuration: Duration.zero,
@@ -1152,7 +1152,7 @@ class _BaoCodeAppState extends State<BaoCodeApp>
   /// under the root there is nothing to move, and no tree to keep up each
   /// frame.
   static Widget _withoutSemantics(Widget app) =>
-      (BaoCodeApp.debugWithoutSemantics ??
+      (LangshenAgentApp.debugWithoutSemantics ??
           (AppPlatform.isWindowsHost || AppPlatform.isMacOSApp))
       ? ExcludeSemantics(child: app)
       : app;

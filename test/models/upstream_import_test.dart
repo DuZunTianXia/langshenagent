@@ -1,13 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:baocode/models/featured_upstreams.dart';
-import 'package:baocode/models/model_provider.dart';
-import 'package:baocode/models/upstream_import.dart';
+import 'package:langshenagent/models/featured_upstreams.dart';
+import 'package:langshenagent/models/model_provider.dart';
+import 'package:langshenagent/models/upstream_import.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 String _link(Map<String, String> query) => Uri(
-  scheme: 'baocode',
+  scheme: 'langshenagent',
   host: 'provider',
   path: '/import',
   queryParameters: query,
@@ -72,7 +72,7 @@ void main() {
         isNull,
       );
       // Other links of the scheme, and other schemes.
-      expect(UpstreamImport.parse('baocode://agent?path=/tmp'), isNull);
+      expect(UpstreamImport.parse('langshenagent://agent?path=/tmp'), isNull);
       expect(
         UpstreamImport.parse('https://provider/import?url=https://a.com'),
         isNull,
@@ -188,7 +188,7 @@ void main() {
       expect(list.single.logo, isNull);
     });
 
-    test('the list baocode.dev serves is whole: each entry shown, its logo '
+    test('the list langshenagent.dev serves is whole: each entry shown, its logo '
         'there, its id its own', () {
       final text = File('site/featured/upstreams.json').readAsStringSync();
       final raw = (jsonDecode(text) as Map)['upstreams'] as List;

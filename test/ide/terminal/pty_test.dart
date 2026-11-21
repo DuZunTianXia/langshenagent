@@ -5,11 +5,11 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/terminal/pty.dart';
-import 'package:baocode/ide/terminal/pty_io.dart';
-import 'package:baocode/ide/terminal/terminal_shell.dart';
-import 'package:baocode/kernel/claude_code/claude_environment.dart';
-import 'package:baocode/platform/child_process_registry.dart';
+import 'package:langshenagent/ide/terminal/pty.dart';
+import 'package:langshenagent/ide/terminal/pty_io.dart';
+import 'package:langshenagent/ide/terminal/terminal_shell.dart';
+import 'package:langshenagent/kernel/claude_code/claude_environment.dart';
+import 'package:langshenagent/platform/child_process_registry.dart';
 import 'package:path/path.dart' as p;
 
 /// The app's side of its terminals' processes: the record of them, stopping
@@ -21,7 +21,7 @@ void main() {
   late File registryFile;
 
   setUp(() {
-    dir = Directory.systemTemp.createTempSync('baocode-pty');
+    dir = Directory.systemTemp.createTempSync('langshenagent-pty');
     registryFile = File(p.join(dir.path, 'pty-processes.json'));
     // Never the user's own list, nor their processes.
     PtyProcesses.registry = ChildProcessRegistry(
@@ -72,7 +72,7 @@ void main() {
     expect(await pty.exitCode.timeout(timeout), 0);
     expect(
       printed.toString(),
-      contains('term=xterm-256color program=baocode lang=en_US.UTF-8'),
+      contains('term=xterm-256color program=langshenagent lang=en_US.UTF-8'),
     );
   });
 
@@ -80,7 +80,7 @@ void main() {
     const cached = {
       'SHELL': '/chosen/bash',
       'PATH': '/cached/bin',
-      'BAOCODE_TEST_CACHE_ONLY': 'cached',
+      'LANGSHENAGENT_TEST_CACHE_ONLY': 'cached',
     };
     setUp(() => ClaudeEnvironment.use(cached));
     tearDown(() => ClaudeEnvironment.use(null));
@@ -102,8 +102,8 @@ void main() {
           isTrue,
         );
         expect(
-          launch.environment!['BAOCODE_TEST_CACHE_ONLY'] ==
-              Platform.environment['BAOCODE_TEST_CACHE_ONLY'],
+          launch.environment!['LANGSHENAGENT_TEST_CACHE_ONLY'] ==
+              Platform.environment['LANGSHENAGENT_TEST_CACHE_ONLY'],
           isTrue,
         );
       }
@@ -124,7 +124,7 @@ void main() {
             shell: shell,
             shellIntegration: false,
           );
-          expect(launch.environment!['BAOCODE_TEST_CACHE_ONLY'], 'cached');
+          expect(launch.environment!['LANGSHENAGENT_TEST_CACHE_ONLY'], 'cached');
         }
       },
     );
@@ -136,9 +136,9 @@ void main() {
         expect(launch.executable, cached['SHELL']);
         expect(launch.arguments, Platform.isMacOS ? ['-l'] : isEmpty);
         expect(
-          launch.environment!['BAOCODE_TEST_CACHE_ONLY'] ==
+          launch.environment!['LANGSHENAGENT_TEST_CACHE_ONLY'] ==
               (Platform.isMacOS
-                  ? Platform.environment['BAOCODE_TEST_CACHE_ONLY']
+                  ? Platform.environment['LANGSHENAGENT_TEST_CACHE_ONLY']
                   : 'cached'),
           isTrue,
         );

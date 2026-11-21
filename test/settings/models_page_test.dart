@@ -1,33 +1,33 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:baocode/icons/brand_logos.dart';
-import 'package:baocode/icons/project_icon.dart';
-import 'package:baocode/ide/ide_hover.dart';
-import 'package:baocode/ide/ide_button.dart';
-import 'package:baocode/ide/ide_back_button.dart';
-import 'package:baocode/ide/ide_spinning.dart';
-import 'package:baocode/kernel/claude_code/claude_core_setting.dart';
-import 'package:baocode/kernel/claude_code/claude_haiku.dart';
-import 'package:baocode/models/claude_resets.dart';
-import 'package:baocode/models/codex/codex_service.dart';
-import 'package:baocode/models/codex/codex_usage.dart';
-import 'package:baocode/models/magpie.dart';
-import 'package:baocode/models/magpie_follow.dart';
-import 'package:baocode/models/model_provider.dart';
-import 'package:baocode/models/model_providers.dart';
-import 'package:baocode/models/secret_store.dart';
-import 'package:baocode/models/upstream.dart';
-import 'package:baocode/settings/pages/model_dialogs.dart';
-import 'package:baocode/settings/pages/models_page.dart';
-import 'package:baocode/settings/pages/settings_widgets.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:langshenagent/icons/brand_logos.dart';
+import 'package:langshenagent/icons/project_icon.dart';
+import 'package:langshenagent/ide/ide_hover.dart';
+import 'package:langshenagent/ide/ide_button.dart';
+import 'package:langshenagent/ide/ide_back_button.dart';
+import 'package:langshenagent/ide/ide_spinning.dart';
+import 'package:langshenagent/kernel/claude_code/claude_core_setting.dart';
+import 'package:langshenagent/kernel/claude_code/claude_haiku.dart';
+import 'package:langshenagent/models/claude_resets.dart';
+import 'package:langshenagent/models/codex/codex_service.dart';
+import 'package:langshenagent/models/codex/codex_usage.dart';
+import 'package:langshenagent/models/magpie.dart';
+import 'package:langshenagent/models/magpie_follow.dart';
+import 'package:langshenagent/models/model_provider.dart';
+import 'package:langshenagent/models/model_providers.dart';
+import 'package:langshenagent/models/secret_store.dart';
+import 'package:langshenagent/models/upstream.dart';
+import 'package:langshenagent/settings/pages/model_dialogs.dart';
+import 'package:langshenagent/settings/pages/models_page.dart';
+import 'package:langshenagent/settings/pages/settings_widgets.dart';
+import 'package:langshenagent/workspace/workspace.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/chat/widgets/pixel_loader.dart';
+import 'package:langshenagent/chat/widgets/pixel_loader.dart';
 
 import '../models/claude_resets_test.dart';
 
@@ -333,7 +333,7 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('on BaoCode\'s own core there is no built-in provider: '
+  testWidgets('on LangshenAgent\'s own core there is no built-in provider: '
       'neither listed nor offered as the default', (tester) async {
     ClaudeCore.current = () => ClaudeCore.builtin;
     // Picked on the CLI: Claude Code's own default, and its Haiku.
@@ -1395,7 +1395,7 @@ void main() {
 
     setUp(() {
       directory = Directory.systemTemp.createTempSync(
-        'baocode-account-import-',
+        'langshenagent-account-import-',
       );
     });
 
@@ -1409,7 +1409,7 @@ void main() {
     }) async {
       final messenger = tester.binding.defaultBinaryMessenger;
       messenger.setMockMethodCallHandler(
-        const MethodChannel('baocode/window'),
+        const MethodChannel('langshenagent/window'),
         (call) async {
           if (call.method != 'pickOpenFiles') return null;
           expect(input, isFalse);
@@ -1419,7 +1419,7 @@ void main() {
       );
       addTearDown(
         () => messenger.setMockMethodCallHandler(
-          const MethodChannel('baocode/window'),
+          const MethodChannel('langshenagent/window'),
           null,
         ),
       );

@@ -1,11 +1,11 @@
-import 'package:baocode/ide/ide_notifications.dart';
-import 'package:baocode/l10n/l10n.dart';
-import 'package:baocode/settings/app_settings.dart';
-import 'package:baocode/settings/user_settings.dart';
-import 'package:baocode/tips/builtin_tips.dart';
-import 'package:baocode/tips/feature_tip.dart';
-import 'package:baocode/tips/feature_tips_controller.dart';
-import 'package:baocode/update/version.dart';
+import 'package:langshenagent/ide/ide_notifications.dart';
+import 'package:langshenagent/l10n/l10n.dart';
+import 'package:langshenagent/settings/app_settings.dart';
+import 'package:langshenagent/settings/user_settings.dart';
+import 'package:langshenagent/tips/builtin_tips.dart';
+import 'package:langshenagent/tips/feature_tip.dart';
+import 'package:langshenagent/tips/feature_tips_controller.dart';
+import 'package:langshenagent/update/version.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -394,7 +394,7 @@ void main() {
         final note = notifications.notifications.single;
         expect(
           note.message,
-          'BaoCode was updated to 1.2.0. New: Title new, Title newer.',
+          'LangshenAgent was updated to 1.2.0. New: Title new, Title newer.',
         );
         expect(note.primary.map((action) => action.label), [
           'Title new',

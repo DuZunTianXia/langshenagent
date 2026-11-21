@@ -3,17 +3,17 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:bao_link/bao_link.dart';
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/customize/customization_store.dart';
-import 'package:baocode/icons/project_icon.dart';
-import 'package:baocode/ide/file_service.dart';
-import 'package:baocode/kernel/agent_kernel.dart' show KernelChoiceKind;
-import 'package:baocode/link/chat_codec.dart';
-import 'package:baocode/link/link_host.dart';
-import 'package:baocode/link/phone_push.dart';
-import 'package:baocode/kernel/mock/mock_kernels.dart';
-import 'package:baocode/workspace/project_workspace.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:langshenagent/chat/chat_models.dart';
+import 'package:langshenagent/customize/customization_store.dart';
+import 'package:langshenagent/icons/project_icon.dart';
+import 'package:langshenagent/ide/file_service.dart';
+import 'package:langshenagent/kernel/agent_kernel.dart' show KernelChoiceKind;
+import 'package:langshenagent/link/chat_codec.dart';
+import 'package:langshenagent/link/link_host.dart';
+import 'package:langshenagent/link/phone_push.dart';
+import 'package:langshenagent/kernel/mock/mock_kernels.dart';
+import 'package:langshenagent/workspace/project_workspace.dart';
+import 'package:langshenagent/workspace/workspace.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
@@ -40,10 +40,10 @@ void main() {
       ),
       filesOf: (project) => (
         files: _MemoryFiles({
-          '~/code/baocode/README.md': '# BaoCode',
-          '~/code/baocode/lib/chat/chat_history_view.dart': 'class View {}',
-          '~/code/baocode/assets/logo.png': null,
-          '~/code/baocode/node_modules/x/index.js': '',
+          '~/code/langshenagent/README.md': '# LangshenAgent',
+          '~/code/langshenagent/lib/chat/chat_history_view.dart': 'class View {}',
+          '~/code/langshenagent/assets/logo.png': null,
+          '~/code/langshenagent/node_modules/x/index.js': '',
           '/tmp/a.log': 'started',
         }),
         paths: p.posix,
@@ -119,7 +119,7 @@ void main() {
   });
 
   test('one relay picked: kept to, told and bound to alone; automatic '
-      'again, all of BaoCode\'s', () async {
+      'again, all of LangshenAgent\'s', () async {
     await host.setEnabled(true);
     expect(platform.boundRelays, defaultLinkRelays);
     // The one in use picked at first.
@@ -330,13 +330,13 @@ void main() {
     expect(state.device.name, 'Test Mac');
     expect(
       [for (final p in state.projects) p.name],
-      ['baocode', 'cursor-docs', 'api-gateway'],
+      ['langshenagent', 'cursor-docs', 'api-gateway'],
     );
     expect(state.projects.first.branch, 'main');
     final first = state.sessions.firstWhere(
       (s) => s.title == 'Sticky user message on scroll',
     );
-    expect(first.project, '~/code/baocode');
+    expect(first.project, '~/code/langshenagent');
 
     final opened = LinkSessionUpdate.fromJson(
       (await peer.call(LinkMethods.open, {'session': first.id}))!
@@ -480,7 +480,7 @@ void main() {
         .session
         .attach();
     final listed =
-        (await peer.call(LinkMethods.files, {'project': '~/code/baocode'}))!
+        (await peer.call(LinkMethods.files, {'project': '~/code/langshenagent'}))!
             as Map;
     // Not what the index leaves out (node_modules).
     expect(listed['paths'], [
@@ -495,7 +495,7 @@ void main() {
     // A folder as it is on disk: what the list leaves out too.
     expect(
       await peer.call(LinkMethods.folder, {
-        'project': '~/code/baocode',
+        'project': '~/code/langshenagent',
         'path': '',
       }),
       {
@@ -505,7 +505,7 @@ void main() {
     );
     expect(
       await peer.call(LinkMethods.folder, {
-        'project': '~/code/baocode',
+        'project': '~/code/langshenagent',
         'path': 'node_modules/x',
       }),
       {
@@ -515,7 +515,7 @@ void main() {
     );
     await expectLater(
       peer.call(LinkMethods.folder, {
-        'project': '~/code/baocode',
+        'project': '~/code/langshenagent',
         'path': '../..',
       }),
       throwsA(
@@ -525,23 +525,23 @@ void main() {
 
     final read =
         (await peer.call(LinkMethods.read, {
-              'project': '~/code/baocode',
+              'project': '~/code/langshenagent',
               'path': 'lib/chat/chat_history_view.dart',
             }))!
             as Map;
     expect(read['text'], 'class View {}');
     final image =
         (await peer.call(LinkMethods.read, {
-              'project': '~/code/baocode',
+              'project': '~/code/langshenagent',
               'path': 'assets/logo.png',
             }))!
             as Map;
     expect(image['binary'], isTrue);
 
     for (final (project, path) in [
-      ('~/code/baocode', '../../.ssh/id_ed25519'),
-      ('~/code/baocode', ''),
-      ('~', 'code/baocode/README.md'),
+      ('~/code/langshenagent', '../../.ssh/id_ed25519'),
+      ('~/code/langshenagent', ''),
+      ('~', 'code/langshenagent/README.md'),
     ]) {
       await expectLater(
         peer.call(LinkMethods.read, {'project': project, 'path': path}),
@@ -561,7 +561,7 @@ void main() {
     final peer = await pair();
     Future<Object?> send(String text, String id) => peer.call(
       LinkMethods.send,
-      {'project': '~/code/baocode', 'text': text, 'id': id},
+      {'project': '~/code/langshenagent', 'text': text, 'id': id},
     );
     final first = await send('only once', 'm1');
     // Its answer lost, sent again: answered as before.
@@ -582,14 +582,14 @@ void main() {
     final peer = await pair();
     final read =
         (await peer.call(LinkMethods.read, {
-              'project': '~/code/baocode',
+              'project': '~/code/langshenagent',
               'path': '/tmp/./a.log',
             }))!
             as Map;
     expect(read['text'], 'started');
     await expectLater(
       peer.call(LinkMethods.read, {
-        'project': '~/code/baocode',
+        'project': '~/code/langshenagent',
         'path': '/tmp/none.log',
       }),
       throwsA(
@@ -599,7 +599,7 @@ void main() {
     // As it is, for an app of the phone's to open.
     final file =
         (await peer.call(LinkMethods.download, {
-              'project': '~/code/baocode',
+              'project': '~/code/langshenagent',
               'path': '/tmp/a.log',
             }))!
             as Map;
@@ -613,7 +613,7 @@ void main() {
       workspace: workspace,
       platform: platform,
       filesOf: (project) => (
-        files: _MemoryFiles({'~/code/baocode/README.md': '#'}),
+        files: _MemoryFiles({'~/code/langshenagent/README.md': '#'}),
         paths: p.posix,
       ),
       reachHost: (project) async => throw StateError('ssh: timed out'),
@@ -621,8 +621,8 @@ void main() {
     await host.load();
     final peer = await pair();
     for (final (method, params) in [
-      (LinkMethods.files, {'project': '~/code/baocode'}),
-      (LinkMethods.read, {'project': '~/code/baocode', 'path': 'README.md'}),
+      (LinkMethods.files, {'project': '~/code/langshenagent'}),
+      (LinkMethods.read, {'project': '~/code/langshenagent', 'path': 'README.md'}),
     ]) {
       await expectLater(
         peer.call(method, params),
@@ -976,7 +976,7 @@ void main() {
     await turn('two');
     await _until(() => platform.posted.isNotEmpty);
     final (url, body) = platform.posted.single;
-    expect(url.toString(), 'https://push.baocode.dev/v1/push');
+    expect(url.toString(), 'https://push.langshenagent.dev/v1/push');
     final key = '${host.id}/${session.id}';
     expect(body, {
       'token': token,

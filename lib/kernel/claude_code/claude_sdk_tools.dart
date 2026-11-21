@@ -129,8 +129,8 @@ abstract interface class ClaudeSdkGate {
 
 /// The app's server and its tools (registered as their features start).
 abstract final class ClaudeSdkTools {
-  /// The server's name: its tools are `mcp__baocode__<name>` to the agent.
-  static const server = 'baocode';
+  /// The server's name: its tools are `mcp__langshenagent__<name>` to the agent.
+  static const server = 'langshenagent';
 
   static final Map<String, ClaudeSdkTool> _tools = {};
 
@@ -174,7 +174,7 @@ abstract final class ClaudeSdkTools {
   /// user at the computer ([ClaudeSdkGate.asksUser]).
   static bool asksUser(String cwd) => gate?.asksUser(cwd) ?? true;
 
-  /// The tool an agent calls [name] (`mcp__baocode__<name>`), if one of
+  /// The tool an agent calls [name] (`mcp__langshenagent__<name>`), if one of
   /// this server's.
   static ClaudeSdkTool? called(String name) {
     const prefix = 'mcp__${server}__';

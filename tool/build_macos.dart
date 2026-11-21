@@ -15,7 +15,7 @@
 //                                                build/remote/ (CI builds
 //                                                it once, for both apps)
 //   dart run tool/build_macos.dart --channel      the channel build
-//                                                (BAOCODE_CHANNEL; lib/channel/),
+//                                                (LANGSHENAGENT_CHANNEL; lib/channel/),
 //                                                its files named -channel
 //   dart run tool/build_macos.dart --remote-release [VERSION]
 //                                                take the remote server
@@ -24,9 +24,9 @@
 //                                                fetch_remote_server.dart)
 //                                                instead of building one
 //
-// They land in build/installers/: BaoCode-<version>-<arch>.dmg and
-// BaoCode-<version>-mac-<arch>.zip, arch arm64 or x64 (the channel
-// build's ending in -channel: BaoCode-<version>-<arch>-channel.dmg…); beside them,
+// They land in build/installers/: LangshenAgent-<version>-<arch>.dmg and
+// LangshenAgent-<version>-mac-<arch>.zip, arch arm64 or x64 (the channel
+// build's ending in -channel: LangshenAgent-<version>-<arch>-channel.dmg…); beside them,
 // remote/<VERSION>/, the remote server's gzipped builds, which the app
 // downloads instead of carrying them (tool/build_remote_server.dart), to
 // upload with the release.
@@ -40,20 +40,20 @@
 // Signed with a Developer ID and notarised when the environment says how
 // (docs/release.md has how to get each):
 //
-//   BAOCODE_MACOS_SIGN_IDENTITY  the certificate's SHA-1 (40 hex digits, as
+//   LANGSHENAGENT_MACOS_SIGN_IDENTITY  the certificate's SHA-1 (40 hex digits, as
 //                                `security find-identity -v -p codesigning`
 //                                lists it) or its name, "Developer ID
 //                                Application: <name> (<team>)"; in a
 //                                keychain searched
-//   BAOCODE_NOTARY_KEY           an App Store Connect API key (.p8), its path
-//   BAOCODE_NOTARY_KEY_ID        that key's ID
-//   BAOCODE_NOTARY_ISSUER        its issuer ID
+//   LANGSHENAGENT_NOTARY_KEY           an App Store Connect API key (.p8), its path
+//   LANGSHENAGENT_NOTARY_KEY_ID        that key's ID
+//   LANGSHENAGENT_NOTARY_ISSUER        its issuer ID
 //
 // Without an identity the app is signed ad hoc, again: the remote server's
 // files put in it after flutter signed it have to be sealed too, or the
 // signature is broken and the app refuses the update (lib/update/
 // installer_io.dart checks it). Ad hoc, it opens on this machine; Gatekeeper
-// refuses it on anyone else's ("BaoCode is damaged and can't be opened").
+// refuses it on anyone else's ("LangshenAgent is damaged and can't be opened").
 // Signed but not notarised, it is refused too, with another message.
 import 'dart:convert';
 import 'dart:io';
@@ -61,7 +61,7 @@ import 'dart:io';
 /// Where the .app flutter leaves behind goes, and where the disk image is
 /// written. Under build/, which the repository already ignores and flutter
 /// clean already removes.
-const _bundleRelative = 'build/macos/Build/Products/Release/BaoCode.app';
+const _bundleRelative = 'build/macos/Build/Products/Release/LangshenAgent.app';
 const _installersRelative = 'build/installers';
 const _symbolsRelative = 'build/symbols';
 
@@ -85,13 +85,13 @@ const _remoteRelative = 'build/remote';
 const _remoteReleaseRelative = 'build/remote-release';
 
 /// The browser's native messaging host, beside the app's executable.
-const _browserHost = 'baocode-browser-host';
+const _browserHost = 'langshenagent-browser-host';
 
 /// What has to be in the .app for it to start. As on Windows, a build that
 /// failed late still leaves an .app behind that looks complete — these are
 /// what tell the difference.
 const _required = [
-  'Contents/MacOS/BaoCode',
+  'Contents/MacOS/LangshenAgent',
   'Contents/Info.plist',
   'Contents/Frameworks/FlutterMacOS.framework',
   'Contents/Frameworks/App.framework',
@@ -103,7 +103,7 @@ const _required = [
   // Finder's context menu (macos/FinderExtension), which Settings → General
   // turns on.
   'Contents/PlugIns/FinderExtension.appex',
-  // What Chrome runs for BaoCode's extension (macos/BrowserBridge).
+  // What Chrome runs for LangshenAgent's extension (macos/BrowserBridge).
   'Contents/MacOS/$_browserHost',
   // The server remote projects run on their host (Linux and macOS, x64 and
   // arm64; tool/build_remote_server.dart): which build, and where it is
@@ -153,7 +153,7 @@ Future<void> main(List<String> arguments) async {
       'build',
       'macos',
       '--release',
-      if (channel) '--dart-define=BAOCODE_CHANNEL=true',
+      if (channel) '--dart-define=LANGSHENAGENT_CHANNEL=true',
       // Its symbols kept, to be saved before it is stripped below.
       '--extra-gen-snapshot-options=--no-strip',
     ], root.path);
@@ -217,13 +217,13 @@ Future<void> main(List<String> arguments) async {
   // breaks the signature of every binary in it.
   final signing = _Signing.fromEnvironment(root) ?? _Signing(root, '-', null);
   if (signing.adHoc) {
-    _step('Signing ad hoc: \$BAOCODE_MACOS_SIGN_IDENTITY is not set');
+    _step('Signing ad hoc: \$LANGSHENAGENT_MACOS_SIGN_IDENTITY is not set');
     stdout.writeln(
       '  It opens on this machine only: Gatekeeper refuses it anywhere\n'
       '  else.',
     );
   } else if (signing.notary == null) {
-    _step('Not notarising: \$BAOCODE_NOTARY_KEY is not set');
+    _step('Not notarising: \$LANGSHENAGENT_NOTARY_KEY is not set');
     stdout.writeln(
       '  Signed but not notarised, the app is still refused by\n'
       '  Gatekeeper on other machines.',
@@ -239,7 +239,7 @@ Future<void> main(List<String> arguments) async {
   final finishing = <Future<List<File>>>[];
   for (final MapEntry(key: lipoArch, value: arch) in _architectures.entries) {
     _step('Making the $arch app');
-    final app = Directory('${root.path}/$_thinRelative/$arch/BaoCode.app');
+    final app = Directory('${root.path}/$_thinRelative/$arch/LangshenAgent.app');
     if (app.parent.existsSync()) app.parent.deleteSync(recursive: true);
     app.parent.createSync(recursive: true);
     await _run('ditto', ['--arch', lipoArch, bundle.path, app.path], root.path);
@@ -251,7 +251,7 @@ Future<void> main(List<String> arguments) async {
 
     _step('Making the $arch disk image');
     final dmg = File(
-      '${installers.path}/BaoCode-${version.marketing}-$arch$edition.dmg',
+      '${installers.path}/LangshenAgent-${version.marketing}-$arch$edition.dmg',
     );
     // A window with the app, an arrow and an Applications shortcut to drag
     // it onto, on the background tool/dmg_background.swift draws (the
@@ -260,7 +260,7 @@ Future<void> main(List<String> arguments) async {
     if (dmg.existsSync()) dmg.deleteSync();
     await _run(createDmg, [
       '--volname',
-      'BaoCode ${version.marketing}',
+      'LangshenAgent ${version.marketing}',
       '--background',
       '${root.path}/$_dmgBackgroundRelative',
       '--window-size',
@@ -269,11 +269,11 @@ Future<void> main(List<String> arguments) async {
       '--icon-size',
       '128',
       '--icon',
-      'BaoCode.app',
+      'LangshenAgent.app',
       '165',
       '145',
       '--hide-extension',
-      'BaoCode.app',
+      'LangshenAgent.app',
       '--app-drop-link',
       '495',
       '145',
@@ -313,12 +313,12 @@ Future<void> main(List<String> arguments) async {
     final mb = (file.lengthSync() / (1024 * 1024)).toStringAsFixed(1);
     stdout.writeln('  ${file.path}  ($mb MB)');
   }
-  final base = '${installers.path}/BaoCode-${version.marketing}';
+  final base = '${installers.path}/LangshenAgent-${version.marketing}';
   stdout.writeln();
   if (servers.isEmpty) {
     stdout
       ..writeln('The app downloads the remote server published:')
-      ..writeln('  https://dl.baocode.dev/releases/remote/$remoteVersion/');
+      ..writeln('  https://dl.langshenagent.dev/releases/remote/$remoteVersion/');
   } else {
     stdout
       ..writeln('Upload the remote server\'s builds, which the app downloads')
@@ -326,7 +326,7 @@ Future<void> main(List<String> arguments) async {
       ..writeln('--remote-release):')
       ..writeln(
         '  ${downloads.path}/*  ->  '
-        'https://dl.baocode.dev/releases/remote/$remoteVersion/',
+        'https://dl.langshenagent.dev/releases/remote/$remoteVersion/',
       );
   }
   stdout
@@ -371,7 +371,7 @@ Future<List<File>> _finish(
   // permissions and extended attributes, which a framework's signature
   // depends on).
   final zip = File(
-    '${installers.path}/BaoCode-$marketing-mac-$arch$edition.zip',
+    '${installers.path}/LangshenAgent-$marketing-mac-$arch$edition.zip',
   );
   if (zip.existsSync()) zip.deleteSync();
   await _run('ditto', [
@@ -393,16 +393,16 @@ class _Signing {
   /// Null when no identity is given (the app is then signed ad hoc).
   static _Signing? fromEnvironment(Directory root) {
     final environment = Platform.environment;
-    final identity = environment['BAOCODE_MACOS_SIGN_IDENTITY'] ?? '';
+    final identity = environment['LANGSHENAGENT_MACOS_SIGN_IDENTITY'] ?? '';
     if (identity.isEmpty) return null;
-    final key = environment['BAOCODE_NOTARY_KEY'] ?? '';
-    final keyId = environment['BAOCODE_NOTARY_KEY_ID'] ?? '';
-    final issuer = environment['BAOCODE_NOTARY_ISSUER'] ?? '';
+    final key = environment['LANGSHENAGENT_NOTARY_KEY'] ?? '';
+    final keyId = environment['LANGSHENAGENT_NOTARY_KEY_ID'] ?? '';
+    final issuer = environment['LANGSHENAGENT_NOTARY_ISSUER'] ?? '';
     if (key.isEmpty) return _Signing(root, identity, null);
     if (keyId.isEmpty || issuer.isEmpty) {
       _fail(
-        '\$BAOCODE_NOTARY_KEY is set: \$BAOCODE_NOTARY_KEY_ID and '
-        '\$BAOCODE_NOTARY_ISSUER have to be too.',
+        '\$LANGSHENAGENT_NOTARY_KEY is set: \$LANGSHENAGENT_NOTARY_KEY_ID and '
+        '\$LANGSHENAGENT_NOTARY_ISSUER have to be too.',
       );
     }
     if (!File(key).existsSync()) _fail('No API key at $key.');
@@ -576,7 +576,7 @@ String _bundleRemote(Directory remote, Directory target) {
 /// The executables in [app]: its own, the browser's host, the Finder
 /// extension's, and each framework's.
 List<String> _executables(Directory app) => [
-  '${app.path}/Contents/MacOS/BaoCode',
+  '${app.path}/Contents/MacOS/LangshenAgent',
   '${app.path}/Contents/MacOS/$_browserHost',
   '${app.path}/Contents/PlugIns/FinderExtension.appex/Contents/MacOS/'
       'FinderExtension',

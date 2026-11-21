@@ -1,8 +1,8 @@
 import 'package:bao_remote/client.dart';
-import 'package:baocode/ide/ide_input.dart';
-import 'package:baocode/models/secret_store.dart';
-import 'package:baocode/remote/ssh_password_dialog.dart';
-import 'package:baocode/remote/ssh_passwords.dart';
+import 'package:langshenagent/ide/ide_input.dart';
+import 'package:langshenagent/models/secret_store.dart';
+import 'package:langshenagent/remote/ssh_password_dialog.dart';
+import 'package:langshenagent/remote/ssh_passwords.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';

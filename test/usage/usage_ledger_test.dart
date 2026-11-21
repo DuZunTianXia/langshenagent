@@ -1,11 +1,11 @@
 import 'dart:io';
 
-import 'package:baocode/usage/usage_capture.dart';
-import 'package:baocode/usage/usage_ledger.dart';
-import 'package:baocode/usage/usage_query.dart';
-import 'package:baocode/usage/usage_record.dart';
-import 'package:baocode/usage/usage_storage_io.dart';
-import 'package:baocode/usage/usage_trace.dart';
+import 'package:langshenagent/usage/usage_capture.dart';
+import 'package:langshenagent/usage/usage_ledger.dart';
+import 'package:langshenagent/usage/usage_query.dart';
+import 'package:langshenagent/usage/usage_record.dart';
+import 'package:langshenagent/usage/usage_storage_io.dart';
+import 'package:langshenagent/usage/usage_trace.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 UsageCall _call(
@@ -101,7 +101,7 @@ void main() {
           'text':
               'Rules.\n\n# MCP Server Instructions\n\nThe following MCP '
               'servers have provided instructions:\n\n## claude.ai Docs\n'
-              '${'Use the docs. ' * 40}\n\n## baocode\nDo not scrape.\n\n'
+              '${'Use the docs. ' * 40}\n\n## langshenagent\nDo not scrape.\n\n'
               '# Environment\nYou run on macOS.',
         },
       ],
@@ -169,7 +169,7 @@ void main() {
       greaterThan(shape.memory['/b/rules.md']!),
     );
     expect(shape.skills.keys, ['dataviz', 'plugin:deploy']);
-    expect(shape.mcpNotes.keys, ['claude.ai Docs', 'baocode']);
+    expect(shape.mcpNotes.keys, ['claude.ai Docs', 'langshenagent']);
     expect(shape.tools.keys, [
       'CronCreate',
       'mcp__github__search',

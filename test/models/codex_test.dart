@@ -3,18 +3,18 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
-import 'package:baocode/models/codex/codex_accounts_io.dart';
-import 'package:baocode/models/codex/codex_api.dart';
-import 'package:baocode/models/codex/codex_balancer.dart';
-import 'package:baocode/models/codex/codex_oauth.dart';
-import 'package:baocode/models/codex/codex_service.dart';
-import 'package:baocode/models/codex/codex_usage.dart';
-import 'package:baocode/models/model_provider.dart';
-import 'package:baocode/models/model_providers.dart';
-import 'package:baocode/models/proxy/model_proxy.dart';
-import 'package:baocode/models/proxy/prompt_cache_key.dart';
-import 'package:baocode/models/secret_store.dart';
-import 'package:baocode/models/upstream.dart';
+import 'package:langshenagent/models/codex/codex_accounts_io.dart';
+import 'package:langshenagent/models/codex/codex_api.dart';
+import 'package:langshenagent/models/codex/codex_balancer.dart';
+import 'package:langshenagent/models/codex/codex_oauth.dart';
+import 'package:langshenagent/models/codex/codex_service.dart';
+import 'package:langshenagent/models/codex/codex_usage.dart';
+import 'package:langshenagent/models/model_provider.dart';
+import 'package:langshenagent/models/model_providers.dart';
+import 'package:langshenagent/models/proxy/model_proxy.dart';
+import 'package:langshenagent/models/proxy/prompt_cache_key.dart';
+import 'package:langshenagent/models/secret_store.dart';
+import 'package:langshenagent/models/upstream.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 String jwt(Map<String, Object?> claims) {
@@ -534,7 +534,7 @@ void main() {
       );
     });
 
-    test("baocode.dev's Codex version, none where it has none", () {
+    test("langshenagent.dev's Codex version, none where it has none", () {
       expect(parseCodexVersion('{"clientVersion": " 0.170.0 "}'), '0.170.0');
       expect(parseCodexVersion('{"clientVersion": ""}'), isNull);
       expect(parseCodexVersion('{"clientVersion": 170}'), isNull);
@@ -851,7 +851,7 @@ void main() {
       expect(asked.headers['chatgpt-account-id'], 'ws-a');
       expect(asked.query['client_version'], codexClientVersion);
 
-      // A version baocode.dev says now: asked as that Codex CLI.
+      // A version langshenagent.dev says now: asked as that Codex CLI.
       codexFeed = (url) async {
         expect(url, codexVersionFeed);
         return '{"clientVersion": "0.170.0"}';

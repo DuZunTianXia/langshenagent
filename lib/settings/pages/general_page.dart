@@ -41,7 +41,7 @@ import 'settings_widgets.dart';
 /// (`chat.promptSuggestions`), whether the composer has its Polish button
 /// (`chat.composer.polish`), whether the turn under way shows its time,
 /// speed and tokens (`chat.liveTurnStats`), the Claude Code to run
-/// (`claudeCode.path`), BaoCode Bash on Windows, the `code` shell command, and Open with BaoCode in Finder's or
+/// (`claudeCode.path`), LangshenAgent Bash on Windows, the `code` shell command, and Open with LangshenAgent in Finder's or
 /// Explorer's context menu. A choice is written at once; the default is not
 /// written.
 class GeneralSettingsPage extends StatelessWidget {
@@ -60,7 +60,7 @@ class GeneralSettingsPage extends StatelessWidget {
   /// test and on the web, where the path is not shown.
   final Future<LocalClaudeStatus?> Function()? claudeStatus;
 
-  /// BaoCode Bash, where it is offered (Windows); none under test.
+  /// LangshenAgent Bash, where it is offered (Windows); none under test.
   final BaoBash? bash;
 
   /// The feature tips: those not on yet are listed first.
@@ -69,7 +69,7 @@ class GeneralSettingsPage extends StatelessWidget {
   static String attributionName(BuildContext context, CommitAttribution value) {
     final l10n = context.l10n;
     return switch (value) {
-      CommitAttribution.baocode => 'BaoCode',
+      CommitAttribution.langshenagent => 'LangshenAgent',
       CommitAttribution.agent => l10n.generalSettingsAttributionAgent,
       CommitAttribution.none => l10n.generalSettingsAttributionNone,
     };
@@ -81,7 +81,7 @@ class GeneralSettingsPage extends StatelessWidget {
   ) {
     final l10n = context.l10n;
     return switch (value) {
-      CommitAttribution.baocode => CommitAttribution.baoCodeCommit,
+      CommitAttribution.langshenagent => CommitAttribution.baoCodeCommit,
       CommitAttribution.agent => l10n.generalSettingsAttributionAgentDetail,
       CommitAttribution.none => l10n.generalSettingsAttributionNoneDetail,
     };
@@ -327,7 +327,7 @@ class GeneralSettingsPage extends StatelessWidget {
                   below: [
                     SelectableText(
                       detail,
-                      style: current == CommitAttribution.baocode
+                      style: current == CommitAttribution.langshenagent
                           ? SettingsText.path
                           : SettingsText.description,
                     ),
@@ -587,7 +587,7 @@ class _ShellCommandSettingState extends State<_ShellCommandSetting> {
   }
 }
 
-/// Whether Open with BaoCode and Open with Fast Ide are in the system's
+/// Whether Open with LangshenAgent and Open with Fast Ide are in the system's
 /// context menu (see ContextMenu), and the buttons to turn them on or off
 /// (and, on macOS, System Settings' extensions); what failed, under them.
 class _ContextMenuSetting extends StatefulWidget {
@@ -679,7 +679,7 @@ class _ContextMenuSettingState extends State<_ContextMenuSetting> {
                 ? () => unawaited(
                     _run(
                       () => ContextMenu.install((
-                        agent: l10n.contextMenuOpenWith('BaoCode'),
+                        agent: l10n.contextMenuOpenWith('LangshenAgent'),
                         ide: l10n.contextMenuOpenWith('Fast Ide'),
                       )),
                     ),

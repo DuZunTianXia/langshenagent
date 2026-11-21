@@ -1,9 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/lsp/lsp_manager.dart';
-import 'package:baocode/ide/lsp/lsp_process.dart';
-import 'package:baocode/ide/lsp/lsp_server_definition.dart';
+import 'package:langshenagent/ide/lsp/lsp_manager.dart';
+import 'package:langshenagent/ide/lsp/lsp_process.dart';
+import 'package:langshenagent/ide/lsp/lsp_server_definition.dart';
 import 'package:path/path.dart' as p;
 
 class _StaticCatalog implements LspCatalog {

@@ -3,10 +3,10 @@ library;
 
 import 'dart:io';
 
-import 'package:baocode/l10n/l10n.dart';
-import 'package:baocode/remote/remote_browser.dart';
-import 'package:baocode/remote/remote_browser_view.dart';
-import 'package:baocode/remote/ssh_host.dart';
+import 'package:langshenagent/l10n/l10n.dart';
+import 'package:langshenagent/remote/remote_browser.dart';
+import 'package:langshenagent/remote/remote_browser_view.dart';
+import 'package:langshenagent/remote/ssh_host.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
@@ -22,8 +22,8 @@ void main() {
   late SshHosts hosts;
 
   setUp(() {
-    dataDir = Directory.systemTemp.createTempSync('baocode-remote-data-');
-    home = Directory.systemTemp.createTempSync('baocode-remote-home-');
+    dataDir = Directory.systemTemp.createTempSync('langshenagent-remote-data-');
+    home = Directory.systemTemp.createTempSync('langshenagent-remote-home-');
     root = home.resolveSymbolicLinksSync();
     hosts = SshHosts(connect: MemoryConnector(dataDir.path).call);
   });

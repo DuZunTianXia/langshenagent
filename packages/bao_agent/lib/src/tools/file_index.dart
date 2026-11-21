@@ -20,7 +20,7 @@ class FileIndex {
   /// Names a program that is ripgrep when run with `ARGV0=rg` (Claude
   /// Code's own build, which carries one): the app's, where the machine
   /// has no `rg` of its own.
-  static const multicallVariable = 'BAOCODE_RIPGREP';
+  static const multicallVariable = 'LANGSHENAGENT_RIPGREP';
 
   /// ripgrep, where there is one: installed, else Claude Code's
   /// ([multicallVariable]); null when neither.

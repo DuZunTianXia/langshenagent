@@ -1,18 +1,18 @@
-# Builds BaoCode Bash (bash.exe, github.com/baocode-dev/bash-exe) for
+# Builds LangshenAgent Bash (bash.exe, github.com/langshenagent-dev/bash-exe) for
 # Windows x64 and arm64, and runs it on each (tool/test_bash_exe.ps1). The
 # app offers it on Windows (lib/bash_exe/) and downloads it from
-# dl.baocode.dev/tools/bash-exe/.
+# dl.langshenagent.dev/tools/bash-exe/.
 #
 #   git tag bash-exe-0.2.0 && git push origin bash-exe-0.2.0
 #                                      build bash-exe's tag v0.2.0 (its
 #                                      version has to be 0.2.0), and publish
-#                                      the builds at dl.baocode.dev/tools/
+#                                      the builds at dl.langshenagent.dev/tools/
 #                                      bash-exe/0.2.0/, then latest.json
 #                                      there naming them, for the app
-#   Actions → BaoCode Bash → Run workflow
+#   Actions → LangshenAgent Bash → Run workflow
 #                                      build a branch, tag or commit of it,
 #                                      to try it
-name: BaoCode Bash
+name: LangshenAgent Bash
 
 on:
   push:
@@ -25,7 +25,7 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: The branch, tag or commit of baocode-dev/bash-exe to build
+        description: The branch, tag or commit of langshenagent-dev/bash-exe to build
         default: main
 
 permissions:
@@ -61,7 +61,7 @@ jobs:
           fi
       - uses: actions/checkout@v5
         with:
-          repository: baocode-dev/bash-exe
+          repository: langshenagent-dev/bash-exe
           ref: ${{ steps.ref.outputs.ref }}
           path: bash-exe
       - uses: ./.github/actions/setup-rust
@@ -102,7 +102,7 @@ jobs:
           New-Item -ItemType Directory -Path $out | Out-Null
           Copy-Item bash-exe/target/${{ matrix.target }}/release/bash.exe, bash-exe/LICENSE, bash-exe/LICENSE-MIT, bash-exe/README.md $out
           # GPL: where its source is, exactly.
-          "BaoCode Bash ${{ steps.version.outputs.version }}`nSource: https://github.com/baocode-dev/bash-exe/tree/${{ steps.version.outputs.commit }}`n" |
+          "LangshenAgent Bash ${{ steps.version.outputs.version }}`nSource: https://github.com/langshenagent-dev/bash-exe/tree/${{ steps.version.outputs.commit }}`n" |
             Set-Content -NoNewline "$out/SOURCE.txt"
           # For people, with its license; the app takes bash.exe alone,
           # gzipped (dart:io has gzip, not zip).
@@ -124,7 +124,7 @@ jobs:
             dist/bash-windows-${{ matrix.arch }}.exe.gz
 
   publish:
-    name: Publish to dl.baocode.dev/tools/bash-exe/
+    name: Publish to dl.langshenagent.dev/tools/bash-exe/
     needs: build
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
@@ -158,7 +158,7 @@ jobs:
       - name: Check they are served
         run: |
           for file in dist/*; do
-            url="https://dl.baocode.dev/tools/bash-exe/$VERSION/$(basename "$file")"
+            url="https://dl.langshenagent.dev/tools/bash-exe/$VERSION/$(basename "$file")"
             expected=$(stat -c %s "$file")
             served=$(curl -fsSI "$url" | tr -d '\r' | awk 'tolower($1) == "content-length:" { print $2 }')
             echo "$url: $served bytes (expected $expected)"
@@ -172,7 +172,7 @@ jobs:
           for arch in x64 arm64; do
             gz="dist/bash-windows-$arch.exe.gz"
             files=$(jq --arg arch "$arch" \
-              --arg url "https://dl.baocode.dev/tools/bash-exe/$VERSION/$(basename "$gz")" \
+              --arg url "https://dl.langshenagent.dev/tools/bash-exe/$VERSION/$(basename "$gz")" \
               --argjson size "$(stat -c %s "$gz")" \
               --arg sha256 "$(sha256sum "$gz" | cut -d' ' -f1)" \
               --argjson unpacked "$(gzip -dc "$gz" | wc -c)" \
@@ -183,4 +183,4 @@ jobs:
           cat latest.json
           aws s3 cp latest.json "s3://$R2_BUCKET/tools/bash-exe/latest.json" \
             --cache-control 'public, max-age=60' --content-type application/json
-          echo "## BaoCode Bash \`$VERSION\` (bash-exe ${COMMIT::7})" >> "$GITHUB_STEP_SUMMARY"
+          echo "## LangshenAgent Bash \`$VERSION\` (bash-exe ${COMMIT::7})" >> "$GITHUB_STEP_SUMMARY"

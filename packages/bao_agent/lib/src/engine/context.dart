@@ -181,7 +181,7 @@ class SessionContext {
     final shell = session.environment['SHELL'];
     if (shell != null && shell.isNotEmpty) return p.basename(shell);
     final runs = session.shell;
-    if (runs.baoBash) return 'bash (BaoCode Bash)';
+    if (runs.baoBash) return 'bash (LangshenAgent Bash)';
     return switch (runs.kind) {
       ShellKind.posix => 'bash',
       ShellKind.cmd => 'cmd.exe',

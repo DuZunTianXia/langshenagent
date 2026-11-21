@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/ide_menu.dart';
-import 'package:baocode/theme/app_theme.dart' show AppMetrics;
-import 'package:baocode/theme/codicons.dart';
+import 'package:langshenagent/ide/ide_menu.dart';
+import 'package:langshenagent/theme/app_theme.dart' show AppMetrics;
+import 'package:langshenagent/theme/codicons.dart';
 
 final _panels = find.byWidgetPredicate(
   (widget) => widget.runtimeType.toString() == '_MenuPanel',
@@ -87,7 +87,7 @@ void main() {
       entries: [
         IdeMenuAction('No project', onSelected: () => chosen = 'none'),
         const IdeMenuSeparator(),
-        for (final name in ['baocode', 'bank_info_ocr', 'demo'])
+        for (final name in ['langshenagent', 'bank_info_ocr', 'demo'])
           IdeMenuAction(name, onSelected: () => chosen = name),
       ],
     );
@@ -101,14 +101,14 @@ void main() {
     await type([LogicalKeyboardKey.keyB, LogicalKeyboardKey.keyK]);
     expect(find.text('bk'), findsOneWidget);
     expect(find.text('1/4'), findsOneWidget);
-    expect(find.text('baocode'), findsNothing);
+    expect(find.text('langshenagent'), findsNothing);
     expect(find.text('No project'), findsNothing);
     final label = tester.widget<Text>(find.text('bank_info_ocr'));
     expect((label.textSpan! as TextSpan).children, isNotNull);
 
     // Back to nothing, every action is listed again.
     await type([LogicalKeyboardKey.backspace, LogicalKeyboardKey.backspace]);
-    expect(find.text('baocode'), findsOneWidget);
+    expect(find.text('langshenagent'), findsOneWidget);
     expect(find.text('No project'), findsOneWidget);
 
     await type([LogicalKeyboardKey.keyD]);

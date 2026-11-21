@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/chat/chat_feed.dart';
-import 'package:baocode/chat/chat_column.dart';
-import 'package:baocode/chat/chat_find.dart';
-import 'package:baocode/chat/chat_history_view.dart';
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/chat/composer/composer_draft.dart';
-import 'package:baocode/chat/widgets/user_message_bubble.dart';
-import 'package:baocode/ide/ide_find_widget.dart';
-import 'package:baocode/theme/app_theme.dart';
+import 'package:langshenagent/chat/chat_feed.dart';
+import 'package:langshenagent/chat/chat_column.dart';
+import 'package:langshenagent/chat/chat_find.dart';
+import 'package:langshenagent/chat/chat_history_view.dart';
+import 'package:langshenagent/chat/chat_models.dart';
+import 'package:langshenagent/chat/chat_session.dart';
+import 'package:langshenagent/chat/composer/composer_draft.dart';
+import 'package:langshenagent/chat/widgets/user_message_bubble.dart';
+import 'package:langshenagent/ide/ide_find_widget.dart';
+import 'package:langshenagent/theme/app_theme.dart';
 
 class _Feed extends ChangeNotifier implements ChatFeed {
   _Feed(this.items);

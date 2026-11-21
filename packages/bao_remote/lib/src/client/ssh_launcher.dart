@@ -140,7 +140,7 @@ class SshConnectException implements Exception {
 /// The server builds the app carries, one per platform.
 abstract interface class RemoteServerBinaries {
   /// Names the build: where it goes on the host
-  /// (`~/.baocode-server/<version>/`), so that each build is put there once.
+  /// (`~/.langshenagent-server/<version>/`), so that each build is put there once.
   String get version;
 
   /// The build for [platform] (`linux-x64`, `darwin-arm64`, …; see
@@ -565,16 +565,16 @@ class SshLauncher {
   static const cancelledMessage = 'Signing in was cancelled.';
 
   /// Where the server's builds go on the host, from its home folder.
-  static const serverRoot = '.baocode-server';
+  static const serverRoot = '.langshenagent-server';
 
   String get _folder => '$serverRoot/${binaries.version}';
 
   /// The server's path on the host, from the home folder.
-  String get serverPath => '$_folder/baocode-server';
+  String get serverPath => '$_folder/langshenagent-server';
 
   /// On a Windows host, from the user's folder.
   String get windowsServerPath =>
-      '$serverRoot\\${binaries.version}\\baocode-server.exe';
+      '$serverRoot\\${binaries.version}\\langshenagent-server.exe';
 
   /// Where a Windows host's sessions keep their ports, from the user's
   /// folder.
@@ -836,9 +836,9 @@ class SshLauncher {
   /// this build of the server is there, and whether it can unpack gzip.
   String get probeScript =>
       '''
-printf 'BAOCODE-PROBE %s %s\\n' "\$(uname -s)" "\$(uname -m)"
-if [ -x '$serverPath' ]; then echo BAOCODE-PRESENT; fi
-if command -v gzip >/dev/null 2>&1; then echo BAOCODE-GZIP; fi
+printf 'LANGSHENAGENT-PROBE %s %s\\n' "\$(uname -s)" "\$(uname -m)"
+if [ -x '$serverPath' ]; then echo LANGSHENAGENT-PRESENT; fi
+if command -v gzip >/dev/null 2>&1; then echo LANGSHENAGENT-GZIP; fi
 exit 0
 ''';
 
@@ -923,14 +923,14 @@ exit 0
 \$ErrorActionPreference = 'SilentlyContinue'
 \$arch = (Get-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment').PROCESSOR_ARCHITECTURE
 if (-not \$arch) { \$arch = \$env:PROCESSOR_ARCHITECTURE }
-[Console]::Out.WriteLine("BAOCODE-PROBE Windows \$arch")
-if (Test-Path -LiteralPath (Join-Path \$env:USERPROFILE ${_quoted(windowsServerPath)})) { [Console]::Out.WriteLine('BAOCODE-PRESENT') }
+[Console]::Out.WriteLine("LANGSHENAGENT-PROBE Windows \$arch")
+if (Test-Path -LiteralPath (Join-Path \$env:USERPROFILE ${_quoted(windowsServerPath)})) { [Console]::Out.WriteLine('LANGSHENAGENT-PRESENT') }
 exit 0
 ''';
 
   /// What starts session [id]'s daemon on a Windows host, out of the SSH
   /// session (WMI's process, not one of sshd's, which ends with it), and
-  /// says where it listens: `BAOCODE-SESSION <port> <token>`, as the
+  /// says where it listens: `LANGSHENAGENT-SESSION <port> <token>`, as the
   /// daemon writes them to a file of the user's (see ServerSession).
   String windowsSessionScript(String id) {
     final arguments = [
@@ -962,7 +962,7 @@ for (\$i = 0; \$i -lt 300; \$i++) {
   if (Test-Path -LiteralPath \$file) {
     \$text = [IO.File]::ReadAllText(\$file).Trim()
     if (\$text -match '^[0-9]+ [0-9a-f]+\$') {
-      [Console]::Out.WriteLine("BAOCODE-SESSION \$text")
+      [Console]::Out.WriteLine("LANGSHENAGENT-SESSION \$text")
       exit 0
     }
   }
@@ -995,7 +995,7 @@ exit 2
     var lines = const LineSplitter().convert(probe.stdout);
     List<String> partsOf(List<String> lines) => lines
         .firstWhere(
-          (line) => line.startsWith('BAOCODE-PROBE '),
+          (line) => line.startsWith('LANGSHENAGENT-PROBE '),
           orElse: () => '',
         )
         .split(' ');
@@ -1040,8 +1040,8 @@ exit 2
       );
     }
     final windows = platform.startsWith('windows-');
-    if (!lines.contains('BAOCODE-PRESENT')) {
-      progress('Installing the BaoCode server on ${target.name}');
+    if (!lines.contains('LANGSHENAGENT-PRESENT')) {
+      progress('Installing the LangshenAgent server on ${target.name}');
       final binary = await binaries.read(platform);
       if (binary == null) {
         throw SshConnectException(
@@ -1051,10 +1051,10 @@ exit 2
       }
       if (windows) {
         await _uploadWindows(target, extra, binary);
-        progress('Starting the BaoCode server on ${target.name}');
+        progress('Starting the LangshenAgent server on ${target.name}');
         return _launchWindows(target, extra);
       }
-      final gzip = lines.contains('BAOCODE-GZIP');
+      final gzip = lines.contains('LANGSHENAGENT-GZIP');
       final upload = await _run(
         target,
         uploadCommand(_nonce(), gzip: gzip),
@@ -1069,7 +1069,7 @@ exit 2
         );
       }
     }
-    progress('Starting the BaoCode server on ${target.name}');
+    progress('Starting the LangshenAgent server on ${target.name}');
     return windows ? _launchWindows(target, extra) : _launch(target, extra);
   }
 
@@ -1081,7 +1081,7 @@ exit 2
     List<String> extra,
     List<int> binary,
   ) async {
-    final local = await Directory.systemTemp.createTemp('baocode-upload-');
+    final local = await Directory.systemTemp.createTemp('langshenagent-upload-');
     try {
       final file = File('${local.path}${Platform.pathSeparator}server.exe');
       await file.writeAsBytes(binary);
@@ -1095,8 +1095,8 @@ exit 2
           '-mkdir $serverRoot',
           '-mkdir $folder',
           'put "${file.path.replaceAll(r'\', '/')}" "$temporary"',
-          '-rm "$folder/baocode-server.exe"',
-          'rename "$temporary" "$folder/baocode-server.exe"',
+          '-rm "$folder/langshenagent-server.exe"',
+          'rename "$temporary" "$folder/langshenagent-server.exe"',
           '',
         ].join('\n'),
       );
@@ -1155,7 +1155,7 @@ exit 2
     final parts = const LineSplitter()
         .convert(started.stdout)
         .firstWhere(
-          (line) => line.startsWith('BAOCODE-SESSION '),
+          (line) => line.startsWith('LANGSHENAGENT-SESSION '),
           orElse: () => '',
         )
         .split(' ');

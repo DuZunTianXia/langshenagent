@@ -3,29 +3,29 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/ide_notifications.dart';
-import 'package:baocode/kernel/commit_attribution.dart';
-import 'package:baocode/keybindings/import_dialog.dart';
+import 'package:langshenagent/ide/ide_notifications.dart';
+import 'package:langshenagent/kernel/commit_attribution.dart';
+import 'package:langshenagent/keybindings/import_dialog.dart';
 import 'package:bao_editor/monaco/flutter/keybinding_entry.dart';
-import 'package:baocode/keybindings/keybinding_service.dart';
-import 'package:baocode/keybindings/keybindings_sync.dart';
-import 'package:baocode/keybindings/default_keybindings.dart';
-import 'package:baocode/keybindings/keymap.dart';
-import 'package:baocode/keybindings/vscode_import.dart';
-import 'package:baocode/main.dart';
-import 'package:baocode/platform/data_dir.dart';
-import 'package:baocode/settings/app_locale.dart';
-import 'package:baocode/settings/app_settings.dart';
-import 'package:baocode/settings/pages/general_page.dart';
-import 'package:baocode/settings/pages/settings_dropdown.dart';
-import 'package:baocode/settings/pages/keybindings_page.dart';
-import 'package:baocode/settings/user_settings.dart';
-import 'package:baocode/tips/builtin_tips.dart';
-import 'package:baocode/tips/feature_tips_view.dart';
-import 'package:baocode/l10n/l10n.dart';
-import 'package:baocode/workspace/main_window.dart';
-import 'package:baocode/workspace/window_controls.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:langshenagent/keybindings/keybinding_service.dart';
+import 'package:langshenagent/keybindings/keybindings_sync.dart';
+import 'package:langshenagent/keybindings/default_keybindings.dart';
+import 'package:langshenagent/keybindings/keymap.dart';
+import 'package:langshenagent/keybindings/vscode_import.dart';
+import 'package:langshenagent/main.dart';
+import 'package:langshenagent/platform/data_dir.dart';
+import 'package:langshenagent/settings/app_locale.dart';
+import 'package:langshenagent/settings/app_settings.dart';
+import 'package:langshenagent/settings/pages/general_page.dart';
+import 'package:langshenagent/settings/pages/settings_dropdown.dart';
+import 'package:langshenagent/settings/pages/keybindings_page.dart';
+import 'package:langshenagent/settings/user_settings.dart';
+import 'package:langshenagent/tips/builtin_tips.dart';
+import 'package:langshenagent/tips/feature_tips_view.dart';
+import 'package:langshenagent/l10n/l10n.dart';
+import 'package:langshenagent/workspace/main_window.dart';
+import 'package:langshenagent/workspace/window_controls.dart';
+import 'package:langshenagent/workspace/workspace.dart';
 import 'package:path/path.dart' as p;
 
 import '../keybindings/fake_home.dart';
@@ -40,7 +40,7 @@ void main() {
   late AppSettings settings;
 
   setUp(() async {
-    data = await Directory.systemTemp.createTemp('baocode-settings-wiring');
+    data = await Directory.systemTemp.createTemp('langshenagent-settings-wiring');
     home = await createFakeHome();
     KeybindingService.instance = KeybindingService()
       ..debugPlatform = KeybindingPlatform.mac;
@@ -90,7 +90,7 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
-      BaoCodeApp(workspace: workspace ?? Workspace.mock(), settings: settings),
+      LangshenAgentApp(workspace: workspace ?? Workspace.mock(), settings: settings),
     );
     await tester.pump();
   }
@@ -170,7 +170,7 @@ void main() {
     }))!;
     expect(keymap.builtIn, isTrue);
     expect(service.keymapName, 'Atom');
-    expect(files.settings['baocode.keymap'], 'ms-vscode.atom-keybindings');
+    expect(files.settings['langshenagent.keymap'], 'ms-vscode.atom-keybindings');
 
     Navigator.of(tester.element(dialog)).pop();
     await tester.pumpAndSettle();
@@ -269,7 +269,7 @@ void main() {
     await tester.runAsync(() async {
       await write(
         DataDirectory(data.path).settingsFile,
-        '{ "baocode.keymap": "ms-vscode.atom-keybindings" }',
+        '{ "langshenagent.keymap": "ms-vscode.atom-keybindings" }',
       );
       await start();
     });
@@ -308,7 +308,7 @@ void main() {
     expect(find.byType(GeneralSettingsPage), findsOneWidget);
     // The main window's comes first.
     final dropdown = find.byType(SettingsDropdown).at(1);
-    expect(tester.widget<SettingsDropdown>(dropdown).current, 'BaoCode');
+    expect(tester.widget<SettingsDropdown>(dropdown).current, 'LangshenAgent');
     expect(find.text(CommitAttribution.baoCodeCommit), findsOneWidget);
 
     Future<void> choose(String label) async {
@@ -331,13 +331,13 @@ void main() {
       contains('"chat.commitAttribution": "none"'),
     );
 
-    await choose('BaoCode');
+    await choose('LangshenAgent');
     await settle(
       tester,
       () => !files.settings.values.containsKey(CommitAttribution.settingKey),
     );
     await tester.pump();
-    expect(tester.widget<SettingsDropdown>(dropdown).current, 'BaoCode');
+    expect(tester.widget<SettingsDropdown>(dropdown).current, 'LangshenAgent');
   }, variant: TargetPlatformVariant.only(TargetPlatform.macOS));
 
   testWidgets('the main window is kept in settings.json, the default '

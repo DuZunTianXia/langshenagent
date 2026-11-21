@@ -1,7 +1,7 @@
 import 'package:bao_markdown/bao_markdown.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/chat/composer/composer.dart';
-import 'package:baocode/theme/app_theme.dart';
+import 'package:langshenagent/chat/chat_session.dart';
+import 'package:langshenagent/chat/composer/composer.dart';
+import 'package:langshenagent/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';

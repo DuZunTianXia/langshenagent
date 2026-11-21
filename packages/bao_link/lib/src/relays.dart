@@ -1,4 +1,4 @@
-/// BaoCode's relays, for when two ends cannot reach each other directly:
+/// LangshenAgent's relays, for when two ends cannot reach each other directly:
 /// both keep to them, and a connection goes through one until a direct
 /// path is found, or for good when none is. More than one, in different
 /// places: an end sends through all it knows of the other's until a path
@@ -7,9 +7,9 @@
 /// A relay only passes along what is sealed between the two ends; it
 /// cannot read it.
 const defaultLinkRelays = [
-  'https://relay-us1.baocode.dev',
-  'https://relay-hk1.baocode.dev',
-  'https://relay-jp1.baocode.dev',
+  'https://relay-us1.langshenagent.dev',
+  'https://relay-hk1.langshenagent.dev',
+  'https://relay-jp1.langshenagent.dev',
 ];
 
 /// [text] as a relay URL (`https://host[:port]`, a bare host taken as
@@ -33,7 +33,7 @@ String? parseRelayUrl(String text) {
   return '${uri.scheme}://$host$port';
 }
 
-/// The relays to keep to: BaoCode's, and the user's own [custom] ones (a
+/// The relays to keep to: LangshenAgent's, and the user's own [custom] ones (a
 /// self-hosted one, say). iroh keeps to the nearest that answers.
 List<String> linkRelays([List<String> custom = const []]) => {
   ...defaultLinkRelays,

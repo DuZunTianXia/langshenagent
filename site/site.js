@@ -19,7 +19,7 @@ const attribution = (() => {
   // A browser that blocks storage may never answer: given up on after a while.
   const within = (promise, ms, fallback) => Promise.race([promise, new Promise((done) => setTimeout(() => done(fallback), ms))]);
   const store = (mode, use) => new Promise((resolve, reject) => {
-    const open = indexedDB.open('baocode', 1);
+    const open = indexedDB.open('langshenagent', 1);
     open.onupgradeneeded = () => open.result.createObjectStore('kv');
     open.onerror = () => reject(open.error);
     open.onsuccess = () => {
@@ -32,8 +32,8 @@ const attribution = (() => {
   });
   const fromDb = () => within(store('readonly', (kv) => kv.get(KEY)).catch(() => null), 1500, null);
   const toDb = (r) => within(store('readwrite', (kv) => kv.put(r, KEY)).then(() => true, () => false), 1500, false);
-  const fromLocal = () => { try { return JSON.parse(localStorage.getItem(`baocode.${KEY}`)); } catch { return null; } };
-  const toLocal = (r) => { try { localStorage.setItem(`baocode.${KEY}`, JSON.stringify(r)); return true; } catch { return false; } };
+  const fromLocal = () => { try { return JSON.parse(localStorage.getItem(`langshenagent.${KEY}`)); } catch { return null; } };
+  const toLocal = (r) => { try { localStorage.setItem(`langshenagent.${KEY}`, JSON.stringify(r)); return true; } catch { return false; } };
   // Written by /dl/ for a download from another site's frame (below), whose
   // storage was that site's alone.
   const fromCookie = () => {
@@ -63,7 +63,7 @@ const attribution = (() => {
   const referrer = () => {
     try {
       const host = new URL(document.referrer).hostname.toLowerCase().replace(/^www\./, '');
-      if (host === 'baocode.dev' || host.endsWith('.baocode.dev')) return null;
+      if (host === 'langshenagent.dev' || host.endsWith('.langshenagent.dev')) return null;
       return VALUE.test(host) ? host : null;
     } catch {
       return null;
@@ -97,7 +97,7 @@ const attribution = (() => {
   // alone (the browser keeps a frame's storage apart): /activate, opened
   // on its own by the channel build's first start, would find nothing. So
   // there a download, a channel kept, goes by /dl/ in a tab of its own,
-  // the channel with it: the Worker keeps it in a cookie of baocode.dev's
+  // the channel with it: the Worker keeps it in a cookie of langshenagent.dev's
   // own (site-worker/index.js), and picks the build. A link off the site
   // (GitHub, the Chrome Web Store by /dl/) opens in a tab of its own too:
   // most sites refuse to show in a frame.
@@ -111,7 +111,7 @@ const attribution = (() => {
       if (!a) return;
       if (a.hasAttribute('data-file')) {
         if (!framedChannel || !DESKTOP.has(a.dataset.file)) return;
-        a.href = `https://baocode.dev/dl/${a.dataset.file}?ch=${encodeURIComponent(framedChannel)}`;
+        a.href = `https://langshenagent.dev/dl/${a.dataset.file}?ch=${encodeURIComponent(framedChannel)}`;
         newTab(a);
       } else if (a.origin !== location.origin || a.pathname.startsWith('/dl/')) {
         newTab(a);
@@ -124,7 +124,7 @@ const attribution = (() => {
 
 // A channel listed in channels.json shows in three
 // places: its logo and name in place of the brand's, "<its logo> <its
-// name> × <our logo> BaoCode" for the home page's title, and its subtitle
+// name> × <our logo> LangshenAgent" for the home page's title, and its subtitle
 // in place of ours; the visitor's kept source decides, as for the
 // download. Only listed ones, words as text, the logo from /channels/: an
 // address anyone can make up never puts anything on the page. head.js has
@@ -154,7 +154,7 @@ listedChannel.then((channel) => {
   if (name) {
     for (const el of document.querySelectorAll('.top .brand')) el.replaceChildren(...side(logo, name).childNodes);
     for (const el of document.querySelectorAll('[data-channel-title]')) {
-      el.replaceChildren(side(logo, name), ' ', span('channel-x', '×'), ' ', side('/icon.png', 'BaoCode'));
+      el.replaceChildren(side(logo, name), ' ', span('channel-x', '×'), ' ', side('/icon.png', 'LangshenAgent'));
     }
   }
   if (subtitle) for (const el of document.querySelectorAll('[data-channel-subtitle]')) el.textContent = subtitle;
@@ -187,7 +187,7 @@ for (const reel of document.querySelectorAll('.reel')) {
 }
 
 // Saying a word: the dialog under the reel, its words (and where to find
-// whoever wrote them, if given) sent to stats.baocode.dev, then thanks.
+// whoever wrote them, if given) sent to stats.langshenagent.dev, then thanks.
 // Escape, Never mind or a click outside closes it; what was typed stays
 // until sent.
 (() => {
@@ -212,7 +212,7 @@ for (const reel of document.querySelectorAll('.reel')) {
     send.textContent = send.dataset.sending;
     status.textContent = '';
     try {
-      const res = await fetch('https://stats.baocode.dev/v1/review', {
+      const res = await fetch('https://stats.langshenagent.dev/v1/review', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
@@ -248,7 +248,7 @@ for (const button of document.querySelectorAll('[data-copy]')) {
 
 // A button's style to pick (/upstreams): copies the prompt above with that
 // button in it, its HTML as a site would write it: a link, its images from
-// baocode.dev, the import link for its href.
+// langshenagent.dev, the import link for its href.
 for (const pick of document.querySelectorAll('.pick')) {
   const hint = pick.dataset.hint;
   pick.addEventListener('click', async () => {
@@ -260,8 +260,8 @@ for (const pick of document.querySelectorAll('.pick')) {
     a.setAttribute('style', sample.getAttribute('style'));
     a.innerHTML = sample.innerHTML;
     for (const img of a.querySelectorAll('img')) {
-      img.setAttribute('src', 'https://baocode.dev' + img.getAttribute('src'));
-      img.setAttribute('srcset', img.getAttribute('srcset').replaceAll('/brand/', 'https://baocode.dev/brand/'));
+      img.setAttribute('src', 'https://langshenagent.dev' + img.getAttribute('src'));
+      img.setAttribute('srcset', img.getAttribute('srcset').replaceAll('/brand/', 'https://langshenagent.dev/brand/'));
     }
     const style = styles.dataset.template
       .replace('{url}', `${styles.dataset.page}#${pick.id}`)
@@ -288,7 +288,7 @@ for (const button of document.querySelectorAll('[data-sound]')) {
   });
 }
 
-// The release published on dl.baocode.dev, once its manifest loads: the
+// The release published on dl.langshenagent.dev, once its manifest loads: the
 // version, the day it was published, and each download's link (ending in its
 // hash, so a release redone is not served from the CDN's cache of the old
 // one) and size. Until then, and if it does not load, the page's own.
@@ -297,7 +297,7 @@ for (const button of document.querySelectorAll('[data-sound]')) {
   try {
     const ctl = new AbortController();
     setTimeout(() => ctl.abort(), 4000);
-    const res = await fetch('https://dl.baocode.dev/releases/latest.json', { signal: ctl.signal, cache: 'no-store' });
+    const res = await fetch('https://dl.langshenagent.dev/releases/latest.json', { signal: ctl.signal, cache: 'no-store' });
     const m = await res.json();
     const v = String(m.version).split('+')[0];
     const zh = document.documentElement.lang.startsWith('zh');
@@ -320,7 +320,7 @@ for (const button of document.querySelectorAll('[data-sound]')) {
   try {
     const ctl = new AbortController();
     setTimeout(() => ctl.abort(), 4000);
-    const res = await fetch('https://dl.baocode.dev/releases/mobile/latest.json', { signal: ctl.signal, cache: 'no-store' });
+    const res = await fetch('https://dl.langshenagent.dev/releases/mobile/latest.json', { signal: ctl.signal, cache: 'no-store' });
     const m = await res.json();
     const v = String(m.version).split('+')[0];
     const zh = document.documentElement.lang.startsWith('zh');
@@ -337,7 +337,7 @@ for (const button of document.querySelectorAll('[data-sound]')) {
   try {
     const ctl = new AbortController();
     setTimeout(() => ctl.abort(), 4000);
-    const res = await fetch('https://dl.baocode.dev/releases/extension/latest.json', { signal: ctl.signal, cache: 'no-store' });
+    const res = await fetch('https://dl.langshenagent.dev/releases/extension/latest.json', { signal: ctl.signal, cache: 'no-store' });
     const m = await res.json();
     const zh = document.documentElement.lang.startsWith('zh');
     for (const el of document.querySelectorAll('[data-extension-version]')) el.textContent = zh ? `版本 ${m.version}` : `Version ${m.version}`;
@@ -366,7 +366,7 @@ function showDownloads(downloads, v) {
     for (const a of document.querySelectorAll(`[data-file="${os}"]`)) {
       a.href = file.url;
       if (a.classList.contains('button')) a.title = `≈ ${Math.round(file.size / 1e6)} MB`;
-      if (a.hasAttribute('data-name')) a.textContent = `BaoCode ${v}`;
+      if (a.hasAttribute('data-name')) a.textContent = `LangshenAgent ${v}`;
     }
     for (const el of document.querySelectorAll(`[data-size="${os}"]`)) {
       el.textContent = `≈ ${Math.round(file.size / 1e6)} MB`;

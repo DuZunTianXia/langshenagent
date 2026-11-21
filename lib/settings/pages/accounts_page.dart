@@ -157,15 +157,15 @@ Uri forgeRevokePage(ForgeAccount account) => account.base.replace(
   },
 );
 
-/// Where a token for BaoCode is made on [site], what it needs checked.
+/// Where a token for LangshenAgent is made on [site], what it needs checked.
 Uri forgeNewTokenPage(ForgeKind kind, Uri site) => switch (kind) {
   ForgeKind.github => site.replace(
     path: '/settings/tokens/new',
-    queryParameters: {'scopes': 'repo,read:user', 'description': 'BaoCode'},
+    queryParameters: {'scopes': 'repo,read:user', 'description': 'LangshenAgent'},
   ),
   ForgeKind.gitlab => site.replace(
     path: '/-/user_settings/personal_access_tokens',
-    queryParameters: {'name': 'BaoCode', 'scopes': 'api'},
+    queryParameters: {'name': 'LangshenAgent', 'scopes': 'api'},
   ),
   ForgeKind.gitee => site.replace(path: '/profile/personal_access_tokens/new'),
   ForgeKind.gitcode => site.replace(path: '/setting/token-classic'),

@@ -124,7 +124,7 @@ ${bot.chatOnly ? "- You do not change files nor run commands: the user set you t
 ${line(bot.can(BotAbility.browser), "You can use the user's browser.", "You cannot use the browser.")}
 ${line(bot.can(BotAbility.proactive), "The app tells you of the user's agents as your rules say (bot_watch; WATCH.md in your folder): what they fit with tell wakes you; with notify, the phone tells the user for you, you not woken; the rest is only kept, for you to look at (bot_recent_events) when the user asks how things went. When they ask you to keep an eye on something, or to stop telling them of something, change your rules (bot_watch), and say so in a word.", "The app does not tell you what the user's agents do: to know, look (session_list, session_read), if you may.${agents ? ' Nor when one you handed work to is done: when you hand one work (session_new, session_send), tell the user so, and that you would hear of it if they turned on Agent notifications (接收智能体通知) in your profile.' : ''}")}
 - You can search the web (WebSearch) and read a page (WebFetch): for news, facts, prices, the weather, anything you would look up. Say what you found in your own words, briefly.
-- ${imageModel ? 'You can make pictures (generate_image): they show by themselves where you are answering, your chat with the user or a group. To show again one made before (its file), send it with bot_send and its images.' : 'You could make pictures, but the computer has no image model turned on: when asked, say the user can turn one on in BaoCode, Settings → Models.'}
+- ${imageModel ? 'You can make pictures (generate_image): they show by themselves where you are answering, your chat with the user or a group. To show again one made before (its file), send it with bot_send and its images.' : 'You could make pictures, but the computer has no image model turned on: when asked, say the user can turn one on in LangshenAgent, Settings → Models.'}
 When asked for something you may not do, say so simply, and that the user can turn it on in your profile.
 </abilities>''';
 }
@@ -214,13 +214,13 @@ String botIdentity(Bot bot, {String? computer}) {
     if (style.isNotEmpty) 'How you talk, in the user\'s words:\n$style',
     if (bot.created case final created?)
       'The user made you on ${botTime(created).split(' ').take(2).join(' ')}.',
-    'You live in BaoCode, on the user\'s computer'
+    'You live in LangshenAgent, on the user\'s computer'
         '${computer == null || computer.isEmpty ? '' : ' ("$computer")'}; '
-        'they talk with you from the BaoCode app on their phone, as in a '
+        'they talk with you from the LangshenAgent app on their phone, as in a '
         'chat app, and they can change all of the above in your profile; so '
         'can you (see <your_profile>).',
     if (bot.assistant)
-      'You are the assistant BaoCode started with: you can\'t be deleted.',
+      'You are the assistant LangshenAgent started with: you can\'t be deleted.',
     '</who_you_are>',
   ].join('\n');
 }

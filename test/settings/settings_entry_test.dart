@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/chat/chat_screen.dart';
-import 'package:baocode/ide/ide_color_theme_picker.dart';
-import 'package:baocode/ide/ide_hover.dart';
-import 'package:baocode/ide/ide_menu.dart';
-import 'package:baocode/ide/ide_workbench.dart';
-import 'package:baocode/keybindings/default_keybindings.dart';
+import 'package:langshenagent/chat/chat_screen.dart';
+import 'package:langshenagent/ide/ide_color_theme_picker.dart';
+import 'package:langshenagent/ide/ide_hover.dart';
+import 'package:langshenagent/ide/ide_menu.dart';
+import 'package:langshenagent/ide/ide_workbench.dart';
+import 'package:langshenagent/keybindings/default_keybindings.dart';
 import 'package:bao_editor/monaco/flutter/keybinding_entry.dart';
 import 'package:bao_editor/monaco/vs/platform/theme/common/theme.dart' as vs;
-import 'package:baocode/keybindings/keybinding_service.dart';
-import 'package:baocode/main.dart';
-import 'package:baocode/settings/pages/appearance_page.dart';
-import 'package:baocode/settings/pages/settings_dropdown.dart';
-import 'package:baocode/settings/settings_dialog.dart';
-import 'package:baocode/sidebar/sidebar.dart';
-import 'package:baocode/theme/codicons.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:langshenagent/keybindings/keybinding_service.dart';
+import 'package:langshenagent/main.dart';
+import 'package:langshenagent/settings/pages/appearance_page.dart';
+import 'package:langshenagent/settings/pages/settings_dropdown.dart';
+import 'package:langshenagent/settings/settings_dialog.dart';
+import 'package:langshenagent/sidebar/sidebar.dart';
+import 'package:langshenagent/theme/codicons.dart';
+import 'package:langshenagent/workspace/workspace.dart';
 
 final _mac = TargetPlatformVariant.only(TargetPlatform.macOS);
 
@@ -35,7 +35,7 @@ Future<Workspace> _pumpApp(WidgetTester tester, {double height = 900}) async {
   KeybindingService.instance = KeybindingService();
   addTearDown(() => KeybindingService.instance = KeybindingService());
   final workspace = Workspace.mock();
-  await tester.pumpWidget(BaoCodeApp(workspace: workspace));
+  await tester.pumpWidget(LangshenAgentApp(workspace: workspace));
   await tester.pump();
   return workspace;
 }
@@ -142,7 +142,7 @@ void main() {
 
     // What the app menu's Preferences… sends (MainFlutterWindow.swift).
     await tester.binding.defaultBinaryMessenger.handlePlatformMessage(
-      'baocode/window',
+      'langshenagent/window',
       const StandardMethodCodec().encodeMethodCall(
         const MethodCall('menuCommand', openSettingsCommandId),
       ),

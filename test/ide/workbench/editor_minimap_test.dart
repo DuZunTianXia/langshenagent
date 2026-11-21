@@ -1,10 +1,10 @@
 import 'dart:io';
 
 import 'package:bao_editor/monaco/flutter/editor_surface.dart';
-import 'package:baocode/ide/editor_minimap_setting.dart';
-import 'package:baocode/ide/ide_commands.dart';
-import 'package:baocode/ide/ide_tab_bar.dart';
-import 'package:baocode/settings/user_settings.dart';
+import 'package:langshenagent/ide/editor_minimap_setting.dart';
+import 'package:langshenagent/ide/ide_commands.dart';
+import 'package:langshenagent/ide/ide_tab_bar.dart';
+import 'package:langshenagent/settings/user_settings.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';

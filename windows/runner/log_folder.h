@@ -13,18 +13,18 @@
 // Win32Window::SizeContent) and the hang reports (see hang_watchdog.h).
 //
 // Only Flutter knows the data folder, which the user can move (the
-// BAOCODE_DATA_DIR variable, ~/.baocode/config-dir.json). It names the
-// folder over `baocode/logs` as it starts:
+// LANGSHENAGENT_DATA_DIR variable, ~/.langshenagent/config-dir.json). It names the
+// folder over `langshenagent/logs` as it starts:
 //
 //   setFolder (path)  the logs folder, absolute
 //
-// and the folder is kept (HKCU\Software\BaoCode, LogsFolder) for what is
+// and the folder is kept (HKCU\Software\LangshenAgent, LogsFolder) for what is
 // written before that, in a later run or by another copy of the app (see
-// hang_watchdog::ReportRunningCopy); %APPDATA%\baocode\logs, the data
+// hang_watchdog::ReportRunningCopy); %APPDATA%\langshenagent\logs, the data
 // folder's default place, before the first time.
 namespace log_folder {
 
-// Answers `baocode/logs` on |messenger| for as long as the channel is kept.
+// Answers `langshenagent/logs` on |messenger| for as long as the channel is kept.
 std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>> Listen(
     flutter::BinaryMessenger* messenger);
 

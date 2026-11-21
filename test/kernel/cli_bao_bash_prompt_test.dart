@@ -1,9 +1,9 @@
 import 'package:bao_agent/bao_agent.dart' show Shell;
-import 'package:baocode/kernel/claude_code/claude_code_transport.dart';
-import 'package:baocode/kernel/claude_code/process_transport_io.dart';
+import 'package:langshenagent/kernel/claude_code/claude_code_transport.dart';
+import 'package:langshenagent/kernel/claude_code/process_transport_io.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Claude Code's CLI given BaoCode Bash is told what it has, as the
+/// Claude Code's CLI given LangshenAgent Bash is told what it has, as the
 /// built-in core's Bash tool is.
 void main() {
   String appended(ClaudeLaunch launch) {

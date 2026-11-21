@@ -1,9 +1,9 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/platform/open_requests.dart';
-import 'package:baocode/window/code_args.dart';
+import 'package:langshenagent/platform/open_requests.dart';
+import 'package:langshenagent/window/code_args.dart';
 
-const _open = MethodChannel('baocode/open');
+const _open = MethodChannel('langshenagent/open');
 
 /// What the system asks the app to open comes to the one listener: first
 /// what the window kept, then each as the window sends it.
@@ -120,7 +120,7 @@ void main() {
     expect(opened.last, [marker, r'C:\work', '-g', 'a.dart:3']);
   });
 
-  test('Open with BaoCode goes as a request of its own, beside those of '
+  test('Open with LangshenAgent goes as a request of its own, beside those of '
       'the `code` command', () async {
     const code = OpenRequests.codeRequestMarker;
     const agent = CodeArgs.agentRequestMarker;
@@ -137,7 +137,7 @@ void main() {
 
   test("a site's import goes as a request of its own, the link as it "
       'came', () async {
-    const link = 'baocode://provider/import?v=1&url=https%3A%2F%2Fapi.x.com';
+    const link = 'langshenagent://provider/import?v=1&url=https%3A%2F%2Fapi.x.com';
     pending = [r'C:\a.txt', CodeArgs.importRequestMarker, link];
     final opened = <List<String>>[];
     OpenRequests.listen(opened.add);
@@ -167,7 +167,7 @@ void main() {
   });
 
   test('what the macOS app was launched for, as the window says (Finder\'s '
-      'Open with BaoCode, an agent; anything else, the IDE)', () async {
+      'Open with LangshenAgent, an agent; anything else, the IDE)', () async {
     for (final (answer, request) in [
       ('agent', LaunchRequest.agent),
       ('ide', LaunchRequest.ide),

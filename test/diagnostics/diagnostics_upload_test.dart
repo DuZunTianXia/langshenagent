@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
-import 'package:baocode/diagnostics/diagnostics_upload.dart';
+import 'package:langshenagent/diagnostics/diagnostics_upload.dart';
 
 class _RealHttp extends HttpOverrides {}
 
@@ -50,7 +50,7 @@ void main() {
 
     setUp(() async {
       HttpOverrides.global = _RealHttp();
-      logs = await Directory.systemTemp.createTemp('baocode-diagnostics');
+      logs = await Directory.systemTemp.createTemp('langshenagent-diagnostics');
       File(p.join(logs.path, 'errors.log'))
           .writeAsStringSync('boom in /home/ann/a.dart\n');
       server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);

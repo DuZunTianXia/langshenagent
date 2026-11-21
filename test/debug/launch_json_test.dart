@@ -2,12 +2,12 @@
 // creating the file from a debugger's initial configurations, appending
 // and editing configurations while keeping comments.
 
-import 'package:baocode/base/cancellation.dart' show CancellationTokenSource;
-import 'package:baocode/base/uri.dart' show VsUri;
-import 'package:baocode/debug/common/debug_types.dart';
-import 'package:baocode/debug/service/debug_configuration_manager.dart';
-import 'package:baocode/debug/service/debug_host.dart';
-import 'package:baocode/settings/jsonc.dart';
+import 'package:langshenagent/base/cancellation.dart' show CancellationTokenSource;
+import 'package:langshenagent/base/uri.dart' show VsUri;
+import 'package:langshenagent/debug/common/debug_types.dart';
+import 'package:langshenagent/debug/service/debug_configuration_manager.dart';
+import 'package:langshenagent/debug/service/debug_host.dart';
+import 'package:langshenagent/settings/jsonc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'support/fake_debug_adapter.dart';

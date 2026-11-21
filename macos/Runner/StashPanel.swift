@@ -24,7 +24,7 @@ final class StashPanel: NSPanel, FlutterHostWindow {
 
   /// Where its place and size are kept (the user defaults'), for the next
   /// launch.
-  private static let frameName = "BaoCodeStashPanel"
+  private static let frameName = "LangshenAgentStashPanel"
 
   /// The app's one panel, once made.
   private(set) static weak var current: StashPanel?
@@ -75,7 +75,7 @@ final class StashPanel: NSPanel, FlutterHostWindow {
     let messenger = flutter.engine.binaryMessenger
     let suffix = ".\(flutter.viewIdentifier)"
     let drops = FileDropView(channel: FlutterMethodChannel(
-      name: "baocode/drop" + suffix, binaryMessenger: messenger))
+      name: "langshenagent/drop" + suffix, binaryMessenger: messenger))
     drops.frame = flutter.view.bounds
     drops.autoresizingMask = [.width, .height]
     flutter.view.addSubview(drops)
@@ -86,7 +86,7 @@ final class StashPanel: NSPanel, FlutterHostWindow {
     setFrameAutosaveName(Self.frameName)
     Self.current = self
 
-    let channel = FlutterMethodChannel(name: "baocode/window" + suffix, binaryMessenger: messenger)
+    let channel = FlutterMethodChannel(name: "langshenagent/window" + suffix, binaryMessenger: messenger)
     self.channel = channel
     channel.setMethodCallHandler { [weak self] call, result in
       guard let self else {
@@ -129,7 +129,7 @@ final class StashPanel: NSPanel, FlutterHostWindow {
   override func performKeyEquivalent(with event: NSEvent) -> Bool {
     let flags = event.modifierFlags.intersection([.command, .shift, .option, .control])
     if flags == .command, let key = event.charactersIgnoringModifiers?.lowercased() {
-      let commands = ["w": "baocode.stash.close", "s": "baocode.stash.save", "n": "baocode.stash.new"]
+      let commands = ["w": "langshenagent.stash.close", "s": "langshenagent.stash.save", "n": "langshenagent.stash.new"]
       if let command = commands[key] {
         menuCommand(command)
         return true
@@ -151,7 +151,7 @@ final class StashPanel: NSPanel, FlutterHostWindow {
 
   /// Escape, as a panel's: Flutter decides (it saves first).
   override func cancelOperation(_ sender: Any?) {
-    menuCommand("baocode.stash.close")
+    menuCommand("langshenagent.stash.close")
   }
 
   private func syncScale() {
@@ -172,12 +172,12 @@ final class StashPanel: NSPanel, FlutterHostWindow {
   }
 
   // The Edit menu's commands, as BaoWindow's.
-  @objc func baocodeUndo(_ sender: Any?) { editCommand("undo") }
-  @objc func baocodeRedo(_ sender: Any?) { editCommand("redo") }
-  @objc func baocodeCut(_ sender: Any?) { editCommand("cut") }
-  @objc func baocodeCopy(_ sender: Any?) { editCommand("copy") }
-  @objc func baocodePaste(_ sender: Any?) { editCommand("paste") }
-  @objc func baocodeSelectAll(_ sender: Any?) { editCommand("selectAll") }
+  @objc func langshenagentUndo(_ sender: Any?) { editCommand("undo") }
+  @objc func langshenagentRedo(_ sender: Any?) { editCommand("redo") }
+  @objc func langshenagentCut(_ sender: Any?) { editCommand("cut") }
+  @objc func langshenagentCopy(_ sender: Any?) { editCommand("copy") }
+  @objc func langshenagentPaste(_ sender: Any?) { editCommand("paste") }
+  @objc func langshenagentSelectAll(_ sender: Any?) { editCommand("selectAll") }
 
   private func editCommand(_ command: String) {
     channel?.invokeMethod("editCommand", arguments: command)
@@ -383,8 +383,8 @@ final class StashHotkey {
 
 // MARK: - The channel
 
-/// `baocode/stash` (see lib/stash/stash_host.dart): the shortcut, and the
-/// text in pictures. Pressed, it tells whether that was in BaoCode itself
+/// `langshenagent/stash` (see lib/stash/stash_host.dart): the shortcut, and the
+/// text in pictures. Pressed, it tells whether that was in LangshenAgent itself
 /// (`self`) and whether the panel was what the keyboard was in (`panel`).
 final class StashChannel {
   static var shared: StashChannel?
@@ -392,7 +392,7 @@ final class StashChannel {
   private let channel: FlutterMethodChannel
 
   init(messenger: FlutterBinaryMessenger) {
-    channel = FlutterMethodChannel(name: "baocode/stash", binaryMessenger: messenger)
+    channel = FlutterMethodChannel(name: "langshenagent/stash", binaryMessenger: messenger)
     channel.setMethodCallHandler { [weak self] call, result in
       self?.handle(call, result: result) ?? result(nil)
     }

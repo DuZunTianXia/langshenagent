@@ -3,22 +3,22 @@
 // page's to pick from; the files the agent names found in its folders.
 
 import 'package:bao_editor/monaco/flutter/editor_surface.dart';
-import 'package:baocode/ide/ide_notifications.dart';
-import 'package:baocode/theme/code_font.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/chat/side_panel/file_link.dart';
-import 'package:baocode/chat/side_panel/file_open.dart';
-import 'package:baocode/chat/side_panel/side_panel_controller.dart';
-import 'package:baocode/chat/side_panel/side_panel_view.dart';
-import 'package:baocode/ide/file_service.dart';
-import 'package:baocode/ide/git/ide_git_commit_panel.dart';
-import 'package:baocode/ide/git/git_repository.dart';
-import 'package:baocode/ide/git/repository_scan.dart';
-import 'package:baocode/ide/ide_explorer.dart';
-import 'package:baocode/ide/ide_list.dart';
-import 'package:baocode/kernel/agent_kernel.dart';
-import 'package:baocode/theme/app_theme.dart';
-import 'package:baocode/theme/codicons.dart';
+import 'package:langshenagent/ide/ide_notifications.dart';
+import 'package:langshenagent/theme/code_font.dart';
+import 'package:langshenagent/chat/chat_session.dart';
+import 'package:langshenagent/chat/side_panel/file_link.dart';
+import 'package:langshenagent/chat/side_panel/file_open.dart';
+import 'package:langshenagent/chat/side_panel/side_panel_controller.dart';
+import 'package:langshenagent/chat/side_panel/side_panel_view.dart';
+import 'package:langshenagent/ide/file_service.dart';
+import 'package:langshenagent/ide/git/ide_git_commit_panel.dart';
+import 'package:langshenagent/ide/git/git_repository.dart';
+import 'package:langshenagent/ide/git/repository_scan.dart';
+import 'package:langshenagent/ide/ide_explorer.dart';
+import 'package:langshenagent/ide/ide_list.dart';
+import 'package:langshenagent/kernel/agent_kernel.dart';
+import 'package:langshenagent/theme/app_theme.dart';
+import 'package:langshenagent/theme/codicons.dart';
 import 'package:flutter/gestures.dart' show kSecondaryButton;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

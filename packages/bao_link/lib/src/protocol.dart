@@ -285,6 +285,43 @@ abstract final class LinkMethods {
   /// ([LinkGroupMessage.images]): `{"type", "data"}`.
   static const groupImage = 'groupImage';
 
+  /// `{"path"?}`: the folders under `path` on this machine (its home,
+  /// without one), for the phone to pick a new workspace in:
+  /// `{"path", "parent"?, "home", "dirs": [{"name", "path"}],
+  /// "truncated"?}`.
+  static const browse = 'browse';
+
+  /// `{"path"}`: a folder listed as a project, a workspace added without
+  /// an agent opened in it: `{"project": ProjectInfo}`.
+  static const addProject = 'addProject';
+
+  /// The model upstreams and the models picked for the jobs:
+  /// `{"providers": [LinkProvider], "defaults": {"model"?, "auxiliary"?,
+  /// "actions"?, "image"?}, "builtin": {"available", "hidden"}}`.
+  static const providers = 'providers';
+
+  /// An upstream as the phone has it, saved (`{"id"?}`: the one of it,
+  /// or a new one made of its `name`; `{"key"?}` its key kept in the
+  /// keychain, an empty one removed): `{"id"}`.
+  static const saveProvider = 'saveProvider';
+
+  /// `{"id"}`: an upstream removed, its key and the defaults and roles
+  /// on its models with it.
+  static const deleteProvider = 'deleteProvider';
+
+  /// `{"id"}` an upstream's, or an unsaved one's fields (`baseUrl`,
+  /// `protocol`?, `modelsUrl`?, `key`?): its models as it lists them:
+  /// `{"models": [{"id", "label"?, "contextWindow"?, "efforts"?,
+  /// "images"?, "kind"?}]}`.
+  static const fetchModels = 'fetchModels';
+
+  /// The models picked for the jobs, set where named: `{"model"?,
+  /// "auxiliary"?, "actions"?, "image"?}` a model ref
+  /// (`@provider/model`), the built-in provider's id or "auxiliary",
+  /// none ("" or null) unset; `{"builtinHidden"?}`: what they are then,
+  /// as [providers] answers.
+  static const modelDefaults = 'modelDefaults';
+
   /// Those whose answers, or requests, can be large: each goes on a stream
   /// of its own (see [LinkPeer]), holding up nothing else. A picture sent
   /// (the user's, a bot's) is up to a megabyte: on the control stream, an
@@ -300,6 +337,9 @@ abstract final class LinkMethods {
     groupImage,
     setMe,
     saveBot,
+    browse,
+    providers,
+    fetchModels,
   };
 }
 

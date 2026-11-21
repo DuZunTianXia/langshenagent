@@ -1,6 +1,6 @@
 name: bao_iroh
 description: >-
-  BaoCode's link transport: iroh 1.x (QUIC, hole punching, relays) built
+  LangshenAgent's link transport: iroh 1.x (QUIC, hole punching, relays) built
   from Rust by a native assets hook, behind a small C interface: endpoints,
   connections, and streams of whole messages. No Flutter in the library.
 version: 0.1.0

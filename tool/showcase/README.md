@@ -1,6 +1,6 @@
 # The showcase
 
-The website's pictures and short videos of BaoCode, made by the app
+The website's pictures and short videos of LangshenAgent, made by the app
 itself: no one takes them by hand, and nothing in them is anyone's real
 data. `run.dart` sets up a made-up developer's machine, builds the
 showcase app, plays its scenes and turns what they took into the files
@@ -43,7 +43,7 @@ over it changes nothing.
 
 ## The scenes
 
-`scenes.dart`: each a fresh `BaoCodeApp` on the same machine, driven as a
+`scenes.dart`: each a fresh `LangshenAgentApp` on the same machine, driven as a
 user would (clicks on text, keys, commands), ending in pictures
 (`ShowScene.shot`) or a video (`ShowScene.record`). While a video is
 recorded the app runs four times slower and each frame is taken at its

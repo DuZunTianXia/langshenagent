@@ -7,9 +7,9 @@ import 'package:path/path.dart' as p;
 import '../../platform/data_dir.dart';
 import 'local_claude_io.dart';
 
-/// ripgrep for BaoCode's own core where the machine has none (#883): as
+/// ripgrep for LangshenAgent's own core where the machine has none (#883): as
 /// Claude Code's own build carries one (it is ripgrep when run with
-/// `ARGV0=rg`), the one BaoCode runs gives it. Without, a search on
+/// `ARGV0=rg`), the one LangshenAgent runs gives it. Without, a search on
 /// Windows was cmd.exe's `findstr` or a script written for it: slow, and
 /// short of what `rg` finds.
 abstract final class CoreRipgrep {

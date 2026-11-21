@@ -6,21 +6,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/chat/panels/interaction_panel.dart';
-import 'package:baocode/ide/ide_hover.dart';
-import 'package:baocode/kernel/kernel_types.dart';
-import 'package:baocode/keybindings/chat_keybindings.dart';
+import 'package:langshenagent/chat/panels/interaction_panel.dart';
+import 'package:langshenagent/ide/ide_hover.dart';
+import 'package:langshenagent/kernel/kernel_types.dart';
+import 'package:langshenagent/keybindings/chat_keybindings.dart';
 import 'package:bao_editor/monaco/flutter/keybinding_entry.dart';
-import 'package:baocode/keybindings/keybinding_service.dart';
-import 'package:baocode/main.dart';
-import 'package:baocode/theme/app_theme.dart';
-import 'package:baocode/workspace/back_to_chat_button.dart';
-import 'package:baocode/workspace/chat_grid.dart';
-import 'package:baocode/workspace/editor_launcher.dart';
-import 'package:baocode/workspace/window_header/window_header.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:langshenagent/keybindings/keybinding_service.dart';
+import 'package:langshenagent/main.dart';
+import 'package:langshenagent/theme/app_theme.dart';
+import 'package:langshenagent/workspace/back_to_chat_button.dart';
+import 'package:langshenagent/workspace/chat_grid.dart';
+import 'package:langshenagent/workspace/editor_launcher.dart';
+import 'package:langshenagent/workspace/window_header/window_header.dart';
+import 'package:langshenagent/workspace/workspace.dart';
 
-const _window = MethodChannel('baocode/window');
+const _window = MethodChannel('langshenagent/window');
 
 final _mac = TargetPlatformVariant.only(TargetPlatform.macOS);
 
@@ -40,7 +40,7 @@ Future<Workspace> pumpApp(WidgetTester tester) async {
     ),
   );
   final workspace = Workspace.mock();
-  await tester.pumpWidget(BaoCodeApp(workspace: workspace));
+  await tester.pumpWidget(LangshenAgentApp(workspace: workspace));
   await tester.pump();
   return workspace;
 }

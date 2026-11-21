@@ -6,7 +6,7 @@
 //   dart run packages/bao_remote/tool/wsl_e2e.dart <distribution> <server>
 //
 // <server> is the Linux build of the server for the distribution's
-// processor (tool/build_remote_server.dart's baocode-server-linux-x64).
+// processor (tool/build_remote_server.dart's langshenagent-server-linux-x64).
 // ignore_for_file: avoid_print
 import 'dart:async';
 import 'dart:convert';

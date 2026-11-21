@@ -1,8 +1,8 @@
-import 'package:baocode/base/step_clock.dart';
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/widgets/rolling_text.dart';
-import 'package:baocode/chat/widgets/turn_footer.dart';
-import 'package:baocode/l10n/l10n.dart';
+import 'package:langshenagent/base/step_clock.dart';
+import 'package:langshenagent/chat/chat_models.dart';
+import 'package:langshenagent/chat/widgets/rolling_text.dart';
+import 'package:langshenagent/chat/widgets/turn_footer.dart';
+import 'package:langshenagent/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

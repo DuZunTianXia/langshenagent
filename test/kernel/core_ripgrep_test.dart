@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:baocode/kernel/claude_code/core_ripgrep_io.dart';
+import 'package:langshenagent/kernel/claude_code/core_ripgrep_io.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 

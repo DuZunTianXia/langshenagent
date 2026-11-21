@@ -1,8 +1,8 @@
-import 'package:baocode/chat/widgets/edge_fade_mask.dart';
-import 'package:baocode/l10n/l10n.dart';
-import 'package:baocode/stash/stash_disk.dart';
-import 'package:baocode/stash/stash_editor.dart';
-import 'package:baocode/stash/stash_store.dart';
+import 'package:langshenagent/chat/widgets/edge_fade_mask.dart';
+import 'package:langshenagent/l10n/l10n.dart';
+import 'package:langshenagent/stash/stash_disk.dart';
+import 'package:langshenagent/stash/stash_editor.dart';
+import 'package:langshenagent/stash/stash_store.dart';
 import 'package:flutter/material.dart';
 import 'package:bao_markdown/bao_markdown.dart';
 import 'package:flutter_test/flutter_test.dart';

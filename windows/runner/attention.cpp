@@ -296,7 +296,7 @@ Attention::Attention(flutter::BinaryMessenger* messenger, HWND window,
     : window_(window),
       windows_(windows),
       channel_(std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
-          messenger, "baocode/attention",
+          messenger, "langshenagent/attention",
           &flutter::StandardMethodCodec::GetInstance())),
       taskbar_created_(::RegisterWindowMessageW(L"TaskbarCreated")),
       taskbar_button_created_(
@@ -546,7 +546,7 @@ void Attention::ShowIcon() {
   data.uCallbackMessage = kTrayMessage;
   data.hIcon = icon;
   const std::wstring tooltip =
-      tray_ && !tray_->tooltip.empty() ? tray_->tooltip : L"BaoCode";
+      tray_ && !tray_->tooltip.empty() ? tray_->tooltip : L"LangshenAgent";
   wcsncpy_s(data.szTip, tooltip.c_str(), _TRUNCATE);
   bool shown = icon_added_ && ::Shell_NotifyIconW(NIM_MODIFY, &data);
   if (!shown) {
@@ -734,7 +734,7 @@ void Attention::PlaySoundFile(const std::wstring& path, bool temporary) {
                    [](wchar_t c) { return static_cast<wchar_t>(std::towlower(c)); });
   }
   const std::wstring alias =
-      L"baocode_sound_" + std::to_wstring(++next_sound_id_);
+      L"langshenagent_sound_" + std::to_wstring(++next_sound_id_);
   const std::wstring type = extension == L".wav" ? L"waveaudio" : L"mpegvideo";
   const std::wstring open =
       L"open \"" + path + L"\" type " + type + L" alias " + alias;

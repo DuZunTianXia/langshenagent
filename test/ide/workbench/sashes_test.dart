@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/ide_columns.dart';
-import 'package:baocode/ide/ide_modern_ui.dart';
-import 'package:baocode/ide/ide_workbench.dart';
-import 'package:baocode/ide/ide_rows.dart';
-import 'package:baocode/theme/codicons.dart';
-import 'package:baocode/workspace/islands.dart';
+import 'package:langshenagent/ide/ide_columns.dart';
+import 'package:langshenagent/ide/ide_modern_ui.dart';
+import 'package:langshenagent/ide/ide_workbench.dart';
+import 'package:langshenagent/ide/ide_rows.dart';
+import 'package:langshenagent/theme/codicons.dart';
+import 'package:langshenagent/workspace/islands.dart';
 
 import 'fake_files.dart';
 

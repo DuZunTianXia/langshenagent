@@ -1,4 +1,4 @@
-// BaoCode Bash, offered on Windows: the build latest.json names, the shell
+// LangshenAgent Bash, offered on Windows: the build latest.json names, the shell
 // agents run commands in, whom the composer recommends it to, installing it,
 // and Settings → General → Command Line.
 
@@ -6,10 +6,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:baocode/bash_exe/bao_bash.dart';
-import 'package:baocode/bash_exe/bao_bash_io.dart';
-import 'package:baocode/bash_exe/bao_bash_view.dart';
-import 'package:baocode/tips/feature_tip.dart';
+import 'package:langshenagent/bash_exe/bao_bash.dart';
+import 'package:langshenagent/bash_exe/bao_bash_io.dart';
+import 'package:langshenagent/bash_exe/bao_bash_view.dart';
+import 'package:langshenagent/tips/feature_tip.dart';
 import 'package:crypto/crypto.dart' as crypto;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -100,7 +100,7 @@ Map<String, Object?> _latest(String version) => {
   'commit': 'abc',
   'files': {
     'x64': {
-      'url': 'https://dl.baocode.dev/tools/bash-exe/$version/x64.exe.gz',
+      'url': 'https://dl.langshenagent.dev/tools/bash-exe/$version/x64.exe.gz',
       'size': 13 * 1024 * 1024,
       'sha256': 'AB' * 32,
       'unpacked': 31 * 1024 * 1024,
@@ -121,7 +121,7 @@ void main() {
 
   group('the shell in use', () {
     test(
-      'none picked: BaoCode Bash where installed, else Git Bash, else cmd',
+      'none picked: LangshenAgent Bash where installed, else Git Bash, else cmd',
       () async {
         final host = _Host(latest: _latest('0.1.0'));
         final bash = BaoBash(host: host, settings: _Settings());
@@ -157,7 +157,7 @@ void main() {
       ));
     });
 
-    test('BaoCode Bash downloaded the first time it is picked', () async {
+    test('LangshenAgent Bash downloaded the first time it is picked', () async {
       final host = _Host(latest: _latest('0.1.0'))
         ..git = _git
         ..downloading = Completer<void>();
@@ -233,7 +233,7 @@ void main() {
     final bash = BaoBash(host: _Host());
     await bash.install();
     expect(bash.installed, isNull);
-    expect(bash.error, contains('dl.baocode.dev'));
+    expect(bash.error, contains('dl.langshenagent.dev'));
     expect(bash.busy, isFalse);
   });
 
@@ -278,21 +278,21 @@ void main() {
       expect(BaoBash.cliEnvironment(const {}), isEmpty);
     });
 
-    test('the built-in core: the shell in use, BaoCode Bash told', () async {
+    test('the built-in core: the shell in use, LangshenAgent Bash told', () async {
       final host = _Host(latest: _latest('0.2.1'));
       final bash = BaoBash.current = BaoBash(host: host, settings: _Settings());
       expect(BaoBash.coreEnvironment(), {
-        'BAOCODE_SHELL': r'C:\Windows\system32\cmd.exe',
+        'LANGSHENAGENT_SHELL': r'C:\Windows\system32\cmd.exe',
       });
       await bash.install();
       final installed = bash.installed!.executable;
       expect(BaoBash.coreEnvironment(), {
-        'BAOCODE_BASH': installed,
-        'BAOCODE_SHELL': installed,
+        'LANGSHENAGENT_BASH': installed,
+        'LANGSHENAGENT_SHELL': installed,
       });
       await bash.choose(WindowsShell.powershell);
       expect(
-        BaoBash.coreEnvironment()['BAOCODE_SHELL'],
+        BaoBash.coreEnvironment()['LANGSHENAGENT_SHELL'],
         endsWith('powershell.exe'),
       );
     });
@@ -313,7 +313,7 @@ void main() {
       // flutter_test's clients answer 400 to all: a real one, to the
       // server here.
       HttpOverrides.global = null;
-      root = await Directory.systemTemp.createTemp('baocode-bash-exe');
+      root = await Directory.systemTemp.createTemp('langshenagent-bash-exe');
       exe = utf8.encode('MZ a bash.exe' * 1000);
       served = gzip.encode(exe);
       server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
@@ -395,7 +395,7 @@ void main() {
       await tester.pump();
     }
 
-    const title = 'On Windows, BaoCode Bash is recommended';
+    const title = 'On Windows, LangshenAgent Bash is recommended';
 
     testWidgets('the hint installs it and picks it, or is put off', (
       tester,
@@ -425,7 +425,7 @@ void main() {
       expect(later.hintDismissed, isTrue);
     });
 
-    testWidgets('Command Line: the shells to pick, BaoCode Bash under it', (
+    testWidgets('Command Line: the shells to pick, LangshenAgent Bash under it', (
       tester,
     ) async {
       final host = _Host(latest: _latest('0.1.0'));
@@ -445,7 +445,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Git Bash'), findsNothing);
       expect(find.text('PowerShell'), findsOne);
-      await tester.tap(find.text('BaoCode Bash (recommended)'));
+      await tester.tap(find.text('LangshenAgent Bash (recommended)'));
       await tester.pumpAndSettle();
       expect(find.text('Version 0.1.0 installed.'), findsOne);
       expect(find.text('Uninstall'), findsOne);
@@ -460,10 +460,10 @@ void main() {
       );
       expect(find.text('Update'), findsOne);
 
-      await tester.tap(find.textContaining('github.com/baocode-dev/bash-exe'));
+      await tester.tap(find.textContaining('github.com/langshenagent-dev/bash-exe'));
       expect(
         opened.single.toString(),
-        'https://github.com/baocode-dev/bash-exe',
+        'https://github.com/langshenagent-dev/bash-exe',
       );
     });
   });

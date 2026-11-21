@@ -10,19 +10,19 @@ import 'package:bao_editor/textmate/textmate_manifest.dart'
     show textMateAssetRoot;
 import 'package:bao_editor/textmate/textmate_syntax.dart';
 import 'package:bao_editor/textmate/textmate_worker.dart';
-import 'package:baocode/chat/user_message_style.dart';
-import 'package:baocode/customize/customize_view.dart';
-import 'package:baocode/ide/ide_diff_options.dart';
-import 'package:baocode/ide/lsp/packs/language_packs.dart';
-import 'package:baocode/kernel/claude_code/claude_core_setting.dart';
-import 'package:baocode/kernel/kernel_registry.dart';
-import 'package:baocode/models/codex/codex_api.dart';
-import 'package:baocode/models/featured_upstreams.dart';
-import 'package:baocode/kernel/mock/mock_kernels.dart';
-import 'package:baocode/platform/context_menu.dart';
-import 'package:baocode/platform/shell_command.dart';
-import 'package:baocode/theme/workbench_theme.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:langshenagent/chat/user_message_style.dart';
+import 'package:langshenagent/customize/customize_view.dart';
+import 'package:langshenagent/ide/ide_diff_options.dart';
+import 'package:langshenagent/ide/lsp/packs/language_packs.dart';
+import 'package:langshenagent/kernel/claude_code/claude_core_setting.dart';
+import 'package:langshenagent/kernel/kernel_registry.dart';
+import 'package:langshenagent/models/codex/codex_api.dart';
+import 'package:langshenagent/models/featured_upstreams.dart';
+import 'package:langshenagent/kernel/mock/mock_kernels.dart';
+import 'package:langshenagent/platform/context_menu.dart';
+import 'package:langshenagent/platform/shell_command.dart';
+import 'package:langshenagent/theme/workbench_theme.dart';
+import 'package:langshenagent/workspace/workspace.dart';
 
 import 'semantics_tree.dart';
 
@@ -38,9 +38,9 @@ import 'semantics_tree.dart';
 /// the context menu are stand-ins, never installed: none looks at the
 /// machine's own. No MCP server is started to see whether it answers, and
 /// neither the upstreams Settings → Models lists nor the Codex CLI's
-/// version is got from baocode.dev.
+/// version is got from langshenagent.dev.
 /// Sessions are the CLI's, with Claude Code as set up on the machine to
-/// pick, which the kernel's tests were written for: those of BaoCode's
+/// pick, which the kernel's tests were written for: those of LangshenAgent's
 /// own core say so. Diffs show as they do by default. The projects in
 /// `/tmp` are listed like any other.
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {

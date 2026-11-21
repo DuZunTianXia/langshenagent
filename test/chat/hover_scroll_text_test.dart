@@ -1,4 +1,4 @@
-import 'package:baocode/chat/widgets/hover_scroll_text.dart';
+import 'package:langshenagent/chat/widgets/hover_scroll_text.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

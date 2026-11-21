@@ -9,9 +9,9 @@ import '../chat/chat_session.dart';
 import '../workspace/workspace.dart';
 import 'workspace_bridge.dart';
 
-/// Where pushes go: baocode.dev's, which holds Apple's key and passes them
+/// Where pushes go: langshenagent.dev's, which holds Apple's key and passes them
 /// on to APNs, keeping nothing of them.
-final pushEndpoint = Uri.parse('https://push.baocode.dev/v1/push');
+final pushEndpoint = Uri.parse('https://push.langshenagent.dev/v1/push');
 
 /// What a phone asked to be pushed ([LinkMethods.push]): its token, and
 /// what it says of each kind in its own words, `{device}` and `{title}` in
@@ -235,7 +235,7 @@ class PushWatcher {
       events.add(
         _AgentEvent(
           '$desktop/$id',
-          title.isEmpty ? 'BaoCode' : title,
+          title.isEmpty ? 'LangshenAgent' : title,
           asking: asking,
         ),
       );

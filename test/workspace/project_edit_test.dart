@@ -1,16 +1,16 @@
 // A project named as the user likes, and had in another folder (its own
 // moved, say): its conversations, and what is kept of it, go along.
 
-import 'package:baocode/chat/chat_session.dart' show ComposerMessage;
-import 'package:baocode/icons/project_icon.dart';
-import 'package:baocode/kernel/agent_kernel.dart';
-import 'package:baocode/kernel/claude_code/claude_code_kernel.dart';
-import 'package:baocode/kernel/mock/mock_kernels.dart';
-import 'package:baocode/main.dart';
-import 'package:baocode/sidebar/sidebar.dart';
-import 'package:baocode/workspace/preference_store.dart';
-import 'package:baocode/workspace/workspace.dart';
-import 'package:baocode/workspace/workspace_dialog.dart';
+import 'package:langshenagent/chat/chat_session.dart' show ComposerMessage;
+import 'package:langshenagent/icons/project_icon.dart';
+import 'package:langshenagent/kernel/agent_kernel.dart';
+import 'package:langshenagent/kernel/claude_code/claude_code_kernel.dart';
+import 'package:langshenagent/kernel/mock/mock_kernels.dart';
+import 'package:langshenagent/main.dart';
+import 'package:langshenagent/sidebar/sidebar.dart';
+import 'package:langshenagent/workspace/preference_store.dart';
+import 'package:langshenagent/workspace/workspace.dart';
+import 'package:langshenagent/workspace/workspace_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -228,7 +228,7 @@ void main() {
       projects: const [Project('site', '/code/site')],
       kernels: [MockKernels.claudeCode],
     );
-    await tester.pumpWidget(BaoCodeApp(workspace: workspace));
+    await tester.pumpWidget(LangshenAgentApp(workspace: workspace));
     workspace.create(project: workspace.projects.first);
     await tester.pump();
 

@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:baocode/ide/ide_status_bar.dart';
-import 'package:baocode/theme/codicons.dart';
-import 'package:baocode/theme/icon_registry.dart';
+import 'package:langshenagent/ide/ide_status_bar.dart';
+import 'package:langshenagent/theme/codicons.dart';
+import 'package:langshenagent/theme/icon_registry.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;

@@ -25,16 +25,16 @@ import 'package:bao_markdown/bao_markdown.dart'
         MarkdownEditorState,
         MarkdownEditing,
         RenderMdLine;
-import 'package:baocode/chat/chat_history_view.dart';
-import 'package:baocode/chat/composer/composer.dart';
-import 'package:baocode/chat/side_panel/side_panel_view.dart';
-import 'package:baocode/sidebar/sidebar.dart';
-import 'package:baocode/stash/stash_controller.dart';
-import 'package:baocode/stash/stash_editor.dart';
-import 'package:baocode/stash/stash_view.dart';
-import 'package:baocode/workspace/chat_drag.dart';
-import 'package:baocode/workspace/chat_grid.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:langshenagent/chat/chat_history_view.dart';
+import 'package:langshenagent/chat/composer/composer.dart';
+import 'package:langshenagent/chat/side_panel/side_panel_view.dart';
+import 'package:langshenagent/sidebar/sidebar.dart';
+import 'package:langshenagent/stash/stash_controller.dart';
+import 'package:langshenagent/stash/stash_editor.dart';
+import 'package:langshenagent/stash/stash_view.dart';
+import 'package:langshenagent/workspace/chat_drag.dart';
+import 'package:langshenagent/workspace/chat_grid.dart';
+import 'package:langshenagent/workspace/workspace.dart';
 
 import 'perf_memory.dart';
 import 'perf_probe.dart';

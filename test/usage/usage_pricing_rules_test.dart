@@ -1,11 +1,11 @@
 import 'dart:convert';
 
-import 'package:baocode/usage/claude_usage_meter.dart';
-import 'package:baocode/usage/usage_capture.dart';
-import 'package:baocode/usage/usage_ledger.dart';
-import 'package:baocode/usage/usage_prices.dart';
-import 'package:baocode/usage/usage_record.dart';
-import 'package:baocode/usage/usage_tools.dart';
+import 'package:langshenagent/usage/claude_usage_meter.dart';
+import 'package:langshenagent/usage/usage_capture.dart';
+import 'package:langshenagent/usage/usage_ledger.dart';
+import 'package:langshenagent/usage/usage_prices.dart';
+import 'package:langshenagent/usage/usage_record.dart';
+import 'package:langshenagent/usage/usage_tools.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 UsageCall _call({

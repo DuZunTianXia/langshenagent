@@ -4,24 +4,24 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/composer/composer_files.dart';
-import 'package:baocode/icons/project_icon.dart';
-import 'package:baocode/l10n/l10n.dart';
-import 'package:baocode/theme/workbench_theme.dart';
+import 'package:langshenagent/chat/chat_session.dart';
+import 'package:langshenagent/chat/chat_models.dart';
+import 'package:langshenagent/chat/composer/composer_files.dart';
+import 'package:langshenagent/icons/project_icon.dart';
+import 'package:langshenagent/l10n/l10n.dart';
+import 'package:langshenagent/theme/workbench_theme.dart';
 import 'package:flutter/services.dart';
 
 import 'dart:ui' as ui;
 
-import 'package:baocode/ide/git/ide_git_log_view.dart';
-import 'package:baocode/ide/ide_workbench.dart';
-import 'package:baocode/ide/terminal/terminal_instance.dart';
-import 'package:baocode/ide/terminal/terminal_view.dart';
-import 'package:baocode/settings/user_settings.dart';
-import 'package:baocode/workspace/chat_grid.dart';
-import 'package:baocode/workspace/window_controls.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:langshenagent/ide/git/ide_git_log_view.dart';
+import 'package:langshenagent/ide/ide_workbench.dart';
+import 'package:langshenagent/ide/terminal/terminal_instance.dart';
+import 'package:langshenagent/ide/terminal/terminal_view.dart';
+import 'package:langshenagent/settings/user_settings.dart';
+import 'package:langshenagent/workspace/chat_grid.dart';
+import 'package:langshenagent/workspace/window_controls.dart';
+import 'package:langshenagent/workspace/workspace.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
@@ -97,7 +97,7 @@ class ShowScene {
   final SettingsFiles settings;
 
   static void log(String message) =>
-      stderr.writeln('BAOCODE_SHOWCASE_LOG $message');
+      stderr.writeln('LANGSHENAGENT_SHOWCASE_LOG $message');
 
   String code(String project) => p.join(home, 'code', project);
 

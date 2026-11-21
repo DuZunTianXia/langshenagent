@@ -1,4 +1,4 @@
-import 'package:baocode/models/claude_resets.dart';
+import 'package:langshenagent/models/claude_resets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// `/api/oauth/usage?cedar_ember=1` as a Max account had it (Nov 2026).

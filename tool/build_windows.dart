@@ -20,7 +20,7 @@
 //                                                  put in tool/engine's
 //                                                  flutter_windows.dll (x64)
 //   dart run tool/build_windows.dart --channel      the channel build
-//                                                  (BAOCODE_CHANNEL;
+//                                                  (LANGSHENAGENT_CHANNEL;
 //                                                  lib/channel/), its
 //                                                  installer named
 //                                                  -setup-channel.exe
@@ -65,18 +65,18 @@ const _installersRelative = r'build\installers';
 const _symbolsRelative = r'build\symbols';
 
 /// What has to be in the bundle for the app to start. A Release build that
-/// fails at the link step (a running baocode.exe holding the output file) still
-/// leaves a baocode.exe behind — but data\ is written by the install step that
+/// fails at the link step (a running langshenagent.exe holding the output file) still
+/// leaves a langshenagent.exe behind — but data\ is written by the install step that
 /// failure skipped, and the executable cannot start without it.
 const _required = [
-  'baocode.exe',
+  'langshenagent.exe',
   'flutter_windows.dll',
   // The browsers' native messaging host and its manifest, which the
   // installer's keys point the browsers to (windows/BrowserBridge).
-  'baocode-browser-host.exe',
-  'dev.baocode.browser.json',
+  'langshenagent-browser-host.exe',
+  'dev.langshenagent.browser.json',
   // What writes down a fast fail (windows/wer), which the app registers.
-  'baocode_wer.dll',
+  'langshenagent_wer.dll',
   // The VC++ runtime, carried rather than taken from System32, which may
   // be older than the build's (see windows/CMakeLists.txt).
   'msvcp140.dll',
@@ -174,7 +174,7 @@ Future<void> main(List<String> arguments) async {
       'build',
       'windows',
       '--release',
-      if (channel) '--dart-define=BAOCODE_CHANNEL=true',
+      if (channel) '--dart-define=LANGSHENAGENT_CHANNEL=true',
       // Not --split-debug-info, which would also leave the app's stack
       // traces (errors.log) unnamed, as offsets.
       '--extra-gen-snapshot-options=--save-debugging-info='
@@ -254,7 +254,7 @@ Future<void> main(List<String> arguments) async {
     '/DOutDir=${installers.path}',
     '/DArch=$arch',
     if (channel) '/DEdition=-channel',
-    '${root.path}\\tool\\baocode.iss',
+    '${root.path}\\tool\\langshenagent.iss',
   ], root.path);
 
   // None when published already (--remote-release).
@@ -274,7 +274,7 @@ Future<void> main(List<String> arguments) async {
 
   _step('Done');
   final installer = File(
-    '${installers.path}\\BaoCode-${version.marketing}-setup'
+    '${installers.path}\\LangshenAgent-${version.marketing}-setup'
     '${arch == 'x64' ? '' : '-$arch'}${channel ? '-channel' : ''}.exe',
   );
   for (final file in [installer, ...servers]) {
@@ -286,7 +286,7 @@ Future<void> main(List<String> arguments) async {
     stdout
       ..writeln()
       ..writeln('The app downloads the remote server published:')
-      ..writeln('  https://dl.baocode.dev/releases/remote/$remoteVersion/');
+      ..writeln('  https://dl.langshenagent.dev/releases/remote/$remoteVersion/');
   } else {
     stdout
       ..writeln()
@@ -296,7 +296,7 @@ Future<void> main(List<String> arguments) async {
       ..writeln('and package with --remote-release):')
       ..writeln(
         '  ${downloads.path}\\*  ->  '
-        'https://dl.baocode.dev/releases/remote/$remoteVersion/',
+        'https://dl.langshenagent.dev/releases/remote/$remoteVersion/',
       );
   }
   stdout.writeln();
@@ -347,7 +347,7 @@ void _checkBundle(Directory directory, List<String> required) {
     '\n'
     'A Release build that failed at the link step leaves exactly this: the\n'
     'install step that writes data\\ never ran. If the build reported\n'
-    'LNK1104, a running baocode.exe is holding the output file — close it and\n'
+    'LNK1104, a running langshenagent.exe is holding the output file — close it and\n'
     'build again.',
   );
 }

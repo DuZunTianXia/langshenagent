@@ -9,14 +9,14 @@ import '../platform/data_dir.dart';
 import '../workspace/editor_launcher.dart' show openExternal;
 import 'browser_bridge.dart';
 
-/// Where BaoCode's extension is got. The store's page is the site's to say
-/// (`store` in dl.baocode.dev's releases/extension/latest.json, which
+/// Where LangshenAgent's extension is got. The store's page is the site's to say
+/// (`store` in dl.langshenagent.dev's releases/extension/latest.json, which
 /// .github/workflows/extension.yml writes): fetched once a run, kept in
 /// the cache for when the site does not answer, and before the first
 /// answer the page the extension's id makes.
 abstract final class ExtensionStore {
   static final manifest = Uri.https(
-    'dl.baocode.dev',
+    'dl.langshenagent.dev',
     '/releases/extension/latest.json',
   );
 
@@ -26,8 +26,8 @@ abstract final class ExtensionStore {
     '/detail/${BrowserBridge.extensionIds.first}',
   );
 
-  /// The zip to load unpacked: baocode.dev sends it to the newest.
-  static final zip = Uri.https('baocode.dev', '/dl/browser-extension');
+  /// The zip to load unpacked: langshenagent.dev sends it to the newest.
+  static final zip = Uri.https('langshenagent.dev', '/dl/browser-extension');
 
   /// The store's page as last known: fetched, or kept; [fallback] before.
   static Uri get page => _page ?? fallback;

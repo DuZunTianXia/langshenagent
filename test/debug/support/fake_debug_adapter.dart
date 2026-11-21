@@ -4,16 +4,16 @@
 
 import 'dart:async';
 
-import 'package:baocode/debug/common/debug_types.dart';
-import 'package:baocode/debug/service/debug_host.dart';
-import 'package:baocode/debug/service/debugger.dart';
-import 'package:baocode/debug/session/debug_adapter.dart';
-import 'package:baocode/debug/session/debug_session.dart';
-import 'package:baocode/debug/common/debug_storage.dart';
-import 'package:baocode/debug/common/debug_model.dart';
-import 'package:baocode/debug/service/debug_configuration_manager.dart';
-import 'package:baocode/debug/service/debug_service.dart';
-import 'package:baocode/base/uri.dart' show VsUri;
+import 'package:langshenagent/debug/common/debug_types.dart';
+import 'package:langshenagent/debug/service/debug_host.dart';
+import 'package:langshenagent/debug/service/debugger.dart';
+import 'package:langshenagent/debug/session/debug_adapter.dart';
+import 'package:langshenagent/debug/session/debug_session.dart';
+import 'package:langshenagent/debug/common/debug_storage.dart';
+import 'package:langshenagent/debug/common/debug_model.dart';
+import 'package:langshenagent/debug/service/debug_configuration_manager.dart';
+import 'package:langshenagent/debug/service/debug_service.dart';
+import 'package:langshenagent/base/uri.dart' show VsUri;
 
 const fakeProgramPath = '/work/app/main.js';
 

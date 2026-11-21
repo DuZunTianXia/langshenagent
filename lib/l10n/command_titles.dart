@@ -37,9 +37,9 @@ String localizedCommandLabel(AppLocalizations l10n, String id, String english) {
     'workbench.action.files.newUntitledFile' => l10n.cmdNewUntitledFile,
     'workbench.action.files.openFile' => l10n.cmdOpenFile,
     'workbench.action.files.openFolder' => l10n.cmdOpenFolder,
-    'baocode.remote.openFolder' => l10n.cmdOpenRemoteFolder,
-    'baocode.remote.openFile' => l10n.cmdOpenRemoteFile,
-    'baocode.workspace.create' => l10n.cmdCreateWorkspace,
+    'langshenagent.remote.openFolder' => l10n.cmdOpenRemoteFolder,
+    'langshenagent.remote.openFile' => l10n.cmdOpenRemoteFile,
+    'langshenagent.workspace.create' => l10n.cmdCreateWorkspace,
     'workbench.action.addRootFolder' => l10n.ideAddFolderToWorkspace,
     'workbench.action.openRecent' => l10n.cmdOpenRecent,
     'workbench.action.clearRecentlyOpened' => l10n.cmdClearRecentlyOpened,
@@ -104,28 +104,28 @@ String localizedCommandLabel(AppLocalizations l10n, String id, String english) {
     'workbench.action.navigateForward' => l10n.cmdGoForward,
     'workbench.action.selectTheme' => l10n.cmdColorTheme,
     // Its title says what running it does.
-    'baocode.ide.toggleFormatOnSave' =>
+    'langshenagent.ide.toggleFormatOnSave' =>
       english.startsWith('Turn Off')
           ? l10n.cmdTurnOffFormatOnSave
           : english.startsWith('Turn On')
           ? l10n.cmdTurnOnFormatOnSave
           : l10n.cmdToggleFormatOnSave,
-    'baocode.ide.retryLanguageServices' => l10n.cmdRetryLanguageServices,
-    'baocode.git.toggleAnnotations' =>
+    'langshenagent.ide.retryLanguageServices' => l10n.cmdRetryLanguageServices,
+    'langshenagent.git.toggleAnnotations' =>
       english.startsWith('Close') ? l10n.gitCloseAnnotations : l10n.gitAnnotate,
-    'baocode.git.branches' => l10n.gitBranchesTitle,
-    'baocode.git.pushDialog' => l10n.gitPushEllipsis,
-    'baocode.git.updateProject' => '${l10n.gitUpdateProject}…',
-    'baocode.git.showFileHistory' => l10n.gitShowHistory,
-    'baocode.git.showSelectionHistory' => l10n.gitShowHistoryForSelection,
-    'baocode.ide.backToChat' => l10n.cmdBackToChat,
+    'langshenagent.git.branches' => l10n.gitBranchesTitle,
+    'langshenagent.git.pushDialog' => l10n.gitPushEllipsis,
+    'langshenagent.git.updateProject' => '${l10n.gitUpdateProject}…',
+    'langshenagent.git.showFileHistory' => l10n.gitShowHistory,
+    'langshenagent.git.showSelectionHistory' => l10n.gitShowHistoryForSelection,
+    'langshenagent.ide.backToChat' => l10n.cmdBackToChat,
     WindowCommandIds.newWindow => l10n.cmdNewWindow,
     WindowCommandIds.closeWindow => l10n.cmdCloseWindow,
     WindowCommandIds.switchWindow => l10n.cmdSwitchWindow,
     WindowCommandIds.showChat => l10n.cmdShowChatWindow,
     'workbench.action.openSettings' => l10n.cmdOpenSettings,
     'workbench.action.openGlobalKeybindings' => l10n.cmdOpenKeyboardShortcuts,
-    'baocode.openLspSettings' => l10n.cmdOpenLspSettings,
+    'langshenagent.openLspSettings' => l10n.cmdOpenLspSettings,
     // The chat's (chatExtraCommands).
     ChatCommandIds.newChat => l10n.cmdChatNewAgent,
     ChatCommandIds.closePane => l10n.cmdChatClosePane,

@@ -1,10 +1,10 @@
-// Windows: both cores run their agents' commands with BaoCode Bash, on a
+// Windows: both cores run their agents' commands with LangshenAgent Bash, on a
 // real model. For a person to start, with
 //
-//   BAOCODE_E2E_KEY    an upstream's key (an OpenCode one)
-//   BAOCODE_E2E_BASH   an installed BaoCode Bash's bash.exe
-//   BAOCODE_E2E_URL    the upstream (OpenCode's Anthropic API by default)
-//   BAOCODE_E2E_MODEL  its model (deepseek-v4.1-flash by default)
+//   LANGSHENAGENT_E2E_KEY    an upstream's key (an OpenCode one)
+//   LANGSHENAGENT_E2E_BASH   an installed LangshenAgent Bash's bash.exe
+//   LANGSHENAGENT_E2E_URL    the upstream (OpenCode's Anthropic API by default)
+//   LANGSHENAGENT_E2E_MODEL  its model (deepseek-v4.1-flash by default)
 //
 //   flutter test --run-skipped -t e2e test/kernel/bash_exe_windows_e2e_test.dart
 // ignore_for_file: avoid_print
@@ -14,19 +14,19 @@ library;
 import 'dart:async';
 import 'dart:io';
 
-import 'package:baocode/bash_exe/bao_bash.dart';
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/kernel/agent_kernel.dart';
-import 'package:baocode/kernel/claude_code/claude_code_kernel.dart';
-import 'package:baocode/kernel/claude_code/claude_core_setting.dart';
-import 'package:baocode/kernel/kernel_event.dart';
-import 'package:baocode/kernel/kernel_registry.dart';
-import 'package:baocode/kernel/kernel_types.dart';
-import 'package:baocode/kernel/transcript.dart';
-import 'package:baocode/models/model_provider.dart';
-import 'package:baocode/models/model_providers.dart';
-import 'package:baocode/network/network_proxy_io.dart';
-import 'package:baocode/network/proxy_settings.dart';
+import 'package:langshenagent/bash_exe/bao_bash.dart';
+import 'package:langshenagent/chat/chat_models.dart';
+import 'package:langshenagent/kernel/agent_kernel.dart';
+import 'package:langshenagent/kernel/claude_code/claude_code_kernel.dart';
+import 'package:langshenagent/kernel/claude_code/claude_core_setting.dart';
+import 'package:langshenagent/kernel/kernel_event.dart';
+import 'package:langshenagent/kernel/kernel_registry.dart';
+import 'package:langshenagent/kernel/kernel_types.dart';
+import 'package:langshenagent/kernel/transcript.dart';
+import 'package:langshenagent/models/model_provider.dart';
+import 'package:langshenagent/models/model_providers.dart';
+import 'package:langshenagent/network/network_proxy_io.dart';
+import 'package:langshenagent/network/proxy_settings.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
@@ -38,7 +38,7 @@ final _env = Platform.environment;
 /// The commands asked for, one Bash call each, and what each one's output
 /// has to show: a part of the command it is told by, and the output.
 const _commands = <(String, String, Pattern)>[
-  // Built in to BaoCode Bash; Git Bash runs a program, if any.
+  // Built in to LangshenAgent Bash; Git Bash runs a program, if any.
   ('type -t rg && echo "bash=\$BASH_VERSION"', 'type -t rg', 'builtin'),
   ('cmd //c "echo 中文 from cmd"', 'from cmd', '中文 from cmd'),
   ('mkdir -p sub && cd sub && pwd', 'cd sub', 'sub'),
@@ -58,7 +58,7 @@ const _commands = <(String, String, Pattern)>[
   ),
 ];
 
-/// An installed BaoCode Bash: the one at [executable].
+/// An installed LangshenAgent Bash: the one at [executable].
 class _Installed implements BaoBashHost {
   _Installed(this.executable);
 
@@ -93,14 +93,14 @@ class _Installed implements BaoBashHost {
 }
 
 void main() {
-  final key = _env['BAOCODE_E2E_KEY'];
-  final bash = _env['BAOCODE_E2E_BASH'];
+  final key = _env['LANGSHENAGENT_E2E_KEY'];
+  final bash = _env['LANGSHENAGENT_E2E_BASH'];
   final skip = !Platform.isWindows
       ? 'Windows only'
       : key == null || bash == null
-      ? 'BAOCODE_E2E_KEY and BAOCODE_E2E_BASH not set'
+      ? 'LANGSHENAGENT_E2E_KEY and LANGSHENAGENT_E2E_BASH not set'
       : null;
-  final model = _env['BAOCODE_E2E_MODEL'] ?? 'deepseek-v4.1-flash';
+  final model = _env['LANGSHENAGENT_E2E_MODEL'] ?? 'deepseek-v4.1-flash';
 
   late String cwd;
   late ModelProviders providers;
@@ -113,7 +113,7 @@ void main() {
     HttpOverrides.global = null;
     addTearDown(() => HttpOverrides.global = overrides);
     final root = Directory.systemTemp
-        .createTempSync('baocode-bash-e2e-')
+        .createTempSync('langshenagent-bash-e2e-')
         .resolveSymbolicLinksSync();
     addTearDown(() async {
       for (var i = 0; i < 10; i++) {
@@ -136,7 +136,7 @@ void main() {
           id: 'oc',
           name: 'OpenCode',
           baseUrl:
-              _env['BAOCODE_E2E_URL'] ??
+              _env['LANGSHENAGENT_E2E_URL'] ??
               'https://opencode.ai/inference/anthropic',
           models: [ProviderModel(id: model)],
         ),
@@ -153,7 +153,7 @@ void main() {
   });
 
   for (final core in [ClaudeCore.builtin, ClaudeCore.cli]) {
-    test('${core.name}: an agent\'s commands run with BaoCode Bash', () async {
+    test('${core.name}: an agent\'s commands run with LangshenAgent Bash', () async {
       if (skip != null) return markTestSkipped(skip);
       ClaudeCore.current = () => core;
       final kernel = KernelRegistry.claudeCode.create(

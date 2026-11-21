@@ -3,11 +3,11 @@
 
 import 'dart:convert';
 
-import 'package:baocode/extensions/gallery/extension_management_backend.dart';
-import 'package:baocode/extensions/gallery/open_vsx_client.dart';
-import 'package:baocode/extensions/ui/extension_detail.dart';
-import 'package:baocode/extensions/ui/extensions_model.dart';
-import 'package:baocode/extensions/vsix/target_platform.dart';
+import 'package:langshenagent/extensions/gallery/extension_management_backend.dart';
+import 'package:langshenagent/extensions/gallery/open_vsx_client.dart';
+import 'package:langshenagent/extensions/ui/extension_detail.dart';
+import 'package:langshenagent/extensions/ui/extensions_model.dart';
+import 'package:langshenagent/extensions/vsix/target_platform.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

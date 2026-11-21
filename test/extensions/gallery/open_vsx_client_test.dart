@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:baocode/base/cancellation.dart';
-import 'package:baocode/extensions/gallery/gallery_models.dart';
-import 'package:baocode/extensions/gallery/open_vsx_client.dart';
-import 'package:baocode/extensions/vsix/target_platform.dart';
+import 'package:langshenagent/base/cancellation.dart';
+import 'package:langshenagent/extensions/gallery/gallery_models.dart';
+import 'package:langshenagent/extensions/gallery/open_vsx_client.dart';
+import 'package:langshenagent/extensions/vsix/target_platform.dart';
 import 'package:crypto/crypto.dart' as crypto;
 import 'package:flutter_test/flutter_test.dart';
 

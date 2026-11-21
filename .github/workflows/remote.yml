@@ -1,11 +1,11 @@
-# Builds the remote server (baocode-server, the app's side on an SSH host)
+# Builds the remote server (langshenagent-server, the app's side on an SSH host)
 # for Linux, macOS and Windows, x64 and arm64 (and Linux riscv64), and runs it
 # on each. docs/ssh-remote.md
 # (9.3) has where the builds go and how the app finds them.
 #
 #   git tag server-foo && git push origin server-foo
 #                                      build, and publish the builds at
-#                                      dl.baocode.dev/releases/remote/
+#                                      dl.langshenagent.dev/releases/remote/
 #                                      <VERSION>/, latest.json there naming
 #                                      them: for apps packaged locally with
 #                                      --remote-release (tool/build_*.dart)
@@ -69,12 +69,12 @@ jobs:
         run: dart run tool/build_remote_server.dart --out build/remote-windows --only windows-${{ matrix.arch }}
       - name: Run it here
         shell: pwsh
-        run: ./tool/test_remote_server_windows.ps1 build/remote-windows/baocode-server-windows-${{ matrix.arch }} ${{ matrix.arch }}
+        run: ./tool/test_remote_server_windows.ps1 build/remote-windows/langshenagent-server-windows-${{ matrix.arch }} ${{ matrix.arch }}
       - uses: actions/upload-artifact@v6
         with:
           name: remote-windows-${{ matrix.arch }}
           if-no-files-found: error
-          path: build/remote-windows/baocode-server-windows-${{ matrix.arch }}
+          path: build/remote-windows/langshenagent-server-windows-${{ matrix.arch }}
 
   build:
     name: Build the remote server
@@ -110,7 +110,7 @@ jobs:
           merge-multiple: true
           path: build/remote-windows
       # Once, for both apps: they carry its servers.json, and download the
-      # build a host needs from dl.baocode.dev (docs/ssh-remote.md, 9.3).
+      # build a host needs from dl.langshenagent.dev (docs/ssh-remote.md, 9.3).
       - name: Build for Linux and macOS, x64 and arm64, Linux riscv64, with Windows'
         run: |
           dart run tool/build_remote_server.dart --out build/remote --all \
@@ -134,7 +134,7 @@ jobs:
           if-no-files-found: error
           path: |
             build/remote/VERSION
-            build/remote/baocode-server-linux-*
+            build/remote/langshenagent-server-linux-*
             !build/remote/*.gz
 
   linux:
@@ -153,11 +153,11 @@ jobs:
       - name: Run it on Linux distributions, in Docker
         run: |
           # Artifacts keep no modes.
-          chmod 755 build/remote/baocode-server-linux-*
+          chmod 755 build/remote/langshenagent-server-linux-*
           tool/test_remote_server.sh build/remote
 
   publish:
-    name: Publish to dl.baocode.dev/releases/remote/
+    name: Publish to dl.langshenagent.dev/releases/remote/
     needs: [build, linux]
     # Its own server-* tag only: called by Release, the release publishes.
     if: github.event_name == 'push' && startsWith(github.ref_name, 'server-')

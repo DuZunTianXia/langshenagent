@@ -1,20 +1,20 @@
-// baocode-browser-host.exe: the native messaging host of BaoCode's browser
+// langshenagent-browser-host.exe: the native messaging host of LangshenAgent's browser
 // extension (browser_extension/) on Windows, as macos/BrowserBridge/host.c
 // is on macOS. The browser starts it for the extension, as
-// dev.baocode.browser.json beside it says (the installer's keys point the
-// browsers there, see tool/baocode.iss). It passes the extension's
-// messages to BaoCode and BaoCode's back: waiting for BaoCode while it is
+// dev.langshenagent.browser.json beside it says (the installer's keys point the
+// browsers there, see tool/langshenagent.iss). It passes the extension's
+// messages to LangshenAgent and LangshenAgent's back: waiting for LangshenAgent while it is
 // not running, and again once it quits.
 //
-// Dart has no Unix sockets on Windows: BaoCode (lib/browser/
+// Dart has no Unix sockets on Windows: LangshenAgent (lib/browser/
 // browser_bridge.dart) listens on 127.0.0.1, at the port its file in the
-// user's temporary folder says, baocode-browser.port: "<port> <token>".
+// user's temporary folder says, langshenagent-browser.port: "<port> <token>".
 // Any program may connect there, so the host's hello says the token, which
-// only the user can read; BaoCode lets in no one who does not.
+// only the user can read; LangshenAgent lets in no one who does not.
 //
 // Both ways a message is the browser's: its length (4 bytes, this
 // machine's order), then that much JSON. The host says what goes on with
-// BaoCode in messages of its own: {"type":"bridge","connected":…}. It
+// LangshenAgent in messages of its own: {"type":"bridge","connected":…}. It
 // quits once the browser lets it go (its input ends).
 
 #include <winsock2.h>
@@ -32,7 +32,7 @@
 
 static SRWLOCK out_lock = SRWLOCK_INIT;
 static SRWLOCK socket_lock = SRWLOCK_INIT;
-static SOCKET bao = INVALID_SOCKET;  // The socket to BaoCode, while connected.
+static SOCKET bao = INVALID_SOCKET;  // The socket to LangshenAgent, while connected.
 static const char* origin = "";
 static HANDLE input;
 static HANDLE output;
@@ -175,13 +175,13 @@ static void escape_json(const char* text, char* out, size_t size) {
   out[j] = 0;
 }
 
-// BaoCode's port and token, from its file: false while there is none
-// (BaoCode is not running) or it is not whole yet.
+// LangshenAgent's port and token, from its file: false while there is none
+// (LangshenAgent is not running) or it is not whole yet.
 static bool find_bao(unsigned* port, char* token, size_t size) {
   wchar_t path[MAX_PATH + 32];
   const DWORD n = GetTempPathW(MAX_PATH + 1, path);
   if (n == 0 || n > MAX_PATH) return false;
-  if (wcscat_s(path, L"baocode-browser.port") != 0) return false;
+  if (wcscat_s(path, L"langshenagent-browser.port") != 0) return false;
   HANDLE file = CreateFileW(
       path, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
       nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
@@ -221,7 +221,7 @@ static SOCKET connect_bao(unsigned port) {
   return fd;
 }
 
-// BaoCode's messages, to the browser; connecting again each time BaoCode
+// LangshenAgent's messages, to the browser; connecting again each time LangshenAgent
 // comes back.
 static DWORD WINAPI from_bao(void*) {
   for (;;) {
@@ -297,7 +297,7 @@ int main(int argc, char** argv) {
   HANDLE thread = CreateThread(nullptr, 0, from_bao, nullptr, 0, nullptr);
   if (!thread) return 1;
   CloseHandle(thread);
-  // The extension's messages, to BaoCode: dropped while it is not there
+  // The extension's messages, to LangshenAgent: dropped while it is not there
   // (the extension knows, told above).
   for (;;) {
     uint32_t length;

@@ -7,18 +7,18 @@ import 'package:bao_remote/client.dart' show SshConnection;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/ide/ide_quick_input.dart';
-import 'package:baocode/kernel/agent_kernel.dart';
-import 'package:baocode/kernel/mock/mock_kernels.dart';
-import 'package:baocode/main.dart';
-import 'package:baocode/remote/open_remote.dart';
-import 'package:baocode/remote/remote_browser_view.dart';
-import 'package:baocode/remote/ssh_host.dart';
-import 'package:baocode/workspace/new_chat_folder_bar.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:langshenagent/chat/chat_session.dart';
+import 'package:langshenagent/ide/ide_quick_input.dart';
+import 'package:langshenagent/kernel/agent_kernel.dart';
+import 'package:langshenagent/kernel/mock/mock_kernels.dart';
+import 'package:langshenagent/main.dart';
+import 'package:langshenagent/remote/open_remote.dart';
+import 'package:langshenagent/remote/remote_browser_view.dart';
+import 'package:langshenagent/remote/ssh_host.dart';
+import 'package:langshenagent/workspace/new_chat_folder_bar.dart';
+import 'package:langshenagent/workspace/workspace.dart';
 
-const _window = MethodChannel('baocode/window');
+const _window = MethodChannel('langshenagent/window');
 const _desktop = '/Users/me/Desktop';
 
 final _mac = TargetPlatformVariant.only(TargetPlatform.macOS);
@@ -46,7 +46,7 @@ Future<Workspace> _pumpNew(WidgetTester tester) async {
     NewChatFolderBar.pickDirectory = pick;
   });
   final workspace = Workspace.mock();
-  await tester.pumpWidget(BaoCodeApp(workspace: workspace));
+  await tester.pumpWidget(LangshenAgentApp(workspace: workspace));
   workspace.create();
   await tester.pump();
   return workspace;
@@ -74,10 +74,10 @@ void main() {
     tester,
   ) async {
     final workspace = await _pumpNew(tester);
-    expect(workspace.selected.project.name, 'baocode');
+    expect(workspace.selected.project.name, 'langshenagent');
     expect(_bar, findsOneWidget);
     expect(
-      find.descendant(of: _bar, matching: find.text('baocode')),
+      find.descendant(of: _bar, matching: find.text('langshenagent')),
       findsOneWidget,
     );
     expect(find.text('Open from Finder'), findsOneWidget);
@@ -95,7 +95,7 @@ void main() {
     workspace.hideProject(hidden);
     await tester.pump();
 
-    await tester.tap(find.descendant(of: _bar, matching: find.text('baocode')));
+    await tester.tap(find.descendant(of: _bar, matching: find.text('langshenagent')));
     await tester.pumpAndSettle();
     expect(find.text('cursor-docs'), findsNothing);
   }, variant: _mac);
@@ -105,7 +105,7 @@ void main() {
   ) async {
     final workspace = await _pumpNew(tester);
     final was = workspace.selected;
-    await tester.tap(find.descendant(of: _bar, matching: find.text('baocode')));
+    await tester.tap(find.descendant(of: _bar, matching: find.text('langshenagent')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('No folder'));
     await tester.pumpAndSettle();
@@ -140,9 +140,9 @@ void main() {
     final workspace = await _pumpNew(tester);
     final project = workspace.selected.project;
     NewChatFolderBar.pickDirectory = () async => '/tmp/extra';
-    await tester.tap(find.descendant(of: _bar, matching: find.text('baocode')));
+    await tester.tap(find.descendant(of: _bar, matching: find.text('langshenagent')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Add Folder to baocode…'));
+    await tester.tap(find.text('Add Folder to langshenagent…'));
     await tester.pumpAndSettle();
 
     expect(workspace.selected.project.path, project.path);
@@ -151,11 +151,11 @@ void main() {
       '/tmp/extra',
     ]);
     expect(
-      find.descendant(of: _bar, matching: find.text('baocode +1')),
+      find.descendant(of: _bar, matching: find.text('langshenagent +1')),
       findsOneWidget,
     );
     await tester.tap(
-      find.descendant(of: _bar, matching: find.text('baocode +1')),
+      find.descendant(of: _bar, matching: find.text('langshenagent +1')),
     );
     await tester.pumpAndSettle();
     expect(find.text('${project.path} · 1 more folder'), findsOneWidget);

@@ -1,9 +1,9 @@
-import 'package:baocode/l10n/l10n.dart';
-import 'package:baocode/models/model_provider.dart';
-import 'package:baocode/models/model_providers.dart';
-import 'package:baocode/models/model_welcome.dart';
-import 'package:baocode/settings/pages/models_page.dart';
-import 'package:baocode/settings/settings_dialog.dart';
+import 'package:langshenagent/l10n/l10n.dart';
+import 'package:langshenagent/models/model_provider.dart';
+import 'package:langshenagent/models/model_providers.dart';
+import 'package:langshenagent/models/model_welcome.dart';
+import 'package:langshenagent/settings/pages/models_page.dart';
+import 'package:langshenagent/settings/settings_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

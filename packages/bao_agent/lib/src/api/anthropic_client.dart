@@ -17,7 +17,7 @@ class ApiConfig {
     this.environment = const {},
     this.maxRetries = 10,
     this.idleTimeout = const Duration(minutes: 5),
-    this.userAgent = 'baocode-agent',
+    this.userAgent = 'langshenagent-agent',
     this.userId,
     this.deviceId,
   });
@@ -57,13 +57,13 @@ class ApiConfig {
       (apiKey?.isNotEmpty ?? false) || (authToken?.isNotEmpty ?? false);
 
   /// Whether this is Anthropic's own API (or, with
-  /// `BAOCODE_FIRST_PARTY_API`, a server that speaks all of it).
+  /// `LANGSHENAGENT_FIRST_PARTY_API`, a server that speaks all of it).
   bool get firstParty => isFirstParty(baseUrl, environment);
 
   /// Whether requests to [baseUrl] go to Anthropic's own API (or the
   /// environment says to treat them so).
   static bool isFirstParty(String baseUrl, Map<String, String> environment) {
-    final forced = environment['BAOCODE_FIRST_PARTY_API'];
+    final forced = environment['LANGSHENAGENT_FIRST_PARTY_API'];
     if (forced != null && forced.isNotEmpty) {
       return forced != '0' && forced != 'false';
     }

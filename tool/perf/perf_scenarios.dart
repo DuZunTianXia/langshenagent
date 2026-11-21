@@ -1,5 +1,5 @@
 // The perf app's scenarios: what the user and the agents do in each, and
-// which parts of it are measured (its phases). Each runs in a BaoCodeApp of
+// which parts of it are measured (its phases). Each runs in a LangshenAgentApp of
 // its own, on a Workspace whose agents are PerfTransport's.
 
 import 'dart:async';
@@ -10,16 +10,16 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:bao_editor/monaco/flutter/editor_surface.dart';
-import 'package:baocode/chat/chat_history_view.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/chat/edit_detail.dart';
-import 'package:baocode/chat/widgets/step_header.dart' show StepBody;
-import 'package:baocode/ide/ide_editor.dart';
-import 'package:baocode/ide/ide_workbench.dart';
-import 'package:baocode/ide/lsp/lsp_protocol.dart';
-import 'package:baocode/workspace/chat_grid.dart';
-import 'package:baocode/theme/app_theme.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:langshenagent/chat/chat_history_view.dart';
+import 'package:langshenagent/chat/chat_session.dart';
+import 'package:langshenagent/chat/edit_detail.dart';
+import 'package:langshenagent/chat/widgets/step_header.dart' show StepBody;
+import 'package:langshenagent/ide/ide_editor.dart';
+import 'package:langshenagent/ide/ide_workbench.dart';
+import 'package:langshenagent/ide/lsp/lsp_protocol.dart';
+import 'package:langshenagent/workspace/chat_grid.dart';
+import 'package:langshenagent/theme/app_theme.dart';
+import 'package:langshenagent/workspace/workspace.dart';
 
 import 'perf_content.dart';
 import 'perf_input.dart';
@@ -123,7 +123,7 @@ class PerfContext {
   static ui.PointerDataPacketCallback? desktopPointers;
 
   static void log(String message) =>
-      stderr.writeln('BAOCODE_PERF_LOG $message');
+      stderr.writeln('LANGSHENAGENT_PERF_LOG $message');
 
   /// Measures [body] as the phase [name].
   Future<void> phase(
@@ -814,17 +814,17 @@ export const rateLimiter = (options: RateLimitOptions): MiddlewareHandler => {
   ),
   PerfScenario(
     'real.history',
-    'A real session, a Claude Code transcript (BAOCODE_PERF_TRANSCRIPT; '
-        'BAOCODE_PERF_TRANSCRIPT_TURNS, its first turns only), loaded turn '
+    'A real session, a Claude Code transcript (LANGSHENAGENT_PERF_TRANSCRIPT; '
+        'LANGSHENAGENT_PERF_TRANSCRIPT_TURNS, its first turns only), loaded turn '
         'by turn, the wheel spun through it, an answer streamed below it.',
     (c) async {
-      final path = Platform.environment['BAOCODE_PERF_TRANSCRIPT'];
-      c.check(path != null, 'BAOCODE_PERF_TRANSCRIPT names a transcript');
+      final path = Platform.environment['LANGSHENAGENT_PERF_TRANSCRIPT'];
+      c.check(path != null, 'LANGSHENAGENT_PERF_TRANSCRIPT names a transcript');
       if (path == null) return;
       final turns = readTranscript(
         path,
         limit: int.tryParse(
-          Platform.environment['BAOCODE_PERF_TRANSCRIPT_TURNS'] ?? '',
+          Platform.environment['LANGSHENAGENT_PERF_TRANSCRIPT_TURNS'] ?? '',
         ),
       );
       await c.settle();

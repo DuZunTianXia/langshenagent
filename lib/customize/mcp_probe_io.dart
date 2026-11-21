@@ -16,7 +16,7 @@ final String _initialize = jsonEncode({
   'params': {
     'protocolVersion': '2025-06-18',
     'capabilities': <String, Object?>{},
-    'clientInfo': {'name': 'BaoCode', 'version': '1.0.0'},
+    'clientInfo': {'name': 'LangshenAgent', 'version': '1.0.0'},
   },
 });
 

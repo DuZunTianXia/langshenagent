@@ -5,11 +5,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bao_editor/monaco/flutter/editor_document_model.dart';
 import 'package:bao_editor/monaco/flutter/editor_surface.dart';
-import 'package:baocode/ide/lsp/language_features.dart';
-import 'package:baocode/ide/lsp/lsp_protocol.dart';
-import 'package:baocode/ide/lsp_ui/language_widgets.dart';
-import 'package:baocode/ide/lsp_ui/problems_panel.dart';
-import 'package:baocode/theme/workbench_theme.dart';
+import 'package:langshenagent/ide/lsp/language_features.dart';
+import 'package:langshenagent/ide/lsp/lsp_protocol.dart';
+import 'package:langshenagent/ide/lsp_ui/language_widgets.dart';
+import 'package:langshenagent/ide/lsp_ui/problems_panel.dart';
+import 'package:langshenagent/theme/workbench_theme.dart';
 
 import '../workbench/fake_files.dart';
 import 'fake_language_features.dart';

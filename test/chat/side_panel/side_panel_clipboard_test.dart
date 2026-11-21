@@ -1,10 +1,10 @@
-import 'package:baocode/ide/ide_notifications.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/chat/side_panel/side_panel_controller.dart';
-import 'package:baocode/chat/side_panel/side_panel_view.dart';
-import 'package:baocode/ide/ide_explorer.dart';
-import 'package:baocode/kernel/agent_kernel.dart' show KernelContext;
-import 'package:baocode/theme/app_theme.dart';
+import 'package:langshenagent/ide/ide_notifications.dart';
+import 'package:langshenagent/chat/chat_session.dart';
+import 'package:langshenagent/chat/side_panel/side_panel_controller.dart';
+import 'package:langshenagent/chat/side_panel/side_panel_view.dart';
+import 'package:langshenagent/ide/ide_explorer.dart';
+import 'package:langshenagent/kernel/agent_kernel.dart' show KernelContext;
+import 'package:langshenagent/theme/app_theme.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -23,7 +23,7 @@ void main() {
   List<String> clipboard(WidgetTester tester) {
     final held = <String>[];
     final messenger = tester.binding.defaultBinaryMessenger;
-    const channel = MethodChannel('baocode/window');
+    const channel = MethodChannel('langshenagent/window');
     messenger.setMockMethodCallHandler(channel, (call) async {
       switch (call.method) {
         case 'writePasteboardFiles':

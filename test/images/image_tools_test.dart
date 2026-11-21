@@ -2,17 +2,17 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/widgets/content_image.dart';
-import 'package:baocode/chat/widgets/copy_button.dart';
-import 'package:baocode/images/image_picks.dart';
-import 'package:baocode/images/image_steps.dart';
-import 'package:baocode/images/image_tools.dart';
-import 'package:baocode/kernel/claude_code/claude_code_translator.dart';
-import 'package:baocode/kernel/claude_code/claude_sdk_tools.dart';
-import 'package:baocode/kernel/transcript.dart';
-import 'package:baocode/models/model_provider.dart';
-import 'package:baocode/models/model_providers.dart';
+import 'package:langshenagent/chat/chat_models.dart';
+import 'package:langshenagent/chat/widgets/content_image.dart';
+import 'package:langshenagent/chat/widgets/copy_button.dart';
+import 'package:langshenagent/images/image_picks.dart';
+import 'package:langshenagent/images/image_steps.dart';
+import 'package:langshenagent/images/image_tools.dart';
+import 'package:langshenagent/kernel/claude_code/claude_code_translator.dart';
+import 'package:langshenagent/kernel/claude_code/claude_sdk_tools.dart';
+import 'package:langshenagent/kernel/transcript.dart';
+import 'package:langshenagent/models/model_provider.dart';
+import 'package:langshenagent/models/model_providers.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -49,7 +49,7 @@ void main() {
             {
               'type': 'tool_use',
               'id': 'g1',
-              'name': 'mcp__baocode__generate_image',
+              'name': 'mcp__langshenagent__generate_image',
               'input': {'prompt': 'A red fox\nin snow', 'aspect_ratio': '16:9'},
             },
           ],

@@ -16,7 +16,7 @@ class RemoteHarness {
   /// talking to it (initialized); [cliExecutable], what its terminals'
   /// `code` command runs.
   static Future<RemoteHarness> start({String? cliExecutable}) async {
-    final dataDir = Directory.systemTemp.createTempSync('baocode-remote-');
+    final dataDir = Directory.systemTemp.createTempSync('langshenagent-remote-');
     final toServer = StreamController<String>();
     final toClient = StreamController<String>();
     final lines = <String>[];
@@ -124,7 +124,7 @@ class MemoryConnector {
   }) async {
     attempts++;
     if (failure case final failure?) throw failure;
-    onProgress?.call('Starting the BaoCode server on ${target.text}');
+    onProgress?.call('Starting the LangshenAgent server on ${target.text}');
     final link = await MemoryLink.open(dataDir, replyDelay: replyDelay);
     links.add(link);
     return SshConnection.over(

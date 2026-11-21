@@ -2,25 +2,25 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:baocode/chat/widgets/tool_call_row.dart'
+import 'package:langshenagent/chat/widgets/tool_call_row.dart'
     show todoDoingIcon, todoDoneIcon, todoOpenIcon;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/edit_detail.dart';
-import 'package:baocode/ide/ide_code_diff.dart';
-import 'package:baocode/chat/panels/activity_strip.dart';
-import 'package:baocode/chat/widgets/agent_message_card.dart';
-import 'package:baocode/chat/widgets/agent_step.dart';
-import 'package:baocode/chat/widgets/chat_item_view.dart';
-import 'package:baocode/chat/widgets/shell_highlight.dart';
-import 'package:baocode/chat/widgets/shimmer_text.dart';
-import 'package:baocode/chat/widgets/step_header.dart';
-import 'package:baocode/chat/widgets/user_message_bubble.dart';
-import 'package:baocode/chat/widgets/wheel_latch.dart';
-import 'package:baocode/ide/terminal/terminal_colors.dart';
-import 'package:baocode/kernel/kernel_types.dart';
-import 'package:baocode/theme/app_theme.dart';
-import 'package:baocode/theme/workbench_theme.dart' show themeColors;
+import 'package:langshenagent/chat/chat_models.dart';
+import 'package:langshenagent/chat/edit_detail.dart';
+import 'package:langshenagent/ide/ide_code_diff.dart';
+import 'package:langshenagent/chat/panels/activity_strip.dart';
+import 'package:langshenagent/chat/widgets/agent_message_card.dart';
+import 'package:langshenagent/chat/widgets/agent_step.dart';
+import 'package:langshenagent/chat/widgets/chat_item_view.dart';
+import 'package:langshenagent/chat/widgets/shell_highlight.dart';
+import 'package:langshenagent/chat/widgets/shimmer_text.dart';
+import 'package:langshenagent/chat/widgets/step_header.dart';
+import 'package:langshenagent/chat/widgets/user_message_bubble.dart';
+import 'package:langshenagent/chat/widgets/wheel_latch.dart';
+import 'package:langshenagent/ide/terminal/terminal_colors.dart';
+import 'package:langshenagent/kernel/kernel_types.dart';
+import 'package:langshenagent/theme/app_theme.dart';
+import 'package:langshenagent/theme/workbench_theme.dart' show themeColors;
 
 /// [item] as the history shows it, opened or not; taps toggle it.
 Future<void> pumpStep(WidgetTester tester, ChatItem item) async {

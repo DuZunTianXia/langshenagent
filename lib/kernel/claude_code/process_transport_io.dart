@@ -85,7 +85,7 @@ class ProcessTransport implements ClaudeCodeTransport {
     }
   }
 
-  /// [launch] with what BaoCode Bash has told, when the CLI runs its
+  /// [launch] with what LangshenAgent Bash has told, when the CLI runs its
   /// commands in it ([baoBash]): ahead of the launch's own instructions,
   /// unless they are all its prompt.
   @visibleForTesting
@@ -115,7 +115,7 @@ class ProcessTransport implements ClaudeCodeTransport {
         : null;
     // Its commands run in the shell Settings → General → Command Line
     // picks, where that is a bash (Windows), unless the user named one and
-    // picked none; told what BaoCode Bash has when it is that.
+    // picked none; told what LangshenAgent Bash has when it is that.
     final bash = BaoBash.cliEnvironment({
       ...Platform.environment,
       ...cli.environment,

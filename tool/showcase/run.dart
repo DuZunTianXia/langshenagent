@@ -63,7 +63,7 @@ Future<void> main(List<String> args) async {
   await _cloneRepositories(p.join(cache, 'repos'));
   // Built in a copy of the sources, run from a copy of its own: the perf
   // app builds into the same place, maybe at the same time.
-  final bundle = p.join(cache, 'app', 'BaoCode.app');
+  final bundle = p.join(cache, 'app', 'LangshenAgent.app');
   final sources = p.join(cache, 'src');
   if (build) {
     await _run('rsync', [
@@ -80,11 +80,11 @@ Future<void> main(List<String> args) async {
     Directory(p.dirname(bundle)).createSync(recursive: true);
     await _run('cp', [
       '-cR',
-      p.join(sources, 'build/macos/Build/Products/Profile/BaoCode.app'),
+      p.join(sources, 'build/macos/Build/Products/Profile/LangshenAgent.app'),
       bundle,
     ]);
   }
-  final app = p.join(bundle, 'Contents', 'MacOS', 'BaoCode');
+  final app = p.join(bundle, 'Contents', 'MacOS', 'LangshenAgent');
   var failed = false;
   for (final locale in locales) {
     Story.locale = locale;
@@ -316,7 +316,7 @@ $description
   // has them.
   final emoji = p.join(
     Platform.environment['HOME']!,
-    'Library/Application Support/baocode/cache/emoji',
+    'Library/Application Support/langshenagent/cache/emoji',
   );
   if (Directory(emoji).existsSync()) {
     Directory(p.join(data, 'cache')).createSync(recursive: true);
@@ -416,17 +416,17 @@ Future<int> _runApp(
     ..._launchEnvironment(app),
     'HOME': home,
     'SHELL': '/bin/zsh',
-    'BAOCODE_SHOWCASE_HOME': home,
-    'BAOCODE_SHOWCASE_DATA': data,
-    'BAOCODE_SHOWCASE_OUT': out,
-    'BAOCODE_SHOWCASE_LOCALE': locale,
-    if (scenes.isNotEmpty) 'BAOCODE_SHOWCASE_SCENES': scenes.join(','),
-    if (!video) 'BAOCODE_SHOWCASE_VIDEO': '0',
+    'LANGSHENAGENT_SHOWCASE_HOME': home,
+    'LANGSHENAGENT_SHOWCASE_DATA': data,
+    'LANGSHENAGENT_SHOWCASE_OUT': out,
+    'LANGSHENAGENT_SHOWCASE_LOCALE': locale,
+    if (scenes.isNotEmpty) 'LANGSHENAGENT_SHOWCASE_SCENES': scenes.join(','),
+    if (!video) 'LANGSHENAGENT_SHOWCASE_VIDEO': '0',
   };
   final process = await Process.start(app, const [], environment: environment);
   void line(String text) {
     sink.writeln(text);
-    const tag = 'BAOCODE_SHOWCASE_LOG ';
+    const tag = 'LANGSHENAGENT_SHOWCASE_LOG ';
     final at = text.indexOf(tag);
     if (at >= 0) print('[$locale] ${text.substring(at + tag.length)}');
   }

@@ -78,7 +78,7 @@ class RemoteServer {
 
   final RpcPeer peer;
 
-  /// Where the server keeps its state: `~/.baocode-server/data`.
+  /// Where the server keeps its state: `~/.langshenagent-server/data`.
   final String dataDir;
 
   /// The build of the server, said in [RemoteHello.version].

@@ -33,35 +33,35 @@ class ScmContribution extends WorkbenchRegistrations {
     add(
       services.get<ActionRegistry>().registerAll([
         WorkbenchAction(
-          id: 'baocode.git.branches',
+          id: 'langshenagent.git.branches',
           category: 'Git',
           title: 'Branches…',
           precondition: hasRepository,
           run: (_, _) => scm.showBranchPopup(),
         ),
         WorkbenchAction(
-          id: 'baocode.git.pushDialog',
+          id: 'langshenagent.git.pushDialog',
           category: 'Git',
           title: 'Push…',
           precondition: (_) => workspace()?.git?.state?.head.branch != null,
           run: (_, _) => scm.pushDialog(),
         ),
         WorkbenchAction(
-          id: 'baocode.git.updateProject',
+          id: 'langshenagent.git.updateProject',
           category: 'Git',
           title: 'Update Project…',
           precondition: hasRepository,
           run: (_, _) => scm.updateProject(),
         ),
         WorkbenchAction(
-          id: 'baocode.git.manageRemotes',
+          id: 'langshenagent.git.manageRemotes',
           category: 'Git',
           title: 'Manage Remotes…',
           precondition: hasRepository,
           run: (_, _) => scm.manageRemotes(),
         ),
         WorkbenchAction(
-          id: 'baocode.localHistory.show',
+          id: 'langshenagent.localHistory.show',
           category: 'Local History',
           title: 'Show History',
           precondition: (_) =>
@@ -179,7 +179,7 @@ class ScmContribution extends WorkbenchRegistrations {
             tooltip: keys.titleWithKeybinding(
               '${hostBasename(state.root)} (Git) - $branch, '
                   '${l10n.gitBranchesTitle}',
-              'baocode.git.branches',
+              'langshenagent.git.branches',
             ),
             onTapRect: scm.showBranchPopup,
           );

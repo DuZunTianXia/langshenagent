@@ -15,7 +15,7 @@ abstract final class ReplySuggestions {
   /// on (or with the first message, on).
   static const on =
       '<system-reminder>Reply suggestions are on: the user turned them on '
-      'in BaoCode. When you finish your turn and hand back to them, end your '
+      'in LangshenAgent. When you finish your turn and hand back to them, end your '
       'last message with two or three things they might send you next, each '
       'in its own <$tag>…</$tag> on a line of its own, after all else: in '
       'their voice and their language, short (about 20 Chinese characters, '
@@ -32,7 +32,7 @@ abstract final class ReplySuggestions {
   /// Once, when they turn them off.
   static const off =
       '<system-reminder>Reply suggestions are off: the user turned them off '
-      'in BaoCode. Write no more <$tag>.</system-reminder>';
+      'in LangshenAgent. Write no more <$tag>.</system-reminder>';
 
   /// What to tell the agent with a message, suggestions [wanted] or not:
   /// [told], what it was last told this run (none yet); [suggested],

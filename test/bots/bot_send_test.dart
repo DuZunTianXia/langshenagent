@@ -1,15 +1,15 @@
 import 'dart:io';
 
-import 'package:baocode/bots/bot.dart';
-import 'package:baocode/bots/bot_folders.dart';
-import 'package:baocode/bots/bot_groups.dart';
-import 'package:baocode/bots/bots.dart';
-import 'package:baocode/kernel/agent_kernel.dart';
-import 'package:baocode/kernel/claude_code/claude_code_kernel.dart';
-import 'package:baocode/kernel/claude_code/claude_sdk_tools.dart';
-import 'package:baocode/kernel/claude_code/mock_claude_code_transport.dart';
-import 'package:baocode/workspace/preference_store.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:langshenagent/bots/bot.dart';
+import 'package:langshenagent/bots/bot_folders.dart';
+import 'package:langshenagent/bots/bot_groups.dart';
+import 'package:langshenagent/bots/bots.dart';
+import 'package:langshenagent/kernel/agent_kernel.dart';
+import 'package:langshenagent/kernel/claude_code/claude_code_kernel.dart';
+import 'package:langshenagent/kernel/claude_code/claude_sdk_tools.dart';
+import 'package:langshenagent/kernel/claude_code/mock_claude_code_transport.dart';
+import 'package:langshenagent/workspace/preference_store.dart';
+import 'package:langshenagent/workspace/workspace.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

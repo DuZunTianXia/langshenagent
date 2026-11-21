@@ -1,0 +1,9 @@
+{
+  "name": "dev.langshenagent.browser",
+  "description": "LangshenAgent",
+  "path": "langshenagent-browser-host.exe",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://jfjagocghaaheooicmdnhcholmgdkngk/"
+  ]
+}

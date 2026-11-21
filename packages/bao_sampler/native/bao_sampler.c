@@ -519,7 +519,7 @@ static void WriteReport(int taken, int missed, int millis) {
 #else
   const char* os = "linux";
 #endif
-  fprintf(out, "BaoCode jank sample (%s-%s): the UI thread, %d ms, every %d ms\n",
+  fprintf(out, "LangshenAgent jank sample (%s-%s): the UI thread, %d ms, every %d ms\n",
           os, arch, millis, g_interval);
   fprintf(out, "%d samples, %d not taken\n", taken, missed);
   fprintf(out, "Dart code: %s, at 0x%llx\n", g_dart_name,

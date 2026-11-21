@@ -3,9 +3,9 @@ library;
 
 import 'dart:io';
 
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/review/change_review.dart';
-import 'package:baocode/chat/review/review_store_io.dart';
+import 'package:langshenagent/chat/chat_models.dart';
+import 'package:langshenagent/chat/review/change_review.dart';
+import 'package:langshenagent/chat/review/review_store_io.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
@@ -62,7 +62,7 @@ void main() {
   };
 
   setUp(() async {
-    temp = await Directory.systemTemp.createTemp('baocode_review_');
+    temp = await Directory.systemTemp.createTemp('langshenagent_review_');
     final resolved = await temp.resolveSymbolicLinks();
     root = p.join(resolved, 'project');
     checkpoints = p.join(resolved, 'checkpoints');

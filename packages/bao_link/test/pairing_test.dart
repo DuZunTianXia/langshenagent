@@ -14,7 +14,7 @@ void main() {
       key: desktop.publicKey,
       token: Uint8List.fromList(List.generate(16, (i) => i)),
       expires: DateTime.fromMillisecondsSinceEpoch(1800000000 * 1000),
-      relays: const ['https://relay-hk1.baocode.dev/'],
+      relays: const ['https://relay-hk1.langshenagent.dev/'],
       addrs: const ['192.168.1.5:47100', '[2408:8207::1]:47100'],
       direct: true,
     );
@@ -41,7 +41,7 @@ void main() {
         )
         .replaceAll('=', '');
     expect(
-      () => PairingOffer.parse('baocode://pair?d=$old'),
+      () => PairingOffer.parse('langshenagent://pair?d=$old'),
       throwsA(
         isA<PairingVersionException>().having((e) => e.older, 'older', true),
       ),

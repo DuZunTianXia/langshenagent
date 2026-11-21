@@ -7,7 +7,7 @@ import UniformTypeIdentifiers
 /// it (see AppWindows.swift), each a view of the one engine. A see-through
 /// title bar over Flutter's own, the sidebar's material under it, files
 /// dragged onto it, and the window controls Flutter asks for over its
-/// channel: `baocode/window` (the main one's) or `baocode/window.<viewId>`.
+/// channel: `langshenagent/window` (the main one's) or `langshenagent/window.<viewId>`.
 class BaoWindow: NSWindow {
   /// Opens wider than the 720 at which the sidebar docks beside the
   /// chat (below it, it is a drawer): room for the sidebar and the full
@@ -78,7 +78,7 @@ class BaoWindow: NSWindow {
 
     // Files dragged onto the window from other apps (see file_drop.dart).
     let drops = FileDropView(channel: FlutterMethodChannel(
-      name: "baocode/drop" + suffix, binaryMessenger: messenger))
+      name: "langshenagent/drop" + suffix, binaryMessenger: messenger))
     drops.frame = flutterViewController.view.frame
     drops.autoresizingMask = [.width, .height]
     flutterViewController.view.superview?.addSubview(
@@ -87,7 +87,7 @@ class BaoWindow: NSWindow {
 
     // Window controls the Flutter side asks for (see window_controls.dart).
     let channel = FlutterMethodChannel(
-      name: "baocode/window" + suffix, binaryMessenger: messenger)
+      name: "langshenagent/window" + suffix, binaryMessenger: messenger)
     self.channel = channel
     channel.setMethodCallHandler { [weak self] call, result in
       guard let self else {
@@ -257,7 +257,7 @@ class BaoWindow: NSWindow {
   /// Keeps the Flutter view's scale the window's. Flutter takes the pixel
   /// ratio from the view's layer (`contentsScale`) but the size in pixels
   /// from the window: a window opened while the app was not in front
-  /// (Finder's Open with BaoCode) can show with its layer still at 1x on a
+  /// (Finder's Open with LangshenAgent) can show with its layer still at 1x on a
   /// 2x screen, everything drawn half size until the window is dragged.
   @objc func syncScale() {
     guard let flutter = flutterViewController,
@@ -478,8 +478,8 @@ class BaoWindow: NSWindow {
     }
   }
 
-  static let darkAppearanceKey = "BaoCodeDarkAppearance"
-  static let windowBlurKey = "BaoCodeWindowBlur"
+  static let darkAppearanceKey = "LangshenAgentDarkAppearance"
+  static let windowBlurKey = "LangshenAgentWindowBlur"
 
   /// Whether the windows were last blurred underneath; not the first time.
   static var keptWindowBlur: Bool {
@@ -567,12 +567,12 @@ class BaoWindow: NSWindow {
   // They come here too when a shortcut Flutter did not take matches them:
   // to the key window, whose channel takes them.
 
-  @objc func baocodeUndo(_ sender: Any?) { editCommand("undo") }
-  @objc func baocodeRedo(_ sender: Any?) { editCommand("redo") }
-  @objc func baocodeCut(_ sender: Any?) { editCommand("cut") }
-  @objc func baocodeCopy(_ sender: Any?) { editCommand("copy") }
-  @objc func baocodePaste(_ sender: Any?) { editCommand("paste") }
-  @objc func baocodeSelectAll(_ sender: Any?) { editCommand("selectAll") }
+  @objc func langshenagentUndo(_ sender: Any?) { editCommand("undo") }
+  @objc func langshenagentRedo(_ sender: Any?) { editCommand("redo") }
+  @objc func langshenagentCut(_ sender: Any?) { editCommand("cut") }
+  @objc func langshenagentCopy(_ sender: Any?) { editCommand("copy") }
+  @objc func langshenagentPaste(_ sender: Any?) { editCommand("paste") }
+  @objc func langshenagentSelectAll(_ sender: Any?) { editCommand("selectAll") }
 
   private func editCommand(_ command: String) {
     channel?.invokeMethod("editCommand", arguments: command)
@@ -580,7 +580,7 @@ class BaoWindow: NSWindow {
 
   // The app menu's Preferences… (⌘,): the app's settings, which ⌘, opens
   // too while Flutter takes the key (it comes here when Flutter did not).
-  @objc func baocodePreferences(_ sender: Any?) {
+  @objc func langshenagentPreferences(_ sender: Any?) {
     menuCommand("workbench.action.openSettings")
   }
 
@@ -628,7 +628,7 @@ class BaoWindow: NSWindow {
 
   /// What an editor copied, beside its text: its markdown, the composer's
   /// tags and all (see lib/platform/native_md_clipboard.dart).
-  static let markdownType = NSPasteboard.PasteboardType("dev.baocode.markdown")
+  static let markdownType = NSPasteboard.PasteboardType("dev.langshenagent.markdown")
 
   /// Puts `text` on the clipboard for other apps, and beside it `copy`
   /// (an editor's, as JSON, kept as it is) for the app's editors.
@@ -682,7 +682,7 @@ class BaoWindow: NSWindow {
 class MainFlutterWindow: BaoWindow {
   /// Where its place and size are kept (the user defaults'), for the next
   /// launch.
-  private static let frameName = "BaoCodeMainWindow"
+  private static let frameName = "LangshenAgentMainWindow"
 
   override func awakeFromNib() {
     let flutterViewController = FlutterViewController()
@@ -961,7 +961,7 @@ final class FileDropView: NSView {
     }
     // Files an app writes once they are let go: into a folder of their own.
     let folder = FileManager.default.temporaryDirectory
-      .appendingPathComponent("baocode-drops", isDirectory: true)
+      .appendingPathComponent("langshenagent-drops", isDirectory: true)
       .appendingPathComponent(UUID().uuidString, isDirectory: true)
     try? FileManager.default.createDirectory(
       at: folder, withIntermediateDirectories: true)

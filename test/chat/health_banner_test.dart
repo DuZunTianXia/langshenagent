@@ -1,6 +1,6 @@
-import 'package:baocode/chat/panels/health_banner.dart';
-import 'package:baocode/kernel/kernel_types.dart';
-import 'package:baocode/l10n/app_localizations.dart';
+import 'package:langshenagent/chat/panels/health_banner.dart';
+import 'package:langshenagent/kernel/kernel_types.dart';
+import 'package:langshenagent/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';

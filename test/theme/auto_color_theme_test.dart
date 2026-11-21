@@ -1,15 +1,15 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:baocode/ide/ide_color_theme_picker.dart';
-import 'package:baocode/ide/ide_quick_input.dart';
-import 'package:baocode/main.dart';
-import 'package:baocode/platform/data_dir.dart';
-import 'package:baocode/settings/jsonc_file.dart';
-import 'package:baocode/settings/user_settings.dart';
-import 'package:baocode/theme/workbench_theme.dart';
-import 'package:baocode/workspace/preference_store.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:langshenagent/ide/ide_color_theme_picker.dart';
+import 'package:langshenagent/ide/ide_quick_input.dart';
+import 'package:langshenagent/main.dart';
+import 'package:langshenagent/platform/data_dir.dart';
+import 'package:langshenagent/settings/jsonc_file.dart';
+import 'package:langshenagent/settings/user_settings.dart';
+import 'package:langshenagent/theme/workbench_theme.dart';
+import 'package:langshenagent/workspace/preference_store.dart';
+import 'package:langshenagent/workspace/workspace.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -83,7 +83,7 @@ void main() {
       brightness: Brightness.light,
     );
     await tester.runAsync(themes.initialize);
-    await tester.pumpWidget(BaoCodeApp(workspace: Workspace.mock()));
+    await tester.pumpWidget(LangshenAgentApp(workspace: Workspace.mock()));
     await tester.pumpAndSettle();
     expect(themes.colorTheme.settingsId, 'Bao Light');
     // The platform's event and the wait for it in real async, not to be

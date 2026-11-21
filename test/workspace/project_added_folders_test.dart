@@ -2,12 +2,12 @@
 // agents start in its folder, its conversations stay), its agents work in
 // those folders too, and its IDE and side panel show each as a root.
 
-import 'package:baocode/kernel/mock/mock_kernels.dart';
-import 'package:baocode/main.dart';
-import 'package:baocode/sidebar/sidebar.dart';
-import 'package:baocode/workspace/preference_store.dart';
-import 'package:baocode/workspace/workspace.dart';
-import 'package:baocode/workspace/workspace_dialog.dart';
+import 'package:langshenagent/kernel/mock/mock_kernels.dart';
+import 'package:langshenagent/main.dart';
+import 'package:langshenagent/sidebar/sidebar.dart';
+import 'package:langshenagent/workspace/preference_store.dart';
+import 'package:langshenagent/workspace/workspace.dart';
+import 'package:langshenagent/workspace/workspace_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -121,7 +121,7 @@ void main() {
       projects: const [Project('site', '/code/site')],
       kernels: [MockKernels.claudeCode],
     );
-    await tester.pumpWidget(BaoCodeApp(workspace: workspace));
+    await tester.pumpWidget(LangshenAgentApp(workspace: workspace));
     workspace.create(project: workspace.projects.first);
     await tester.pump();
 

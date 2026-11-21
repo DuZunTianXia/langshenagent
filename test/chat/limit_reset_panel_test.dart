@@ -1,5 +1,5 @@
-import 'package:baocode/chat/panels/limit_reset_panel.dart';
-import 'package:baocode/l10n/app_localizations.dart';
+import 'package:langshenagent/chat/panels/limit_reset_panel.dart';
+import 'package:langshenagent/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

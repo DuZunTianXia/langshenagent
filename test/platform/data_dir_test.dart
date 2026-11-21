@@ -4,17 +4,17 @@ library;
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/platform/data_dir.dart';
+import 'package:langshenagent/platform/data_dir.dart';
 import 'package:path/path.dart' as p;
 
-/// Where the data folder is found: `BAOCODE_DATA_DIR`, else the pointer in
-/// `~/.baocode`, else the platform's place. Every home is a temporary one.
+/// Where the data folder is found: `LANGSHENAGENT_DATA_DIR`, else the pointer in
+/// `~/.langshenagent`, else the platform's place. Every home is a temporary one.
 void main() {
   late Directory home;
   late Map<String, String> environment;
 
   setUp(() {
-    home = Directory.systemTemp.createTempSync('baocode-home');
+    home = Directory.systemTemp.createTempSync('langshenagent-home');
     environment = {'HOME': home.path};
   });
   tearDown(() {
@@ -26,7 +26,7 @@ void main() {
   });
 
   File pointer() =>
-      File(p.join(home.path, '.baocode', 'config-dir.json'))
+      File(p.join(home.path, '.langshenagent', 'config-dir.json'))
         ..parent.createSync(recursive: true);
 
   Directory folder(String name) =>
@@ -47,7 +47,7 @@ void main() {
     );
     expect(
       resolution.pointerFile,
-      p.join(home.path, '.baocode', 'config-dir.json'),
+      p.join(home.path, '.langshenagent', 'config-dir.json'),
     );
   });
 
@@ -60,7 +60,7 @@ void main() {
       (pointed.path, DataDirectorySource.pointer),
     );
 
-    environment['BAOCODE_DATA_DIR'] = variable.path;
+    environment['LANGSHENAGENT_DATA_DIR'] = variable.path;
     expect(
       (resolve().path, resolve().source),
       (variable.path, DataDirectorySource.environment),
@@ -69,10 +69,10 @@ void main() {
   });
 
   test('~ is the home, in the pointer and the variable', () {
-    folder('Data/baocode');
-    pointer().writeAsStringSync('{"dataDir": "~/Data/baocode"}');
-    expect(resolve().path, p.join(home.path, 'Data', 'baocode'));
-    environment['BAOCODE_DATA_DIR'] = '~';
+    folder('Data/langshenagent');
+    pointer().writeAsStringSync('{"dataDir": "~/Data/langshenagent"}');
+    expect(resolve().path, p.join(home.path, 'Data', 'langshenagent'));
+    environment['LANGSHENAGENT_DATA_DIR'] = '~';
     expect(resolve().path, home.path);
     expect(expandDataDirectory(r'~\x', '/h'), p.join('/h', 'x'));
     expect(expandDataDirectory('/a/~', '/h'), '/a/~');
@@ -104,7 +104,7 @@ void main() {
 
   test('a folder that is missing or read-only is reported, not replaced '
       'by the default', () {
-    final gone = p.join(home.path, 'Volumes', 'D', 'BaoCode');
+    final gone = p.join(home.path, 'Volumes', 'D', 'LangshenAgent');
     pointer().writeAsStringSync('{"dataDir": "$gone"}');
     var resolution = resolve();
     expect(resolution.ok, isFalse);
@@ -114,12 +114,12 @@ void main() {
     expect(Directory(gone).existsSync(), isFalse, reason: 'not made');
 
     final file = File(p.join(home.path, 'file'))..writeAsStringSync('');
-    environment['BAOCODE_DATA_DIR'] = file.path;
+    environment['LANGSHENAGENT_DATA_DIR'] = file.path;
     expect(resolve().problem, DataDirectoryProblem.missing);
 
     final readOnly = folder('ReadOnly');
     Process.runSync('chmod', ['555', readOnly.path]);
-    environment['BAOCODE_DATA_DIR'] = readOnly.path;
+    environment['LANGSHENAGENT_DATA_DIR'] = readOnly.path;
     resolution = resolve();
     expect(resolution.problem, DataDirectoryProblem.notWritable);
     expect(resolution.source, DataDirectorySource.environment);

@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/kernel/kernel_event.dart';
-import 'package:baocode/kernel/kernel_types.dart';
-import 'package:baocode/kernel/transcript.dart';
+import 'package:langshenagent/chat/chat_models.dart';
+import 'package:langshenagent/kernel/kernel_event.dart';
+import 'package:langshenagent/kernel/kernel_types.dart';
+import 'package:langshenagent/kernel/transcript.dart';
 
 /// A turn as a kernel reports it: a thought and a reply streamed in parts,
 /// a question asked and answered, a file changed.

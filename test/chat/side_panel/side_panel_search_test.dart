@@ -2,20 +2,20 @@
 // search in place of the tree, the results come from the engine the IDE
 // searches with, and a result opens its file at its line.
 
-import 'package:baocode/ide/ide_notifications.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/chat/side_panel/file_link.dart';
-import 'package:baocode/chat/side_panel/side_panel_controller.dart';
-import 'package:baocode/chat/side_panel/side_panel_view.dart';
-import 'package:baocode/ide/file_service.dart';
-import 'package:baocode/ide/ide_explorer.dart';
-import 'package:baocode/ide/search/ide_search_view.dart';
-import 'package:baocode/ide/ide_input.dart';
-import 'package:baocode/ide/search/text_search.dart';
-import 'package:baocode/kernel/agent_kernel.dart';
-import 'package:baocode/theme/app_theme.dart';
-import 'package:baocode/theme/code_font.dart';
-import 'package:baocode/theme/codicons.dart';
+import 'package:langshenagent/ide/ide_notifications.dart';
+import 'package:langshenagent/chat/chat_session.dart';
+import 'package:langshenagent/chat/side_panel/file_link.dart';
+import 'package:langshenagent/chat/side_panel/side_panel_controller.dart';
+import 'package:langshenagent/chat/side_panel/side_panel_view.dart';
+import 'package:langshenagent/ide/file_service.dart';
+import 'package:langshenagent/ide/ide_explorer.dart';
+import 'package:langshenagent/ide/search/ide_search_view.dart';
+import 'package:langshenagent/ide/ide_input.dart';
+import 'package:langshenagent/ide/search/text_search.dart';
+import 'package:langshenagent/kernel/agent_kernel.dart';
+import 'package:langshenagent/theme/app_theme.dart';
+import 'package:langshenagent/theme/code_font.dart';
+import 'package:langshenagent/theme/codicons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter_test/flutter_test.dart';

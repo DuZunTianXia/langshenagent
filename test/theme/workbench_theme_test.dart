@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart' hide ColorScheme;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/theme/app_theme.dart';
-import 'package:baocode/theme/workbench_theme.dart';
-import 'package:baocode/workspace/preference_store.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:langshenagent/theme/app_theme.dart';
+import 'package:langshenagent/theme/workbench_theme.dart';
+import 'package:langshenagent/workspace/preference_store.dart';
+import 'package:langshenagent/workspace/workspace.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

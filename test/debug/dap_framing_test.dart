@@ -2,8 +2,8 @@
 
 import 'dart:convert';
 
-import 'package:baocode/debug/common/debug_types.dart';
-import 'package:baocode/debug/session/dap_framing.dart';
+import 'package:langshenagent/debug/common/debug_types.dart';
+import 'package:langshenagent/debug/session/dap_framing.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

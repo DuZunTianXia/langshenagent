@@ -7,7 +7,7 @@ import 'package:path/path.dart' as p;
 import '../support/harness.dart';
 
 /// A ripgrep on this machine, if there is one (on `PATH`, or the one
-/// BaoCode's extension host brings).
+/// LangshenAgent's extension host brings).
 
 void main() {
   late Harness h;

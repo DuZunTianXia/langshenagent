@@ -13,6 +13,7 @@ import '../../l10n/l10n.dart';
 import '../../models/model_provider.dart';
 import '../../models/upstream.dart';
 import '../../theme/app_theme.dart';
+import '../../usage/usage_prices.dart';
 import '../../theme/codicons.dart';
 import '../../theme/workbench_theme.dart' show themeColors;
 import 'models_page.dart' show ModelsSettingsPage;
@@ -671,6 +672,42 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
   late List<int>? _contexts = _start?.contexts;
   bool _tried = false;
 
+  /// Its price a million tokens of each kind, in the currency (kept in
+  /// `usage.prices` under `<provider>/<model>`), typed where it is used
+  /// for costs; all empty clears it.
+  late final TextEditingController _priceInput = TextEditingController(
+    text: _number(_price?.input),
+  );
+  late final TextEditingController _priceCacheRead = TextEditingController(
+    text: _number(_price?.cacheRead),
+  );
+  late final TextEditingController _priceCacheWrite = TextEditingController(
+    text: _number(_price?.cacheWrite),
+  );
+  late final TextEditingController _priceOutput = TextEditingController(
+    text: _number(_price?.output),
+  );
+  late final TextEditingController _priceCurrency = TextEditingController(
+    text: _price?.currency,
+  );
+  bool _priceIncomplete = false;
+
+  /// The price kept for the model edited (none for one being added).
+  ModelPrice? get _price => widget.model == null
+      ? null
+      : UsagePrices.current.all[UsagePrices.key(
+          widget.provider.id,
+          widget.model!.id,
+        )];
+
+  static String _number(double? value) {
+    if (value == null) return '';
+    final text = value.toStringAsFixed(4);
+    return text.contains('.')
+        ? text.replaceFirst(RegExp(r'\.?0+$'), '')
+        : text;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -691,6 +728,11 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
     _label.dispose();
     _context.dispose();
     _endpointUrl.dispose();
+    _priceInput.dispose();
+    _priceCacheRead.dispose();
+    _priceCacheWrite.dispose();
+    _priceOutput.dispose();
+    _priceCurrency.dispose();
     super.dispose();
   }
 
@@ -775,6 +817,30 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
     }
     final label = _label.text.trim();
     final model = widget.model;
+    double? number(TextEditingController field) =>
+        double.tryParse(field.text.trim().replaceAll(',', ''));
+    final priceInput = number(_priceInput);
+    final priceOutput = number(_priceOutput);
+    final priceEmpty = [
+      _priceInput,
+      _priceCacheRead,
+      _priceCacheWrite,
+      _priceOutput,
+    ].every((field) => field.text.trim().isEmpty);
+    if (!priceEmpty && (priceInput == null || priceOutput == null)) {
+      setState(() => _priceIncomplete = true);
+      return;
+    }
+    _savePrice(model?.id ?? _id.text.trim(), () {
+      if (priceEmpty) return null;
+      return (
+        input: priceInput!,
+        output: priceOutput!,
+        cacheRead: number(_priceCacheRead),
+        cacheWrite: number(_priceCacheWrite),
+        currency: _priceCurrency.text.trim().toUpperCase(),
+      );
+    }());
     Navigator.pop(
       context,
       model == null
@@ -800,6 +866,41 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
               protocol: () => _keptProtocol,
               endpointUrl: () => _keptEndpointUrl,
             ),
+    );
+  }
+
+  /// The price typed kept for the model [id] on this upstream, as the
+  /// usage page's own rows write it ([_PriceRow] semantics): null
+  /// clearing it; its rules (tiers, hours, fees) untouched.
+  void _savePrice(
+    String modelId,
+    ({
+      double input,
+      double output,
+      double? cacheRead,
+      double? cacheWrite,
+      String currency,
+    })?
+    typed,
+  ) {
+    final prices = UsagePrices.current;
+    final key = UsagePrices.key(widget.provider.id, modelId);
+    final old = prices.all[key];
+    if (typed == null) {
+      if (old != null) unawaited(prices.update({key: null}));
+      return;
+    }
+    final next = (old ?? const ModelPrice(input: 0, output: 0)).withPrices(
+      input: typed.input,
+      output: typed.output,
+      cacheRead: typed.cacheRead,
+      cacheWrite: typed.cacheWrite,
+      currency: typed.currency.isEmpty ? old?.currency ?? 'USD' : typed.currency,
+      updated: DateTime.now(),
+    );
+    if (next == old) return;
+    unawaited(
+      old == null ? prices.update({key: next}) : prices.put(key, next),
     );
   }
 
@@ -1038,6 +1139,80 @@ class _ModelEditDialogState extends State<ModelEditDialog> {
                 (value) => setState(() => _images = !value),
               ),
             ],
+            _field(
+              l10n.ustatPrices,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(l10n.ustatPricesDetail, style: _muted(context)),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: IdeInputBox(
+                          controller: _priceInput,
+                          placeholder: l10n.ustatTokenInput,
+                          semanticsLabel:
+                              '${l10n.ustatPrices} ${l10n.ustatTokenInput}',
+                          onSubmitted: (_) => _save(),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: IdeInputBox(
+                          controller: _priceCacheRead,
+                          placeholder: l10n.ustatTokenCacheRead,
+                          semanticsLabel:
+                              '${l10n.ustatPrices} ${l10n.ustatTokenCacheRead}',
+                          onSubmitted: (_) => _save(),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: IdeInputBox(
+                          controller: _priceCacheWrite,
+                          placeholder: l10n.ustatTokenCacheWrite,
+                          semanticsLabel:
+                              '${l10n.ustatPrices} ${l10n.ustatTokenCacheWrite}',
+                          onSubmitted: (_) => _save(),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: IdeInputBox(
+                          controller: _priceOutput,
+                          placeholder: l10n.ustatTokenOutput,
+                          semanticsLabel:
+                              '${l10n.ustatPrices} ${l10n.ustatTokenOutput}',
+                          onSubmitted: (_) => _save(),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      SizedBox(
+                        width: 64,
+                        child: IdeInputBox(
+                          controller: _priceCurrency,
+                          placeholder: 'USD',
+                          semanticsLabel:
+                              '${l10n.ustatPrices} ${l10n.ustatPriceCurrency}',
+                          onSubmitted: (_) => _save(),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (_priceIncomplete)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        l10n.ustatPriceIncomplete,
+                        style: _muted(
+                          context,
+                        ).copyWith(color: themeColors['errorForeground']),
+                      ),
+                    ),
+                ],
+              ),
+            ),
           ],
         ),
       ),

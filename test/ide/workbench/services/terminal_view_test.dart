@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/ide_layout.dart';
-import 'package:baocode/ide/lsp_ui/problems_panel.dart' show IdePanelTab;
-import 'package:baocode/ide/services/terminal_view.dart';
-import 'package:baocode/ide/terminal/terminal_instance.dart';
-import 'package:baocode/ide/terminal/terminal_service.dart';
+import 'package:langshenagent/ide/ide_layout.dart';
+import 'package:langshenagent/ide/lsp_ui/problems_panel.dart' show IdePanelTab;
+import 'package:langshenagent/ide/services/terminal_view.dart';
+import 'package:langshenagent/ide/terminal/terminal_instance.dart';
+import 'package:langshenagent/ide/terminal/terminal_service.dart';
 
 import '../../terminal/fake_pty.dart';
 import '../../terminal/fake_terminal.dart';

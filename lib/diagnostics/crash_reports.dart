@@ -5,19 +5,19 @@ import 'dart:typed_data';
 import 'package:path/path.dart' as p;
 
 /// A crash report the system kept of the app, outside the logs folder:
-/// macOS' `BaoCode-<time>.ips` (a crash, a hang it caught, a kill for
-/// memory), and its spindump's `BaoCode_<time>_<host>.hang` (the app
+/// macOS' `LangshenAgent-<time>.ips` (a crash, a hang it caught, a kill for
+/// memory), and its spindump's `LangshenAgent_<time>_<host>.hang` (the app
 /// quit by force while it hung), `.spin` (a hang it came out of) and
 /// `.cpu_resource.diag` (the CPU kept busy for minutes); Windows Error Reporting's `Report.wer` of an
-/// `AppCrash_baocode.exe_…` or `AppHang_…` folder. Linux keeps none the
+/// `AppCrash_langshenagent.exe_…` or `AppHang_…` folder. Linux keeps none the
 /// app can read: its own (see packages/bao_sampler's crash handler) are
 /// in the logs folder's `hangs/`.
 class CrashReport {
   const CrashReport(this.name, this.path, this.modified, this.size);
 
-  /// Its name in a diagnostics bundle: `BaoCode-2026-10-28-120616.ips`,
-  /// `BaoCode_2026-10-28-141700.hang` (the computer's name left out),
-  /// `AppCrash_baocode.exe_1a2b_3c4d.wer`.
+  /// Its name in a diagnostics bundle: `LangshenAgent-2026-10-28-120616.ips`,
+  /// `LangshenAgent_2026-10-28-141700.hang` (the computer's name left out),
+  /// `AppCrash_langshenagent.exe_1a2b_3c4d.wer`.
   final String name;
 
   /// The file.
@@ -72,14 +72,14 @@ List<String> platformCrashReportFolders() => crashReportFolders(
 );
 
 /// The names macOS gives the app's reports: its process's name first. Not
-/// `BaoCodeHelper` and the like.
-final macReportName = RegExp(r'^BaoCode[-_.].*\.(?:ips|hang|spin|diag)$');
+/// `LangshenAgentHelper` and the like.
+final macReportName = RegExp(r'^LangshenAgent[-_.].*\.(?:ips|hang|spin|diag)$');
 
 /// A report's [name] without the computer's, which spindump's have after
-/// the time: `BaoCode_2026-10-28-141700_anns-MacBook.hang` is
-/// `BaoCode_2026-10-28-141700.hang`.
+/// the time: `LangshenAgent_2026-10-28-141700_anns-MacBook.hang` is
+/// `LangshenAgent_2026-10-28-141700.hang`.
 String macReportBundleName(String name) => name.replaceFirstMapped(
-  RegExp(r'^(BaoCode_\d{4}-\d\d-\d\d-\d{6})_[^.]+(\..+)$'),
+  RegExp(r'^(LangshenAgent_\d{4}-\d\d-\d\d-\d{6})_[^.]+(\..+)$'),
   (match) => '${match[1]}${match[2]}',
 );
 
@@ -89,9 +89,9 @@ bool macReportEnds(String name) =>
     name.endsWith('.ips') || name.endsWith('.hang');
 
 /// The folders Windows Error Reporting keeps a report of the app in, its
-/// `Report.wer` inside: `AppCrash_baocode.exe_<hash>_<id>`.
+/// `Report.wer` inside: `AppCrash_langshenagent.exe_<hash>_<id>`.
 final werFolderName = RegExp(
-  r'^App(?:Crash|Hang)_baocode\.exe_',
+  r'^App(?:Crash|Hang)_langshenagent\.exe_',
   caseSensitive: false,
 );
 
@@ -252,7 +252,7 @@ String? crashReportSince(List<String> folders, DateTime since) {
   final after = since.subtract(const Duration(seconds: 5));
   for (final report in listCrashReports(folders)) {
     if (report.modified.isBefore(after)) return null;
-    if (report.name.startsWith('BaoCode') && !macReportEnds(report.name)) {
+    if (report.name.startsWith('LangshenAgent') && !macReportEnds(report.name)) {
       continue;
     }
     try {

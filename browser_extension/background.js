@@ -1,41 +1,41 @@
-// BaoCode's browser extension: lets BaoCode's agents use the tabs shared
-// with them, those of the "BaoCode" tab group (theirs, and any the user
-// puts there or shares with the toolbar button). BaoCode is reached through
+// LangshenAgent's browser extension: lets LangshenAgent's agents use the tabs shared
+// with them, those of the "LangshenAgent" tab group (theirs, and any the user
+// puts there or shares with the toolbar button). LangshenAgent is reached through
 // its native messaging host (macos/BrowserBridge/host.c), which passes
-// messages to BaoCode (lib/browser/browser_bridge.dart) and back.
+// messages to LangshenAgent (lib/browser/browser_bridge.dart) and back.
 //
-// BaoCode asks {id, method, params} and is answered {id, result} or
+// LangshenAgent asks {id, method, params} and is answered {id, result} or
 // {id, error}; what happens is told as {type: "event", event, ...}.
 //
-// Kept thin, so that BaoCode grows without it: what an agent does in a page
-// is BaoCode's, through the DevTools protocol passed on as it is (cdp, with
+// Kept thin, so that LangshenAgent grows without it: what an agent does in a page
+// is LangshenAgent's, through the DevTools protocol passed on as it is (cdp, with
 // the sessions of a page's frames and workers, and their events); the
 // browser's tabs and windows through their APIs passed on too (call,
 // subscribe). This keeps alone what only it can: the line round the tabs
-// shared, which nothing BaoCode asks crosses, and the toolbar button. A
+// shared, which nothing LangshenAgent asks crosses, and the toolbar button. A
 // new method here is said in CAPABILITIES; BRIDGE goes up only for a change
-// an older BaoCode would get wrong.
+// an older LangshenAgent would get wrong.
 
-const HOST = 'dev.baocode.browser';
-const GROUP = 'BaoCode';
+const HOST = 'dev.langshenagent.browser';
+const GROUP = 'LangshenAgent';
 const PROTOCOL = '1.3';
-// What BaoCode and this extension say to each other: one more with each
+// What LangshenAgent and this extension say to each other: one more with each
 // change the other has to know of (lib/browser/browser_bridge.dart).
 const BRIDGE = 1;
-// What BaoCode may ask of this version, beyond BRIDGE 1's first methods
+// What LangshenAgent may ask of this version, beyond BRIDGE 1's first methods
 // (tabs.*, cdp, detach, watch): told in the hello.
 const CAPABILITIES = ['cdp.session', 'call', 'subscribe', 'configure'];
-// What the toolbar button opens while BaoCode is not there to connect to.
-const HELP = 'https://baocode.dev/download#browser';
+// What the toolbar button opens while LangshenAgent is not there to connect to.
+const HELP = 'https://langshenagent.dev/download#browser';
 
 let port = null;
-let connected = false; // To BaoCode, not just its host.
+let connected = false; // To LangshenAgent, not just its host.
 const attached = new Set(); // Tabs the debugger is attached to.
-let watching = null; // The tab BaoCode watches the user in, recording.
-// How BaoCode wants it (configure), as long as it is connected.
+let watching = null; // The tab LangshenAgent watches the user in, recording.
+// How LangshenAgent wants it (configure), as long as it is connected.
 const DEFAULTS = { followOpeners: true };
 let config = { ...DEFAULTS };
-const subscribed = new Set(); // The browser's events BaoCode is told of.
+const subscribed = new Set(); // The browser's events LangshenAgent is told of.
 
 // --- The connection.
 
@@ -58,7 +58,7 @@ function connect() {
 function setConnected(value) {
   if (connected === value) return;
   connected = value;
-  // BaoCode gone: nothing watches any more, and the next one says again
+  // LangshenAgent gone: nothing watches any more, and the next one says again
   // what it wants.
   if (!value) {
     watching = null;
@@ -111,15 +111,15 @@ function showState() {
   chrome.action.setTitle({
     title:
       watching !== null
-        ? 'BaoCode is watching: click when you are done'
+        ? 'LangshenAgent is watching: click when you are done'
         : connected
-          ? 'BaoCode: connected'
-          : 'BaoCode: not running',
+          ? 'LangshenAgent: connected'
+          : 'LangshenAgent: not running',
   });
 }
 
-// Whether BaoCode is connected, given a moment to: a worker just woken has
-// its host to start, which then finds BaoCode.
+// Whether LangshenAgent is connected, given a moment to: a worker just woken has
+// its host to start, which then finds LangshenAgent.
 async function connection() {
   for (let waited = 0; !connected && port && waited < 1500; waited += 100) {
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -160,7 +160,7 @@ async function received(message) {
   }
 }
 
-// --- What BaoCode asks.
+// --- What LangshenAgent asks.
 
 async function handle(method, params) {
   switch (method) {
@@ -232,13 +232,13 @@ const APIS = ['tabs', 'windows', 'tabGroups'];
 
 // Calls chrome.<api> (`tabs.update`, `windows.get`…) with [args]: a tab it
 // names (a number first, or tabIds) has to be shared, a window one with a
-// shared tab, a group BaoCode's. What it answers keeps to the same: the
-// shared tabs alone, BaoCode's groups alone. A tab it makes is shared.
+// shared tab, a group LangshenAgent's. What it answers keeps to the same: the
+// shared tabs alone, LangshenAgent's groups alone. A tab it makes is shared.
 async function call(api, args) {
   const [space, name, ...rest] = String(api).split('.');
   const fn = chrome[space]?.[name];
   if (!APIS.includes(space) || rest.length || typeof fn !== 'function' || name.startsWith('on')) {
-    throw new Error(`Not a method BaoCode may call: ${api}`);
+    throw new Error(`Not a method LangshenAgent may call: ${api}`);
   }
   if (!Array.isArray(args)) throw new Error('args is a list');
   await guard(space, name, args);
@@ -266,14 +266,14 @@ async function guard(space, name, args) {
             ? [first.tabIds]
             : (first?.tabIds ?? []);
     for (const tabId of ids) await sharedTab(tabId);
-    // A tab put in a group: BaoCode's.
+    // A tab put in a group: LangshenAgent's.
     if (first?.groupId !== undefined) await ourGroup(first.groupId);
     if (name === 'move' && second?.windowId !== undefined) await sharedWindow(second.windowId);
     if (['query', 'create', 'getCurrent'].includes(name)) return;
     if (!ids.length && name !== 'create') throw new Error(`tabs.${name} needs a shared tab`);
   } else if (space === 'windows') {
     if (typeof first === 'number') await sharedWindow(first);
-    // Closing a window closes the user's tabs in it too: one of BaoCode's
+    // Closing a window closes the user's tabs in it too: one of LangshenAgent's
     // alone.
     if (name === 'remove') {
       for (const tab of await chrome.tabs.query({ windowId: first })) await sharedTab(tab.id);
@@ -283,7 +283,7 @@ async function guard(space, name, args) {
   }
 }
 
-// [value] with what is not BaoCode's left out: tabs not shared, groups not
+// [value] with what is not LangshenAgent's left out: tabs not shared, groups not
 // its own, a window's tabs.
 async function within(value) {
   if (Array.isArray(value)) {
@@ -308,16 +308,16 @@ async function within(value) {
 async function sharedWindow(windowId) {
   const tabs = await sharedTabs();
   if (!tabs.some((tab) => tab.windowId === windowId)) {
-    throw new Error(`Window ${windowId} has no tab shared with BaoCode.`);
+    throw new Error(`Window ${windowId} has no tab shared with LangshenAgent.`);
   }
 }
 
 async function ourGroup(groupId) {
   const group = await chrome.tabGroups.get(groupId);
-  if (group.title !== GROUP) throw new Error(`Group ${groupId} is not BaoCode's.`);
+  if (group.title !== GROUP) throw new Error(`Group ${groupId} is not LangshenAgent's.`);
 }
 
-// The browser's events BaoCode may be told of (subscribe), as
+// The browser's events LangshenAgent may be told of (subscribe), as
 // {event: "chrome", name, args}: of the shared tabs alone.
 const EVENTS = [
   'tabs.onCreated',
@@ -385,7 +385,7 @@ chrome.tabs.onCreated.addListener(async (tab) => {
   }
 });
 
-// --- The tabs shared: the "BaoCode" group's, in any window.
+// --- The tabs shared: the "LangshenAgent" group's, in any window.
 
 async function groups() {
   try {
@@ -421,7 +421,7 @@ async function isShared(tab) {
 async function sharedTab(tabId) {
   const tab = await chrome.tabs.get(tabId);
   if (!(await isShared(tab))) {
-    throw new Error(`Tab ${tabId} is not shared with BaoCode.`);
+    throw new Error(`Tab ${tabId} is not shared with LangshenAgent.`);
   }
   return tab;
 }
@@ -463,8 +463,8 @@ async function share(tab, group) {
   await chrome.tabGroups.update(groupId, { title: GROUP, color: 'yellow' });
 }
 
-// The toolbar button: shares the tab in front with BaoCode, or stops; while
-// BaoCode watches the user, says they are done. Without BaoCode, tells how
+// The toolbar button: shares the tab in front with LangshenAgent, or stops; while
+// LangshenAgent watches the user, says they are done. Without LangshenAgent, tells how
 // to get it.
 chrome.action.onClicked.addListener(async (tab) => {
   connect();
@@ -484,8 +484,8 @@ chrome.action.onClicked.addListener(async (tab) => {
   }
 });
 
-// --- The debugger, attached to a shared tab the first time BaoCode asks
-// it something; what it tells goes to BaoCode.
+// --- The debugger, attached to a shared tab the first time LangshenAgent asks
+// it something; what it tells goes to LangshenAgent.
 
 async function attach(tabId) {
   if (attached.has(tabId)) return;
@@ -529,7 +529,7 @@ chrome.debugger.onDetach.addListener((source, reason) => {
 chrome.tabs.onUpdated.addListener(async (tabId, change, tab) => {
   if (!('url' in change || 'title' in change || 'status' in change || 'groupId' in change)) return;
   if ('groupId' in change && !(await isShared(tab))) {
-    // Out of the group: no longer BaoCode's.
+    // Out of the group: no longer LangshenAgent's.
     await detach(tabId);
     event('unshared', { tabId });
     return;
@@ -544,7 +544,7 @@ chrome.tabs.onRemoved.addListener((tabId) => {
   event('closed', { tabId });
 });
 
-// --- Kept connected: at start, and now and then while BaoCode is away
+// --- Kept connected: at start, and now and then while LangshenAgent is away
 // (the host waits for it, which keeps this worker running).
 
 chrome.action.setBadgeText({ text: '!' });

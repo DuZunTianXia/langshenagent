@@ -210,10 +210,10 @@ bool sendsApiKeyHeader(ModelProvider provider) =>
 /// version it is, it leaves to us.
 const claudeCodeUserAgent = 'claude-cli/2.0.1 (external, cli)';
 
-/// BaoCode's own user agent, for magpie: there Claude Code's is answered
+/// LangshenAgent's own user agent, for magpie: there Claude Code's is answered
 /// as Claude Code's model discovery, by ids made to pass its filter
 /// (`anthropic/magpie-<number>`, [Magpie.alias]); its key names the app.
-const baoCodeUserAgent = 'BaoCode/$appVersionString';
+const baoCodeUserAgent = 'LangshenAgent/$appVersionString';
 
 /// The headers [provider] is asked with, [key] in them.
 Map<String, String> upstreamHeaders(ModelProvider provider, String? key) => {
@@ -294,7 +294,7 @@ String openCodeSession(String? session) {
     final bytes = [for (var i = 0; i < 16; i++) random.nextInt(256)];
     return 'ses_${bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join()}';
   }
-  final digest = sha256.convert(utf8.encode('baocode:opencode:$session'));
+  final digest = sha256.convert(utf8.encode('langshenagent:opencode:$session'));
   return 'ses_${'$digest'.substring(0, 32)}';
 }
 

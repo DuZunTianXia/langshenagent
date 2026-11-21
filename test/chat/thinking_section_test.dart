@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/chat/widgets/thinking_section.dart';
+import 'package:langshenagent/chat/widgets/thinking_section.dart';
 
 void main() {
   group('a summarized thought', () {

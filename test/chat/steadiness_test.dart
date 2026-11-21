@@ -1,4 +1,4 @@
-import 'package:baocode/chat/steadiness.dart';
+import 'package:langshenagent/chat/steadiness.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 // Under testWidgets for its fake time, which runs the timers.

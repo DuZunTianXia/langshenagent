@@ -7,7 +7,7 @@ import 'dart:typed_data';
 import 'package:bao_iroh/bao_iroh.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-const alpn = 'baocode/test/1';
+const alpn = 'langshenagent/test/1';
 
 Uint8List secret() {
   final random = Random.secure();

@@ -10,40 +10,40 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bao_markdown/bao_markdown.dart';
-import 'package:baocode/chat/widgets/activity_row.dart';
-import 'package:baocode/sidebar/sidebar.dart';
-import 'package:baocode/workspace/workspace.dart';
-import 'package:baocode/chat/widgets/markdown_view.dart';
-import 'package:baocode/workspace/window_controls.dart';
-import 'package:baocode/main.dart';
+import 'package:langshenagent/chat/widgets/activity_row.dart';
+import 'package:langshenagent/sidebar/sidebar.dart';
+import 'package:langshenagent/workspace/workspace.dart';
+import 'package:langshenagent/chat/widgets/markdown_view.dart';
+import 'package:langshenagent/workspace/window_controls.dart';
+import 'package:langshenagent/main.dart';
 import 'package:super_sliver_list/super_sliver_list.dart';
-import 'package:baocode/kernel/claude_code/claude_code_kernel.dart';
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/widgets/edge_fade_mask.dart';
-import 'package:baocode/chat/widgets/live_selectable_text.dart';
-import 'package:baocode/chat/widgets/shimmer_text.dart';
-import 'package:baocode/chat/widgets/thinking_section.dart';
-import 'package:baocode/chat/widgets/chat_item_view.dart';
-import 'package:baocode/chat/widgets/user_message_bubble.dart';
-import 'package:baocode/chat/chat_find.dart';
-import 'package:baocode/chat/chat_history_view.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/kernel/agent_kernel.dart' show KernelContext;
-import 'package:baocode/chat/chat_screen.dart';
-import 'package:baocode/chat/composer/composer.dart';
-import 'package:baocode/chat/composer/composer_caret.dart';
-import 'package:baocode/chat/composer/composer_controller.dart';
-import 'package:baocode/chat/composer/composer_embeds.dart';
-import 'package:baocode/chat/composer/composer_files.dart';
-import 'package:baocode/chat/composer/composer_picker.dart';
-import 'package:baocode/chat/floating/floating_layer.dart';
-import 'package:baocode/chat/composer/suggestion_menu.dart';
-import 'package:baocode/chat/panels/activity_strip.dart';
-import 'package:baocode/chat/panels/interaction_panel.dart';
-import 'package:baocode/chat/panels/context_usage_panel.dart';
-import 'package:baocode/keybindings/keybinding_service.dart';
-import 'package:baocode/platform/native_md_clipboard.dart';
-import 'package:baocode/theme/app_theme.dart';
+import 'package:langshenagent/kernel/claude_code/claude_code_kernel.dart';
+import 'package:langshenagent/chat/chat_models.dart';
+import 'package:langshenagent/chat/widgets/edge_fade_mask.dart';
+import 'package:langshenagent/chat/widgets/live_selectable_text.dart';
+import 'package:langshenagent/chat/widgets/shimmer_text.dart';
+import 'package:langshenagent/chat/widgets/thinking_section.dart';
+import 'package:langshenagent/chat/widgets/chat_item_view.dart';
+import 'package:langshenagent/chat/widgets/user_message_bubble.dart';
+import 'package:langshenagent/chat/chat_find.dart';
+import 'package:langshenagent/chat/chat_history_view.dart';
+import 'package:langshenagent/chat/chat_session.dart';
+import 'package:langshenagent/kernel/agent_kernel.dart' show KernelContext;
+import 'package:langshenagent/chat/chat_screen.dart';
+import 'package:langshenagent/chat/composer/composer.dart';
+import 'package:langshenagent/chat/composer/composer_caret.dart';
+import 'package:langshenagent/chat/composer/composer_controller.dart';
+import 'package:langshenagent/chat/composer/composer_embeds.dart';
+import 'package:langshenagent/chat/composer/composer_files.dart';
+import 'package:langshenagent/chat/composer/composer_picker.dart';
+import 'package:langshenagent/chat/floating/floating_layer.dart';
+import 'package:langshenagent/chat/composer/suggestion_menu.dart';
+import 'package:langshenagent/chat/panels/activity_strip.dart';
+import 'package:langshenagent/chat/panels/interaction_panel.dart';
+import 'package:langshenagent/chat/panels/context_usage_panel.dart';
+import 'package:langshenagent/keybindings/keybinding_service.dart';
+import 'package:langshenagent/platform/native_md_clipboard.dart';
+import 'package:langshenagent/theme/app_theme.dart';
 
 Future<ChatSession> pumpScreen(
   WidgetTester tester, {
@@ -644,7 +644,7 @@ void main() {
     expect(controller.shownText, '\uFFFC ');
   });
 
-  testWidgets('files put in the draft from outside (Open with BaoCode) go '
+  testWidgets('files put in the draft from outside (Open with LangshenAgent) go '
       'in as if pasted: before the composer shows, and while it does', (
     tester,
   ) async {
@@ -720,7 +720,7 @@ void main() {
     final messenger = tester.binding.defaultBinaryMessenger;
     final menus = <List<Map<Object?, Object?>>>[];
     final replies = ['selectAll', 'copy', 'paste'];
-    messenger.setMockMethodCallHandler(const MethodChannel('baocode/window'), (
+    messenger.setMockMethodCallHandler(const MethodChannel('langshenagent/window'), (
       call,
     ) async {
       switch (call.method) {
@@ -781,7 +781,7 @@ void main() {
       expect(menus, hasLength(3));
     } finally {
       messenger.setMockMethodCallHandler(
-        const MethodChannel('baocode/window'),
+        const MethodChannel('langshenagent/window'),
         null,
       );
       messenger.setMockMethodCallHandler(SystemChannels.platform, null);
@@ -807,7 +807,7 @@ void main() {
       /// The menu item [command] chosen, as the window sends it.
       Future<void> menu(String command) async {
         await messenger.handlePlatformMessage(
-          'baocode/window',
+          'langshenagent/window',
           const StandardMethodCodec().encodeMethodCall(
             MethodCall('editCommand', command),
           ),
@@ -842,7 +842,7 @@ void main() {
       expect(copied!.length, greaterThan(200));
     } finally {
       messenger.setMockMethodCallHandler(
-        const MethodChannel('baocode/window'),
+        const MethodChannel('langshenagent/window'),
         null,
       );
       messenger.setMockMethodCallHandler(SystemChannels.platform, null);
@@ -995,14 +995,14 @@ void main() {
         // The pasteboard's own channel: no images, as the composer's paste
         // asks it (else the ask never answers under the test binding).
         ..setMockMethodCallHandler(
-          const MethodChannel('baocode/window'),
+          const MethodChannel('langshenagent/window'),
           (call) async => null,
         );
       addTearDown(() {
         tester.binding.defaultBinaryMessenger
           ..setMockMethodCallHandler(SystemChannels.platform, null)
           ..setMockMethodCallHandler(
-            const MethodChannel('baocode/window'),
+            const MethodChannel('langshenagent/window'),
             null,
           );
       });
@@ -1045,7 +1045,7 @@ void main() {
           (call) async =>
               call.method == 'Clipboard.getData' ? {'text': text} : null,
         )
-        ..setMockMethodCallHandler(const MethodChannel('baocode/window'), (
+        ..setMockMethodCallHandler(const MethodChannel('langshenagent/window'), (
           call,
         ) async {
           switch (call.method) {
@@ -1063,7 +1063,7 @@ void main() {
         tester.binding.defaultBinaryMessenger
           ..setMockMethodCallHandler(SystemChannels.platform, null)
           ..setMockMethodCallHandler(
-            const MethodChannel('baocode/window'),
+            const MethodChannel('langshenagent/window'),
             null,
           );
       });
@@ -1505,7 +1505,7 @@ void main() {
 
     testWidgets('an edit stays open while another conversation is visited '
         'from the sidebar', (tester) async {
-      await tester.pumpWidget(BaoCodeApp(workspace: Workspace.mock()));
+      await tester.pumpWidget(LangshenAgentApp(workspace: Workspace.mock()));
       await tester.pump();
       final title = find.descendant(
         of: find.byType(Sidebar),

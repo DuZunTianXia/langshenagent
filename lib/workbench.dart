@@ -397,7 +397,7 @@ class _WorkbenchState extends State<Workbench> implements WindowDelegate {
   /// Whether this is one of them.
   bool get _ideWindow => _multi && (widget.window?.isIde ?? false);
 
-  /// Whether this is an agent's window (Explorer's Open with BaoCode): its
+  /// Whether this is an agent's window (Explorer's Open with LangshenAgent): its
   /// conversation alone, [_agentThread]'s.
   bool get _agentWindow => widget.window?.isAgent ?? false;
   AgentThread? get _agentThread => _agentWindow ? widget.window!.thread : null;
@@ -891,7 +891,7 @@ class _WorkbenchState extends State<Workbench> implements WindowDelegate {
     }
   }
 
-  /// The setup page's `baocode://activate` link, opened: what it says,
+  /// The setup page's `langshenagent://activate` link, opened: what it says,
   /// unless it was set up already; one not this install's, said so.
   Future<void> _acceptChannelLink(String link) async {
     final setup = ChannelSetup.current;
@@ -1381,7 +1381,7 @@ class _WorkbenchState extends State<Workbench> implements WindowDelegate {
   // --- Search and Customize ---------------------------------------------------
 
   /// Customize's command, for the palette.
-  static const _customizeCommand = 'baocode.chat.customize';
+  static const _customizeCommand = 'langshenagent.chat.customize';
 
   /// Claude Code's customizations show in place of the chat.
   bool _customizing = false;
@@ -1411,7 +1411,7 @@ class _WorkbenchState extends State<Workbench> implements WindowDelegate {
   // --- The stashes ------------------------------------------------------------
 
   /// The stashes' page's command, for the palette and the keys.
-  static const _stashCommand = 'baocode.stash.show';
+  static const _stashCommand = 'langshenagent.stash.show';
 
   /// The stashes (docs/stash.md) show in place of the chat.
   bool _stashing = false;
@@ -1834,7 +1834,7 @@ class _WorkbenchState extends State<Workbench> implements WindowDelegate {
     );
   }
 
-  /// Star BaoCode on GitHub, the command: the ask, now.
+  /// Star LangshenAgent on GitHub, the command: the ask, now.
   void _starOnGitHub() => unawaited(_starPrompt?.show() ?? _showStarDialog());
 
   /// The restores of the card seen (see [_tipsChanged]).
@@ -2341,7 +2341,7 @@ class _WorkbenchState extends State<Workbench> implements WindowDelegate {
   /// the File menu's Open Recent): folders and files alike in the IDE,
   /// whichever the main window is; the chat is left as it was. With the
   /// app's windows, as they open them (see [AppWindows.openRequested]).
-  /// A `baocode://file/…` link, in the IDE as `code -g` opens it.
+  /// A `langshenagent://file/…` link, in the IDE as `code -g` opens it.
   Future<void> _openPaths(List<String> paths) async {
     if (paths.firstOrNull == CodeArgs.importRequestMarker) {
       for (final link in paths.skip(1)) {

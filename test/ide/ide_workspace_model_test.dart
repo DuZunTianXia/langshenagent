@@ -4,11 +4,11 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bao_editor/monaco/flutter/editor_document_model.dart';
 import 'package:bao_editor/monaco/vs/editor/common/core/range.dart';
-import 'package:baocode/ide/file_service.dart';
-import 'package:baocode/ide/file_views.dart';
+import 'package:langshenagent/ide/file_service.dart';
+import 'package:langshenagent/ide/file_views.dart';
 import 'package:flutter/widgets.dart' show SizedBox;
-import 'package:baocode/ide/ide_workspace.dart';
-import 'package:baocode/ide/lsp/lsp_protocol.dart';
+import 'package:langshenagent/ide/ide_workspace.dart';
+import 'package:langshenagent/ide/lsp/lsp_protocol.dart';
 import 'package:path/path.dart' as p;
 
 import 'workbench/fake_files.dart';
@@ -426,7 +426,7 @@ void main() {
   test(
     'a file outside the project opens and saves as one inside does',
     () async {
-      final temp = await Directory.systemTemp.createTemp('baocode-outside-');
+      final temp = await Directory.systemTemp.createTemp('langshenagent-outside-');
       addTearDown(() => temp.delete(recursive: true));
       final base = await temp.resolveSymbolicLinks();
       final project = await Directory(p.join(base, 'project')).create();

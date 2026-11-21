@@ -10,15 +10,15 @@ import '../../update/version.dart';
 const aboutIconAsset = 'assets/branding/app_icon.png';
 
 /// Help → About: what the app is, and which build this is.
-Future<void> showAboutBaoCode(BuildContext context) => showDialog<void>(
+Future<void> showAboutLangshenAgent(BuildContext context) => showDialog<void>(
   context: context,
   // Black, not the theme's: as upstream's dialogs dim the window.
   barrierColor: const Color(0x88000000),
-  builder: (context) => const _AboutBaoCodeDialog(),
+  builder: (context) => const _AboutLangshenAgentDialog(),
 );
 
-class _AboutBaoCodeDialog extends StatelessWidget {
-  const _AboutBaoCodeDialog();
+class _AboutLangshenAgentDialog extends StatelessWidget {
+  const _AboutLangshenAgentDialog();
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +59,7 @@ class _AboutBaoCodeDialog extends StatelessWidget {
                 ),
                 SizedBox(width: 10),
                 Text(
-                  'BaoCode',
+                  'LangshenAgent',
                   style: TextStyle(
                     color: AppColors.textPrimary,
                     fontSize: 15,

@@ -244,7 +244,7 @@ String botWorld({
         'your files and the chats, did not happen.',
     '',
     '## The user',
-    '$user: everyone talks with them from the BaoCode app on their phone; '
+    '$user: everyone talks with them from the LangshenAgent app on their phone; '
         'the app and everyone live on their computer.',
     '',
     '## Everyone',

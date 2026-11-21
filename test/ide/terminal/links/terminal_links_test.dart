@@ -5,9 +5,9 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/terminal/links/terminal_link_parsing.dart';
-import 'package:baocode/ide/terminal/links/terminal_link_resolver.dart';
-import 'package:baocode/ide/terminal/links/terminal_links.dart';
+import 'package:langshenagent/ide/terminal/links/terminal_link_parsing.dart';
+import 'package:langshenagent/ide/terminal/links/terminal_link_resolver.dart';
+import 'package:langshenagent/ide/terminal/links/terminal_links.dart';
 import 'package:bao_xterm/headless/public/terminal.dart';
 import 'package:bao_xterm/typings/xterm_headless.dart' hide Terminal;
 
@@ -191,7 +191,7 @@ void main() {
       link,
       contextLine: contextLine,
       os: OperatingSystem.linux,
-      workspaceFolders: ['/code/baocode'],
+      workspaceFolders: ['/code/langshenagent'],
     );
 
     test('drops file:// and ./ prefixes', () {
@@ -211,7 +211,7 @@ void main() {
     });
 
     test('drops a workspace folder name', () {
-      expect(text('baocode/lib/a.dart'), 'lib/a.dart');
+      expect(text('langshenagent/lib/a.dart'), 'lib/a.dart');
     });
   });
 }

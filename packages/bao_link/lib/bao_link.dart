@@ -1,4 +1,4 @@
-/// BaoCode's link between a desktop and its paired phones: pairing by QR
+/// LangshenAgent's link between a desktop and its paired phones: pairing by QR
 /// code or from those nearby, connections by device key (iroh: direct or
 /// through a relay, end-to-end encrypted), and the requests over them.
 /// Pure Dart: the network itself is in `bao_link_io.dart`.

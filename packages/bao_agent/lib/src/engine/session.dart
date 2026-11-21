@@ -51,7 +51,7 @@ class EngineOptions {
     this.environment = const {},
     this.rootCertificates = const [],
     this.configDir,
-    this.productName = 'BaoCode',
+    this.productName = 'LangshenAgent',
     this.systemPrompt,
     this.tools,
     this.maxTurns,
@@ -81,7 +81,7 @@ class EngineOptions {
     },
     rootCertificates: [...asList(json['rootCertificates']).whereType<String>()],
     configDir: asText(json['configDir']),
-    productName: asText(json['productName']) ?? 'BaoCode',
+    productName: asText(json['productName']) ?? 'LangshenAgent',
     systemPrompt: asString(json['systemPrompt']),
     tools: json['tools'] is List
         ? [...asList(json['tools']).whereType<String>()]
@@ -193,7 +193,7 @@ class MissingCredentials implements Exception {
 
   static const message =
       'No API key for the built-in Claude Code core. Add an Anthropic (or '
-      'compatible) provider in BaoCode\'s settings, set ANTHROPIC_API_KEY '
+      'compatible) provider in LangshenAgent\'s settings, set ANTHROPIC_API_KEY '
       '(or ANTHROPIC_AUTH_TOKEN, or an apiKeyHelper in ~/.claude/settings.json), '
       'or switch the core to the Claude Code CLI in Settings → General. '
       'A Claude subscription login is only usable by the Claude Code CLI.';
@@ -425,7 +425,7 @@ class AgentSession {
         for (final MapEntry(:key, :value) in settings.env.entries)
           if (!_secret(key) || options.environment[key] == value) key: value,
         'CLAUDECODE': '1',
-        'CLAUDE_CODE_ENTRYPOINT': 'baocode-dart',
+        'CLAUDE_CODE_ENTRYPOINT': 'langshenagent-dart',
         'GIT_EDITOR': 'true',
       });
 
@@ -500,7 +500,7 @@ class AgentSession {
       idleTimeout: Duration(
         milliseconds: asInt(env['API_TIMEOUT_MS']) ?? 300000,
       ),
-      userAgent: 'baocode-agent/1.0 (dart)',
+      userAgent: 'langshenagent-agent/1.0 (dart)',
       // As the CLI gives it (JSON with a `session_id`): what our model
       // proxy and the gateways read the session from.
       userId: jsonEncode({'session_id': sessionId}),
@@ -638,7 +638,7 @@ class AgentSession {
       commit: set.commit ?? 'Co-Authored-By: Claude <noreply@anthropic.com>',
       pr:
           set.pr ??
-          '🤖 Generated with [${options.productName}](https://baocode.dev)',
+          '🤖 Generated with [${options.productName}](https://langshenagent.dev)',
     );
   }
 

@@ -1,16 +1,16 @@
-// baocode-browser-host: the native messaging host of BaoCode's browser
+// langshenagent-browser-host: the native messaging host of LangshenAgent's browser
 // extension (browser_extension/), which the browser starts for it. It
-// passes the extension's messages to BaoCode and BaoCode's back, over a
-// Unix socket of BaoCode's (lib/browser/browser_bridge.dart): waiting for
-// BaoCode while it is not running, and again once it quits.
+// passes the extension's messages to LangshenAgent and LangshenAgent's back, over a
+// Unix socket of LangshenAgent's (lib/browser/browser_bridge.dart): waiting for
+// LangshenAgent while it is not running, and again once it quits.
 //
 // Both ways a message is the browser's: its length (4 bytes, this
 // machine's order), then that much JSON. The host says what goes on with
-// BaoCode in messages of its own: {"type":"bridge","connected":…}. It
+// LangshenAgent in messages of its own: {"type":"bridge","connected":…}. It
 // quits once the browser lets it go (its input ends).
 //
 // Built for Linux too (linux/BrowserBridge/CMakeLists.txt): there the
-// socket is in $XDG_RUNTIME_DIR, the user's alone, and BaoCode has to be
+// socket is in $XDG_RUNTIME_DIR, the user's alone, and LangshenAgent has to be
 // the user's own (SO_PEERCRED), wherever the socket is.
 
 #ifdef __linux__
@@ -38,7 +38,7 @@
 
 static pthread_mutex_t out_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t socket_lock = PTHREAD_MUTEX_INITIALIZER;
-static int bao = -1;  // The socket to BaoCode, while connected.
+static int bao = -1;  // The socket to LangshenAgent, while connected.
 static const char* origin = "";
 
 static int read_all(int fd, void* buffer, size_t size) {
@@ -146,7 +146,7 @@ static int socket_path(char* path, size_t size) {
   if (!dir || !*dir) dir = "/tmp";
   const size_t n = strlen(dir);
   const char* slash = n > 0 && dir[n - 1] == '/' ? "" : "/";
-  return snprintf(path, size, "%s%sbaocode-browser.sock", dir, slash) <
+  return snprintf(path, size, "%s%slangshenagent-browser.sock", dir, slash) <
                  (int)size
              ? 0
              : -1;
@@ -163,7 +163,7 @@ static int connect_bao(void) {
     return -1;
   }
 #ifdef __linux__
-  // Another user's, listening where BaoCode would: not told the browser's.
+  // Another user's, listening where LangshenAgent would: not told the browser's.
   struct ucred peer;
   socklen_t peer_size = sizeof peer;
   if (getsockopt(fd, SOL_SOCKET, SO_PEERCRED, &peer, &peer_size) != 0 ||
@@ -175,7 +175,7 @@ static int connect_bao(void) {
   return fd;
 }
 
-// BaoCode's messages, to the browser; connecting again each time BaoCode
+// LangshenAgent's messages, to the browser; connecting again each time LangshenAgent
 // comes back.
 static void* from_bao(void* unused) {
   (void)unused;
@@ -237,7 +237,7 @@ int main(int argc, char** argv) {
   tell_browser(0);
   pthread_t thread;
   pthread_create(&thread, NULL, from_bao, NULL);
-  // The extension's messages, to BaoCode: dropped while it is not there
+  // The extension's messages, to LangshenAgent: dropped while it is not there
   // (the extension knows, told above).
   for (;;) {
     uint32_t length;

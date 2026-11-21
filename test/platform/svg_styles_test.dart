@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:baocode/platform/svg_styles.dart';
+import 'package:langshenagent/platform/svg_styles.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vector_graphics_compiler/vector_graphics_compiler.dart';
 import 'package:xml/xml.dart';

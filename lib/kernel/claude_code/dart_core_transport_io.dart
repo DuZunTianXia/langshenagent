@@ -11,7 +11,7 @@ import 'claude_code_transport.dart';
 import 'claude_environment.dart';
 import 'core_ripgrep_io.dart';
 
-/// A session on BaoCode's own core: package:bao_agent's engine in an
+/// A session on LangshenAgent's own core: package:bao_agent's engine in an
 /// isolate of its own, speaking what the CLI speaks on its stdin and
 /// stdout, started as [ClaudeLaunch] would start the CLI.
 class DartCoreTransport implements ClaudeCodeTransport {
@@ -64,7 +64,7 @@ class DartCoreTransport implements ClaudeCodeTransport {
       ..addAll(ClaudeEnvironment.stateDirectory(base));
     await CoreRipgrep.addTo(environment);
     // Its commands run in the shell Settings → General → Command Line
-    // picks (Windows): BaoCode Bash where installed, unless another.
+    // picks (Windows): LangshenAgent Bash where installed, unless another.
     environment.addAll(BaoBash.coreEnvironment());
     final instructions = launch.instructions;
     return EngineOptions(

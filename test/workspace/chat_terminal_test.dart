@@ -6,26 +6,26 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bao_editor/monaco/flutter/keybinding_entry.dart';
-import 'package:baocode/chat/chat_screen.dart';
-import 'package:baocode/ide/ide_hover.dart';
-import 'package:baocode/ide/terminal/terminal_instance.dart';
-import 'package:baocode/ide/terminal/terminal_widget.dart';
-import 'package:baocode/keybindings/keybinding_service.dart';
-import 'package:baocode/main.dart';
-import 'package:baocode/workspace/chat_grid.dart';
-import 'package:baocode/workspace/chat_grid_view.dart';
-import 'package:baocode/workspace/chat_quota_bar.dart';
-import 'package:baocode/workspace/chat_terminal.dart';
-import 'package:baocode/workspace/islands.dart';
-import 'package:baocode/workspace/window_header/window_header.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:langshenagent/chat/chat_screen.dart';
+import 'package:langshenagent/ide/ide_hover.dart';
+import 'package:langshenagent/ide/terminal/terminal_instance.dart';
+import 'package:langshenagent/ide/terminal/terminal_widget.dart';
+import 'package:langshenagent/keybindings/keybinding_service.dart';
+import 'package:langshenagent/main.dart';
+import 'package:langshenagent/workspace/chat_grid.dart';
+import 'package:langshenagent/workspace/chat_grid_view.dart';
+import 'package:langshenagent/workspace/chat_quota_bar.dart';
+import 'package:langshenagent/workspace/chat_terminal.dart';
+import 'package:langshenagent/workspace/islands.dart';
+import 'package:langshenagent/workspace/window_header/window_header.dart';
+import 'package:langshenagent/workspace/workspace.dart';
 
 import '../chat_split_test.dart' show dragTitle;
 import '../ide/terminal/fake_pty.dart';
 import '../ide/terminal/fake_terminal.dart';
 import 'chat_window_keys_test.dart' show press;
 
-const _window = MethodChannel('baocode/window');
+const _window = MethodChannel('langshenagent/window');
 
 Future<Workspace> _pumpApp(
   WidgetTester tester, {
@@ -46,7 +46,7 @@ Future<Workspace> _pumpApp(
   );
   final workspace = Workspace.mock();
   await tester.pumpWidget(
-    BaoCodeApp(workspace: workspace, terminalBackend: terminalBackend),
+    LangshenAgentApp(workspace: workspace, terminalBackend: terminalBackend),
   );
   await tester.pump();
   return workspace;

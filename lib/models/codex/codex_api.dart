@@ -8,7 +8,7 @@ import 'dart:convert';
 import '../upstream.dart';
 import 'codex_feed_stub.dart' if (dart.library.io) 'codex_feed_io.dart';
 
-/// The Codex CLI's version this speaks as until baocode.dev says another
+/// The Codex CLI's version this speaks as until langshenagent.dev says another
 /// ([codexVersion]).
 const codexClientVersion = '0.169.1';
 
@@ -18,8 +18,8 @@ const codexClientVersion = '0.169.1';
 /// models are listed, so that a new one needs no release.
 String codexVersion = codexClientVersion;
 
-/// Where baocode.dev keeps the version ([codexVersion]): site/codex.json.
-final codexVersionFeed = Uri.parse('https://baocode.dev/codex.json');
+/// Where langshenagent.dev keeps the version ([codexVersion]): site/codex.json.
+final codexVersionFeed = Uri.parse('https://langshenagent.dev/codex.json');
 
 /// The version in [text] (codex.json's): null when it has none.
 String? parseCodexVersion(String text) {
@@ -34,12 +34,12 @@ String? parseCodexVersion(String text) {
   return null;
 }
 
-/// How [loadCodexVersion] gets codex.json's text: null where baocode.dev
+/// How [loadCodexVersion] gets codex.json's text: null where langshenagent.dev
 /// does not answer. Tests set their own.
 Future<String?> Function(Uri url) codexFeed = fetchCodexFeed;
 
 /// Sets [codexVersion] as [codexVersionFeed] says; left as it is where
-/// baocode.dev does not answer in [timeout].
+/// langshenagent.dev does not answer in [timeout].
 Future<void> loadCodexVersion({
   Duration timeout = const Duration(seconds: 5),
 }) async {

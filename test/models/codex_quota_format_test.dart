@@ -1,6 +1,6 @@
-import 'package:baocode/l10n/app_localizations_en.dart';
-import 'package:baocode/l10n/app_localizations_zh.dart';
-import 'package:baocode/models/codex/codex_quota_format.dart';
+import 'package:langshenagent/l10n/app_localizations_en.dart';
+import 'package:langshenagent/l10n/app_localizations_zh.dart';
+import 'package:langshenagent/models/codex/codex_quota_format.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

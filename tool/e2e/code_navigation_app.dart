@@ -7,18 +7,18 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:bao_editor/monaco/flutter/editor_surface.dart';
-import 'package:baocode/ide/ide_editor.dart';
-import 'package:baocode/ide/ide_workbench.dart';
-import 'package:baocode/ide/lsp/catalog/standard_lsp.dart';
-import 'package:baocode/ide/lsp/language_features.dart';
-import 'package:baocode/ide/lsp/lsp_manager.dart';
-import 'package:baocode/ide/lsp/lsp_protocol.dart';
-import 'package:baocode/ide/lsp_ui/problems_panel.dart';
-import 'package:baocode/main.dart' show BaoCodeApp;
-import 'package:baocode/platform/data_dir.dart';
-import 'package:baocode/settings/app_locale.dart';
-import 'package:baocode/theme/workbench_theme.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:langshenagent/ide/ide_editor.dart';
+import 'package:langshenagent/ide/ide_workbench.dart';
+import 'package:langshenagent/ide/lsp/catalog/standard_lsp.dart';
+import 'package:langshenagent/ide/lsp/language_features.dart';
+import 'package:langshenagent/ide/lsp/lsp_manager.dart';
+import 'package:langshenagent/ide/lsp/lsp_protocol.dart';
+import 'package:langshenagent/ide/lsp_ui/problems_panel.dart';
+import 'package:langshenagent/main.dart' show LangshenAgentApp;
+import 'package:langshenagent/platform/data_dir.dart';
+import 'package:langshenagent/settings/app_locale.dart';
+import 'package:langshenagent/theme/workbench_theme.dart';
+import 'package:langshenagent/workspace/workspace.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -28,16 +28,16 @@ import '../perf/perf_input.dart';
 
 const _main =
     "import 'greeter.dart';\n\nvoid main() {\n"
-    "  final message = greet('BaoCode');\n  print(message);\n}\n";
+    "  final message = greet('LangshenAgent');\n  print(message);\n}\n";
 const _greeter = "String greet(String name) {\n  return 'Hello, \$name!';\n}\n";
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final directory = Platform.environment['BAOCODE_E2E_OUT'];
-  final dart = Platform.environment['BAOCODE_E2E_DART'];
+  final directory = Platform.environment['LANGSHENAGENT_E2E_OUT'];
+  final dart = Platform.environment['LANGSHENAGENT_E2E_DART'];
   if (directory == null || dart == null || !File(dart).existsSync()) {
     stderr.writeln(
-      'Set BAOCODE_E2E_OUT and BAOCODE_E2E_DART (the SDK binary).',
+      'Set LANGSHENAGENT_E2E_OUT and LANGSHENAGENT_E2E_DART (the SDK binary).',
     );
     exit(2);
   }
@@ -62,8 +62,8 @@ Future<void> main() async {
   final launcher = File(p.join(out.path, 'dart-language-server'))
     ..writeAsStringSync(
       '#!/bin/sh\n'
-      'while [ ! -f "\$BAOCODE_E2E_RELEASE" ]; do sleep 0.05; done\n'
-      'exec "\$BAOCODE_E2E_DART" "\$@"\n',
+      'while [ ! -f "\$LANGSHENAGENT_E2E_RELEASE" ]; do sleep 0.05; done\n'
+      'exec "\$LANGSHENAGENT_E2E_DART" "\$@"\n',
     );
   final chmod = await Process.run('chmod', ['700', launcher.path]);
   if (chmod.exitCode != 0) throw StateError('chmod: ${chmod.stderr}');
@@ -76,8 +76,8 @@ Future<void> main() async {
           'command': launcher.path,
           'args': ['language-server', '--protocol=lsp'],
           'environment': {
-            'BAOCODE_E2E_DART': dart,
-            'BAOCODE_E2E_RELEASE': release.path,
+            'LANGSHENAGENT_E2E_DART': dart,
+            'LANGSHENAGENT_E2E_RELEASE': release.path,
           },
         },
       },
@@ -110,7 +110,7 @@ Future<void> main() async {
     runApp(
       RepaintBoundary(
         key: boundary,
-        child: BaoCodeApp(
+        child: LangshenAgentApp(
           workspace: workspace,
           appLocale: AppLocale(storage: MemoryLocaleStorage(AppLocale.english)),
           languagesFor: (folder) {
@@ -122,7 +122,7 @@ Future<void> main() async {
       ),
     );
     await _until(() => _find<IdeWorkbench>() != null, 'Fast IDE window');
-    await const MethodChannel('baocode/windows').invokeMethod(
+    await const MethodChannel('langshenagent/windows').invokeMethod(
       'focus',
       WidgetsBinding.instance.platformDispatcher.implicitView!.viewId,
     );
@@ -298,7 +298,7 @@ Future<void> main() async {
     for (final manager in managers) {
       await manager.shutdown();
     }
-    stdout.writeln('BAOCODE_E2E_RESULT ${p.join(out.path, 'result.json')}');
+    stdout.writeln('LANGSHENAGENT_E2E_RESULT ${p.join(out.path, 'result.json')}');
   }
   exit(failed ? 1 : 0);
 }

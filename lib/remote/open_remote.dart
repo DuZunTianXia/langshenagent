@@ -17,7 +17,7 @@ import 'remote_location.dart';
 import 'ssh_host.dart';
 
 /// The command's id, in the palettes and on the start page.
-const openRemoteFolderCommandId = 'baocode.remote.openFolder';
+const openRemoteFolderCommandId = 'langshenagent.remote.openFolder';
 
 /// Walks the user through opening a remote project: [show] shows each
 /// step's quick pick; [onOpen] is given the project's location.

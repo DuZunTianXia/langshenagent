@@ -6,20 +6,20 @@ import 'dart:io';
 
 import 'package:bao_remote/client.dart' show RemotePlatform;
 import 'package:bao_remote/local.dart';
-import 'package:baocode/kernel/claude_code/claude_core_setting.dart';
-import 'package:baocode/kernel/claude_code/claude_install_progress.dart';
-import 'package:baocode/kernel/claude_code/claude_path_setting.dart';
-import 'package:baocode/kernel/claude_code/local_claude_io.dart';
-import 'package:baocode/l10n/l10n.dart';
-import 'package:baocode/remote/remote_status.dart';
-import 'package:baocode/settings/pages/general_page.dart';
+import 'package:langshenagent/kernel/claude_code/claude_core_setting.dart';
+import 'package:langshenagent/kernel/claude_code/claude_install_progress.dart';
+import 'package:langshenagent/kernel/claude_code/claude_path_setting.dart';
+import 'package:langshenagent/kernel/claude_code/local_claude_io.dart';
+import 'package:langshenagent/l10n/l10n.dart';
+import 'package:langshenagent/remote/remote_status.dart';
+import 'package:langshenagent/settings/pages/general_page.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
 /// The Claude Code run on a machine: the newest of the user's builds and
-/// the one BaoCode downloaded for them, downloaded where there is none
+/// the one LangshenAgent downloaded for them, downloaded where there is none
 /// that runs, or only ones too old.
 void main() {
   late Directory home;
@@ -31,7 +31,7 @@ void main() {
   setUp(() async {
     // flutter_test answers every HttpClient request with a 400.
     HttpOverrides.global = null;
-    home = Directory.systemTemp.createTempSync('baocode-runtime-');
+    home = Directory.systemTemp.createTempSync('langshenagent-runtime-');
     data = Directory(p.join(home.path, 'data'))..createSync();
     releases = await _FakeReleases.start(platform);
     ClaudeRelease.baseOverride = releases.base;
@@ -194,14 +194,14 @@ void main() {
   });
 
   test('Settings name the one to run here, `~` the home; '
-      'BAOCODE_CLAUDE_PATH in the environment is not read', () async {
+      'LANGSHENAGENT_CLAUDE_PATH in the environment is not read', () async {
     final named = build('named', '0.1.0');
     final other = build('other', '1.0.0');
     CliLocator.candidatesOverride = (_) => [other];
     CliLocator.use({
       'PATH': '/usr/bin:/bin',
       'HOME': home.path,
-      'BAOCODE_CLAUDE_PATH': named,
+      'LANGSHENAGENT_CLAUDE_PATH': named,
     });
     LocalClaude.runtime = null;
     expect((await LocalClaude.locate(install: false)).executable, other);
@@ -260,7 +260,7 @@ void main() {
     expect(releases.served, hasLength(served));
   });
 
-  test('its status: the one run, its version, whether BaoCode downloaded '
+  test('its status: the one run, its version, whether LangshenAgent downloaded '
       'it; none yet', () async {
     LocalClaude.runtime = runtime;
     expect(await LocalClaude.status(), isA<LocalClaudeMissing>());
@@ -302,7 +302,7 @@ void main() {
       await tester.pump();
     }
 
-    // The core, unset, with no Claude Code installed: BaoCode's own,
+    // The core, unset, with no Claude Code installed: LangshenAgent's own,
     // nothing downloaded unasked.
     await show(const LocalClaudeMissing());
     expect(find.text('Built-in'), findsOneWidget);
@@ -318,7 +318,7 @@ void main() {
       const LocalClaudeFound('/data/claude-2.1.4', '2.1.4', downloaded: true),
     );
     expect(
-      find.text('In use: Claude Code 2.1.4, downloaded by BaoCode'),
+      find.text('In use: Claude Code 2.1.4, downloaded by LangshenAgent'),
       findsOneWidget,
     );
     await show(const LocalClaudeMissing());

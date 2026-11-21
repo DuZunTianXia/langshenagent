@@ -2,14 +2,14 @@ import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/lsp_ui/problems_panel.dart';
-import 'package:baocode/ide/ide_layout.dart';
-import 'package:baocode/ide/ide_menu.dart';
-import 'package:baocode/ide/ide_quick_input.dart';
-import 'package:baocode/ide/ide_workbench.dart';
-import 'package:baocode/keybindings/keybinding_service.dart';
-import 'package:baocode/settings/user_settings.dart';
-import 'package:baocode/theme/codicons.dart';
+import 'package:langshenagent/ide/lsp_ui/problems_panel.dart';
+import 'package:langshenagent/ide/ide_layout.dart';
+import 'package:langshenagent/ide/ide_menu.dart';
+import 'package:langshenagent/ide/ide_quick_input.dart';
+import 'package:langshenagent/ide/ide_workbench.dart';
+import 'package:langshenagent/keybindings/keybinding_service.dart';
+import 'package:langshenagent/settings/user_settings.dart';
+import 'package:langshenagent/theme/codicons.dart';
 import 'package:path/path.dart' as p;
 
 import '../terminal/fake_pty.dart';
@@ -201,7 +201,7 @@ void main() {
   testWidgets('Select Default Profile writes it to settings.json, where '
       'new terminals and the dropdown find it', (tester) async {
     final temp = Directory.systemTemp.createTempSync(
-      'baocode-terminal-default',
+      'langshenagent-terminal-default',
     );
     addTearDown(() => temp.deleteSync(recursive: true));
     final settings = UserSettings(

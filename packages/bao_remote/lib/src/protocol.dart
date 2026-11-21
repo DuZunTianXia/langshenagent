@@ -198,7 +198,7 @@ class RemoteHello {
   /// The user's home folder there.
   final String home;
 
-  /// Where the server keeps its own state there (`~/.baocode-server/data`).
+  /// Where the server keeps its own state there (`~/.langshenagent-server/data`).
   final String dataDir;
 
   Map<String, Object?> toJson() => {

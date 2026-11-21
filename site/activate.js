@@ -1,14 +1,14 @@
-// The channel build's first start: BaoCode opens
+// The channel build's first start: LangshenAgent opens
 //
-//   https://baocode.dev/activate#i=<install id>
+//   https://langshenagent.dev/activate#i=<install id>
 //
 // and waits (`&again=<id>` too when it asks once more: its channel not one
 // with accounts, the visitor might have come by another since, which this
-// browser now keeps). This page sends stats.baocode.dev where the visitor came to
-// the site from, as site.js kept it in this browser, and BaoCode, asking
-// there, goes on. Should BaoCode not hear of it (its network, the server
-// down), the page hands it over itself: baocode://activate?…, opened or
-// pasted into BaoCode. Nothing kept in this browser: the link to open in
+// browser now keeps). This page sends stats.langshenagent.dev where the visitor came to
+// the site from, as site.js kept it in this browser, and LangshenAgent, asking
+// there, goes on. Should LangshenAgent not hear of it (its network, the server
+// down), the page hands it over itself: langshenagent://activate?…, opened or
+// pasted into LangshenAgent. Nothing kept in this browser: the link to open in
 // the one that came to the site, or on without. The page's words are in
 // its HTML (each language's).
 (() => {
@@ -40,14 +40,14 @@
     sent = true;
     const source = kept?.source || 'none';
     const value = kept?.value || null;
-    const link = `baocode://activate?i=${id}&s=${source}${value ? `&c=${encodeURIComponent(value)}` : ''}`;
+    const link = `langshenagent://activate?i=${id}&s=${source}${value ? `&c=${encodeURIComponent(value)}` : ''}`;
     root.querySelector('[data-open]').href = link;
     root.querySelector('[data-link]').textContent = link;
     show('sending');
     try {
       const ctl = new AbortController();
       setTimeout(() => ctl.abort(), 8000);
-      const res = await fetch('https://stats.baocode.dev/v1/attribution', {
+      const res = await fetch('https://stats.langshenagent.dev/v1/attribution', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ v: 1, id, source, value, ...(again ? { again } : {}) }),
@@ -64,7 +64,7 @@
       send(kept);
       return;
     }
-    root.querySelector('[data-page-link]').textContent = `https://baocode.dev/activate${location.hash}`;
+    root.querySelector('[data-page-link]').textContent = `https://langshenagent.dev/activate${location.hash}`;
     show('missing');
     root.querySelector('[data-continue]').addEventListener('click', () => send(null));
   });

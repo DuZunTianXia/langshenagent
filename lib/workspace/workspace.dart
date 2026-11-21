@@ -557,6 +557,16 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
   Future<AgentThread> openFolder(String path) async =>
       create(project: _openProject(path));
 
+  /// Lists [path] as a project without an agent opened in it: a phone's
+  /// "add workspace".
+  Project listFolder(String path) {
+    final project = _openProject(path);
+    // [_openProject] says nothing of a project kept sessions are not
+    // found in yet: the sidebar (and a phone's state) hears it now.
+    notifyListeners();
+    return project;
+  }
+
   /// Has [thread], a new agent nothing was sent to yet, work in [path]
   /// instead: a new agent there (an untouched one reused) takes its pane,
   /// and it goes. [path] is opened as a project if it was not one.
@@ -742,10 +752,10 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
   /// Sample projects and agents at various ages and states, on the
   /// registered kernels (mock ones under test).
   factory Workspace.mock() {
-    const baocode = Project('baocode', '~/code/baocode');
+    const langshenagent = Project('langshenagent', '~/code/langshenagent');
     const docs = Project('cursor-docs', '~/code/cursor-docs');
     const gateway = Project('api-gateway', '~/work/api-gateway');
-    final workspace = Workspace(projects: const [baocode, docs, gateway]);
+    final workspace = Workspace(projects: const [langshenagent, docs, gateway]);
     final claude = workspace.kernels.first;
     final codex = workspace.kernels.lastOrNull ?? claude;
     final now = DateTime.now();
@@ -787,13 +797,13 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
     }
 
     add(
-      baocode,
+      langshenagent,
       'Optimize virtual list scrolling',
       const Duration(minutes: 2),
       history: MockConversation.itemCount,
     );
     add(
-      baocode,
+      langshenagent,
       'Sticky user message on scroll',
       const Duration(minutes: 38),
       unread: true,
@@ -807,18 +817,18 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
       ],
     );
     add(
-      baocode,
+      langshenagent,
       'Fix selection jitter in streaming thoughts',
       const Duration(hours: 3),
       history: 24,
     );
     add(
-      baocode,
+      langshenagent,
       'Floating layer for composer popovers',
       const Duration(days: 1, hours: 2),
       pinned: true,
     );
-    add(baocode, 'Edit sent messages in history', const Duration(days: 4));
+    add(langshenagent, 'Edit sent messages in history', const Duration(days: 4));
     add(
       docs,
       'Rewrite the agents quickstart',
@@ -978,7 +988,7 @@ class Workspace extends ChangeNotifier implements ColorThemeStorage {
   }
 
   /// The agents shown each in a window of its own (Explorer's Open with
-  /// BaoCode; see AppWindows.openAgent): what [isShown] counts too.
+  /// LangshenAgent; see AppWindows.openAgent): what [isShown] counts too.
   Set<AgentThread> _windowAgents = const {};
 
   void showAgentWindows(Iterable<AgentThread> threads) {

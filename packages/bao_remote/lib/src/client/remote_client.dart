@@ -303,7 +303,7 @@ class RemoteClient {
       final args = _map(params);
       final open = onCode;
       final error = open == null
-          ? 'BaoCode cannot open files from here.'
+          ? 'LangshenAgent cannot open files from here.'
           : await open(args['cwd'] as String? ?? '', [
               for (final arg in args['args'] as List? ?? const [])
                 if (arg is String) arg,
@@ -711,7 +711,7 @@ class RemoteClient {
   /// Starts Claude Code there with [arguments] in [cwd]: [settings] (flag
   /// settings with a key) written to a file only the user reads and given
   /// as `--settings`, the variables named in [cleared] set empty, then
-  /// [environment] over its own. [core] `builtin` runs BaoCode's own core
+  /// [environment] over its own. [core] `builtin` runs LangshenAgent's own core
   /// there instead (a server of before runs the CLI). Throws
   /// ClaudeUnavailable when the CLI is to run and is not installed there.
   Future<RemoteProcess> startClaude({

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show Directory, FileSystemException, Platform;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -23,8 +24,14 @@ import '../customize/customizations.dart';
 import '../ide/file_service.dart';
 import '../kernel/agent_kernel.dart' show KernelChoiceKind;
 import '../kernel/kernel_types.dart';
+import '../models/model_provider.dart';
+import '../models/model_providers.dart';
+import '../models/model_runtime.dart' show UpstreamException;
+import '../models/model_runtime_io.dart' show listUpstreamModels;
+import '../models/upstream.dart' show RemoteModel;
 import '../remote/project_host.dart';
 import '../remote/ssh_host.dart';
+import '../usage/usage_prices.dart';
 import '../workspace/session_tools.dart';
 import '../workspace/workspace.dart';
 import 'chat_codec.dart';
@@ -917,8 +924,425 @@ class WorkspaceBridge {
           throw LinkRemoteException(LinkErrors.notFound, 'No icon $id');
         }
         return {'kind': image.kind.name, 'data': base64Encode(image.bytes)};
+      case LinkMethods.browse:
+        return _browse(params['path'] as String?);
+      case LinkMethods.addProject:
+        final path = (params['path'] as String? ?? '').trim();
+        if (path.isEmpty || !Directory(path).existsSync()) {
+          throw LinkRemoteException(LinkErrors.notFound, 'No folder $path');
+        }
+        final project = workspace.listFolder(path);
+        return {
+          'project': ProjectInfo(
+            id: project.path,
+            name: project.name,
+            path: project.root,
+            branch: branchOf?.call(project),
+            icon: workspace.iconOf(project)?.toJson(),
+            pinned: workspace.isPinnedProject(project),
+          ).toJson(),
+        };
+      case LinkMethods.providers:
+        return await _providers();
+      case LinkMethods.saveProvider:
+        return await _saveProvider(params);
+      case LinkMethods.deleteProvider:
+        final id = params['id'] as String? ?? '';
+        if (ModelProviders.current.provider(id) == null) {
+          throw LinkRemoteException(LinkErrors.notFound, 'No upstream $id');
+        }
+        await ModelProviders.current.remove(id);
+        return null;
+      case LinkMethods.fetchModels:
+        return await _fetchModels(params);
+      case LinkMethods.modelDefaults:
+        return await _modelDefaults(params);
     }
     throw LinkRemoteException('unknown', 'No such request: $method');
+  }
+
+  // --- Folders browsed ------------------------------------------------
+
+  /// This machine's home folder ([LinkMethods.browse] with no `path`).
+  static String get _home =>
+      Platform.environment['HOME'] ??
+      Platform.environment['USERPROFILE'] ??
+      '';
+
+  /// The folders under [path] (the home folder's without one), for the
+  /// phone to pick a workspace in. Folders only, the hidden left out.
+  Map<String, Object?> _browse(String? path) {
+    final at = (path == null || path.isEmpty)
+        ? (_home.isEmpty ? Directory('/') : Directory(_home))
+        : Directory(path);
+    if (!at.existsSync()) {
+      throw LinkRemoteException(LinkErrors.notFound, 'No folder ${at.path}');
+    }
+    final dirs = <Map<String, Object?>>[];
+    try {
+      for (final entity in at.listSync(followLinks: false)) {
+        if (entity is! Directory) continue;
+        final name = p.basename(entity.path);
+        if (name.isEmpty || name.startsWith('.')) continue;
+        dirs.add({'name': name, 'path': entity.path});
+      }
+    } on FileSystemException catch (error) {
+      throw LinkRemoteException(LinkErrors.unsupported, '$error');
+    }
+    dirs.sort(
+      (a, b) => (a['name'] as String).toLowerCase().compareTo(
+        (b['name'] as String).toLowerCase(),
+      ),
+    );
+    const keep = 500;
+    final parent = at.parent.path;
+    return {
+      'path': at.path,
+      'home': _home,
+      if (parent != at.path) 'parent': parent,
+      'dirs': dirs.length > keep ? dirs.sublist(0, keep) : dirs,
+      if (dirs.length > keep) 'truncated': true,
+    };
+  }
+
+  // --- Model upstreams ----------------------------------------------------
+
+  /// Provider [id], or `notFound`.
+  static ModelProvider _provider(String id) =>
+      ModelProviders.current.provider(id) ??
+      (throw LinkRemoteException(LinkErrors.notFound, 'No upstream $id'));
+
+  /// What the jobs' models are picked as, and whether Claude Code as set
+  /// up on this machine is offered.
+  static Map<String, Object?> _defaultsJson() {
+    final store = ModelProviders.current;
+    return {
+      'model': ?store.defaultModel,
+      'auxiliary': ?store.auxiliaryModel,
+      'actions': ?store.actionsModel,
+      'image': ?store.imageModel,
+      'builtin': {
+        'available': store.builtinAvailable,
+        'hidden': store.builtinHidden,
+      },
+    };
+  }
+
+  /// A provider as the phone edits it: its key only as `hasKey` (the key
+  /// itself never leaves the machine).
+  static Map<String, Object?> _providerJson(
+    ModelProvider provider, {
+    required bool hasKey,
+  }) => {
+    'id': provider.id,
+    'name': provider.name,
+    'protocol': provider.protocol.id,
+    'baseUrl': provider.baseUrl,
+    'modelsUrl': ?provider.modelsUrl,
+    'endpointUrl': ?provider.endpointUrl,
+    'auth': provider.auth.id,
+    'enabled': provider.enabled,
+    'hasKey': hasKey,
+    'follows': ?provider.follows,
+    'accounts': provider.accounts.length,
+    'connected': provider.connected,
+    'error': ?ModelProviders.current.error(provider.id),
+    'rate': ?_rateJson(UsagePrices.current.rates[provider.id]),
+    'models': [
+      for (final model in provider.sortedModels)
+        {
+          'id': model.id,
+          'label': ?model.label,
+          'enabled': model.enabled,
+          'custom': model.custom,
+          'missing': model.missing,
+          'images': model.images,
+          'kind': ?model.kindSet?.id,
+          'contextWindow': ?model.contextWindow,
+          'efforts': ?model.efforts,
+          'contexts': ?model.contexts,
+          'price': ?_priceJson(
+            UsagePrices.current.all[UsagePrices.key(provider.id, model.id)],
+          ),
+        },
+    ],
+  };
+
+  /// A model's price as the phone edits it: a million tokens of each
+  /// kind, in [ModelPrice.currency].
+  static Map<String, Object?>? _priceJson(ModelPrice? price) =>
+      price == null
+      ? null
+      : {
+          'input': price.input,
+          'output': price.output,
+          'cacheRead': ?price.cacheRead,
+          'cacheWrite': ?price.cacheWrite,
+          'currency': price.currency,
+        };
+
+  /// An upstream's rate ([UpstreamRate]): what it charges every model it
+  /// has no price of.
+  static Map<String, Object?>? _rateJson(UpstreamRate? rate) =>
+      rate == null
+      ? null
+      : {
+          'multiplier': rate.multiplier,
+          'currency': ?rate.currency,
+          'perCall': rate.perCall,
+        };
+
+  /// [LinkMethods.providers].
+  Future<Map<String, Object?>> _providers() async {
+    final store = ModelProviders.current;
+    final providers = <Map<String, Object?>>[];
+    for (final provider in store.providers) {
+      providers.add(
+        _providerJson(provider, hasKey: await _hasKey(store, provider.id)),
+      );
+    }
+    return {'providers': providers, 'defaults': _defaultsJson()};
+  }
+
+  static Future<bool> _hasKey(ModelProviders store, String id) async =>
+      (await store.key(id))?.isNotEmpty ?? false;
+
+  /// [LinkMethods.saveProvider]: [params]' fields over the provider of
+  /// `id` (a new one without), what it does not name kept.
+  Future<Map<String, Object?>> _saveProvider(
+    Map<String, Object?> params,
+  ) async {
+    final store = ModelProviders.current;
+    final id = params['id'] as String?;
+    final existing = id == null ? null : _provider(id);
+    final name = (params['name'] as String? ?? existing?.name ?? '').trim();
+    if (name.isEmpty) {
+      throw const LinkRemoteException('bad', 'No name');
+    }
+    String? url(String key, String? was) => switch (params[key]) {
+      final String value when value.trim().isNotEmpty => value.trim(),
+      final String _ => null,
+      _ => was,
+    };
+    final provider = ModelProvider(
+      id: id ?? store.newId(name),
+      name: name,
+      protocol: params.containsKey('protocol')
+          ? ProviderProtocol.parse(params['protocol'])
+          : existing?.protocol ?? ProviderProtocol.anthropic,
+      baseUrl: url('baseUrl', existing?.baseUrl) ?? '',
+      modelsUrl: url('modelsUrl', existing?.modelsUrl),
+      endpointUrl: url('endpointUrl', existing?.endpointUrl),
+      auth: params.containsKey('auth')
+          ? ProviderAuth.parse(params['auth'])
+          : existing?.auth ?? ProviderAuth.auto,
+      enabled: params['enabled'] as bool? ?? existing?.enabled ?? true,
+      models: _providerModels(params['models'], existing?.models),
+      // What the phone does not edit stays as it is.
+      roles: existing?.roles ?? const ProviderRoles(),
+      disableNonessentialTraffic:
+          existing?.disableNonessentialTraffic ?? false,
+      preserveThinking: existing?.preserveThinking ?? false,
+      promptCacheKey: existing?.promptCacheKey ?? true,
+      env: existing?.env ?? const {},
+      headers: existing?.headers ?? const {},
+      accounts: existing?.accounts ?? const [],
+      balance: existing?.balance ?? AccountBalance.roundRobin,
+      autoResetCredits: existing?.autoResetCredits ?? false,
+      resetCreditsFiveHours: existing?.resetCreditsFiveHours ?? false,
+      icon: existing?.icon,
+      follows: existing?.follows,
+    );
+    await store.save(provider);
+    if (params['key'] case final String key) {
+      await store.setKey(provider.id, key);
+    }
+    await _savePrices(provider, params['models']);
+    if (params.containsKey('rate')) {
+      await UsagePrices.current.updateRates({
+        provider.id: UpstreamRate.fromJson(params['rate']),
+      });
+    }
+    return {'id': provider.id};
+  }
+
+  /// The prices [sent]'s model entries name ([LinkMethods.saveProvider]'s
+  /// `models`, each `{"id", "price"}`): a price kept as the key's only,
+  /// or the one of its date when the key has others; null clearing it.
+  /// What an entry does not name stays as it is.
+  static Future<void> _savePrices(
+    ModelProvider provider,
+    Object? sent,
+  ) async {
+    if (sent is! List) return;
+    final prices = UsagePrices.current;
+    final updates = <String, ModelPrice?>{};
+    final puts = <(String, ModelPrice)>[];
+    for (final item in sent) {
+      if (item is! Map || !item.containsKey('price')) continue;
+      final id = item['id'];
+      if (id is! String || id.trim().isEmpty) continue;
+      final key = UsagePrices.key(provider.id, id.trim());
+      final json = item['price'];
+      if (json == null) {
+        if (prices.all.containsKey(key)) updates[key] = null;
+        continue;
+      }
+      if (json is! Map) continue;
+      double? number(Object? raw) => switch (raw) {
+        final num n when n >= 0 => n.toDouble(),
+        final String s => double.tryParse(s.trim()),
+        _ => null,
+      };
+      final input = number(json['input']);
+      final output = number(json['output']);
+      if (input == null || output == null) continue;
+      final old = prices.all[key];
+      final next = (old ?? const ModelPrice(input: 0, output: 0))
+          .withPrices(
+            input: input,
+            output: output,
+            cacheRead: number(json['cacheRead']),
+            cacheWrite: number(json['cacheWrite']),
+            currency: switch (json['currency']) {
+              final String c when c.trim().isNotEmpty =>
+                c.trim().toUpperCase(),
+              _ => old?.currency ?? 'USD',
+            },
+            updated: DateTime.now(),
+          );
+      if (next == old) continue;
+      // A first price replaces whatever the key had (the usage card's
+      // own semantics); one changed becomes its version of today.
+      if (old == null) {
+        updates[key] = next;
+      } else {
+        puts.add((key, next));
+      }
+    }
+    if (updates.isNotEmpty) await prices.update(updates);
+    for (final (key, price) in puts) {
+      await prices.put(key, price);
+    }
+  }
+
+  /// The models [sent] names ([LinkMethods.saveProvider]'s `models`):
+  /// each over the one of its id [kept] has, the rest kept; a new one is
+  /// `custom` (added by hand, not listed).
+  static List<ProviderModel> _providerModels(
+    Object? sent,
+    List<ProviderModel>? kept,
+  ) {
+    if (sent is! List) return kept ?? const [];
+    final models = [...?kept];
+    for (final item in sent) {
+      if (item is! Map) continue;
+      final id = item['id'];
+      if (id is! String || id.trim().isEmpty) continue;
+      final index = models.indexWhere((model) => model.id == id);
+      final was = index < 0 ? null : models[index];
+      final kind = ModelKind.parse(item['kind']) ?? was?.kindSet;
+      var model = ProviderModel(
+        id: id.trim(),
+        label: switch (item['label']) {
+          final String label when label.trim().isNotEmpty => label.trim(),
+          _ => was?.label,
+        },
+        contextWindow: was?.contextWindow,
+        efforts: was?.efforts,
+        contexts: was?.contexts,
+        images: item['images'] as bool? ?? was?.images ?? true,
+        enabled: item['enabled'] as bool? ?? was?.enabled ?? true,
+        custom: was?.custom ?? true,
+        missing: was != null && was.missing,
+        protocol: was?.protocol,
+        endpointUrl: was?.endpointUrl,
+      );
+      if (kind != model.kindSet) {
+        model = model.copyWith(kind: () => kind);
+      }
+      if (index < 0) {
+        models.add(model);
+      } else {
+        models[index] = model;
+      }
+    }
+    return models;
+  }
+
+  /// [LinkMethods.fetchModels]: the models an upstream lists, of a saved
+  /// provider's (`id`, its key used), or of [params]' fields for one not
+  /// saved yet (its `key`, if given, used but not kept).
+  Future<Map<String, Object?>> _fetchModels(
+    Map<String, Object?> params,
+  ) async {
+    final store = ModelProviders.current;
+    final ModelProvider provider;
+    final String? key;
+    if (params['id'] case final String id) {
+      provider = _provider(id);
+      key = await store.key(id);
+    } else {
+      provider = ModelProvider(
+        id: '',
+        name: '',
+        protocol: ProviderProtocol.parse(params['protocol']),
+        baseUrl: (params['baseUrl'] as String? ?? '').trim(),
+        modelsUrl: switch (params['modelsUrl']) {
+          final String url when url.trim().isNotEmpty => url.trim(),
+          _ => null,
+        },
+        auth: ProviderAuth.parse(params['auth']),
+      );
+      key = params['key'] as String?;
+    }
+    final List<RemoteModel> models;
+    try {
+      models = await listUpstreamModels(provider, key);
+    } on UpstreamException catch (error) {
+      throw LinkRemoteException('upstream', error.message);
+    }
+    return {
+      'models': [
+        for (final model in models)
+          {
+            'id': model.id,
+            'label': ?model.label,
+            'contextWindow': ?model.contextWindow,
+            'efforts': ?model.efforts,
+            'images': ?model.images,
+            'kind': ?model.kind?.id,
+          },
+      ],
+    };
+  }
+
+  /// [LinkMethods.modelDefaults]: the jobs' models set where [params]
+  /// names one, then what they are.
+  Future<Map<String, Object?>> _modelDefaults(
+    Map<String, Object?> params,
+  ) async {
+    final store = ModelProviders.current;
+    String? ref(String key) => switch (params[key]) {
+      final String value when value.trim().isNotEmpty => value.trim(),
+      _ => null,
+    };
+    if (params.containsKey('model')) {
+      await store.setDefaultModel(ref('model'));
+    }
+    if (params.containsKey('auxiliary')) {
+      await store.setAuxiliaryModel(ref('auxiliary'));
+    }
+    if (params.containsKey('actions')) {
+      await store.setActionsModel(ref('actions'));
+    }
+    if (params.containsKey('image')) {
+      await store.setImageModel(ref('image'));
+    }
+    if (params['builtinHidden'] case final bool hidden) {
+      await store.setBuiltinHidden(hidden);
+    }
+    return _defaultsJson();
   }
 
   static KernelTask? _task(ChatSession session, Object? id) {

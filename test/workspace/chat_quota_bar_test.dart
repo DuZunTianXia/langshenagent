@@ -1,13 +1,13 @@
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/kernel/agent_kernel.dart' show KernelChoiceKind;
-import 'package:baocode/l10n/app_localizations.dart';
-import 'package:baocode/models/codex/codex_service.dart';
-import 'package:baocode/models/codex/codex_usage.dart';
-import 'package:baocode/models/model_provider.dart';
-import 'package:baocode/models/model_providers.dart';
-import 'package:baocode/theme/app_theme.dart';
-import 'package:baocode/theme/codicons.dart';
-import 'package:baocode/workspace/chat_quota_bar.dart';
+import 'package:langshenagent/chat/chat_session.dart';
+import 'package:langshenagent/kernel/agent_kernel.dart' show KernelChoiceKind;
+import 'package:langshenagent/l10n/app_localizations.dart';
+import 'package:langshenagent/models/codex/codex_service.dart';
+import 'package:langshenagent/models/codex/codex_usage.dart';
+import 'package:langshenagent/models/model_provider.dart';
+import 'package:langshenagent/models/model_providers.dart';
+import 'package:langshenagent/theme/app_theme.dart';
+import 'package:langshenagent/theme/codicons.dart';
+import 'package:langshenagent/workspace/chat_quota_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

@@ -49,7 +49,7 @@ void main() {
       AgentCommandLine.parse(arguments, cwd: cwd, environment: environment);
 
   group('its command line', () {
-    test('as BaoCode starts a session', () {
+    test('as LangshenAgent starts a session', () {
       final settings = File(p.join(root.path, 'flag.json'))
         ..writeAsStringSync(
           jsonEncode({
@@ -95,12 +95,12 @@ void main() {
         '--mcp-config',
         jsonEncode({
           'mcpServers': {
-            'baocode': {'type': 'sdk', 'name': 'baocode'},
+            'langshenagent': {'type': 'sdk', 'name': 'langshenagent'},
             'docs': {'command': 'docs-server'},
           },
         }),
         '--allowedTools',
-        'mcp__baocode',
+        'mcp__langshenagent',
         '--append-system-prompt',
         'Cite code so.',
       ]);
@@ -119,13 +119,13 @@ void main() {
       expect(options.resume, 'abc');
       expect(options.directories, ['/data', '/more']);
       expect(options.persist, isFalse);
-      expect(options.sdkServers, ['baocode']);
+      expect(options.sdkServers, ['langshenagent']);
       expect(options.appendSystemPrompt, 'Cite code so.');
       expect(options.environment, environment);
       expect(options.flagSettings, {
         'env': {'ANTHROPIC_API_KEY': 'sk-file'},
         'permissions': {
-          'allow': ['Read(//data/**)', 'mcp__baocode'],
+          'allow': ['Read(//data/**)', 'mcp__langshenagent'],
           'deny': ['Bash(rm:*)'],
         },
         'mcpServers': {

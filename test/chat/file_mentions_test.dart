@@ -1,8 +1,8 @@
-import 'package:baocode/chat/composer/composer_mock_data.dart';
-import 'package:baocode/chat/composer/file_mentions.dart';
-import 'package:baocode/ide/file_service.dart';
-import 'package:baocode/ide/ide_quick_open.dart';
-import 'package:baocode/kernel/kernel_types.dart';
+import 'package:langshenagent/chat/composer/composer_mock_data.dart';
+import 'package:langshenagent/chat/composer/file_mentions.dart';
+import 'package:langshenagent/ide/file_service.dart';
+import 'package:langshenagent/ide/ide_quick_open.dart';
+import 'package:langshenagent/kernel/kernel_types.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 

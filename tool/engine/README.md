@@ -59,9 +59,9 @@ logs what it ended up with (`Windows text: ...`):
 The individual ones apply on top of `FLUTTER_WIN_TEXT=off` too.
 
 ```powershell
-$env:FLUTTER_WIN_TEXT = 'off'; .\baocode.exe          # stock
-Remove-Item Env:FLUTTER_WIN_TEXT; .\baocode.exe       # patched
-$env:FLUTTER_WIN_TEXT_CONTRAST = '0.75'; .\baocode.exe
+$env:FLUTTER_WIN_TEXT = 'off'; .\langshenagent.exe          # stock
+Remove-Item Env:FLUTTER_WIN_TEXT; .\langshenagent.exe       # patched
+$env:FLUTTER_WIN_TEXT_CONTRAST = '0.75'; .\langshenagent.exe
 ```
 
 ## Building
@@ -108,7 +108,7 @@ C:\src\flutter-wintext\bin\flutter.bat build windows --release `
 ```
 
 or copy `engine\src\out\host_release\flutter_windows.dll` over the one next to
-`baocode.exe` in a stock build of the same tag. Only that DLL differs; the
+`langshenagent.exe` in a stock build of the same tag. Only that DLL differs; the
 Dart snapshot is the same because the tag (and so the Dart SDK) is.
 
 ## Shipping
@@ -123,7 +123,7 @@ It is not shipped now: the app draws with Skia on Windows, as on macOS
 `dart run tool/build_windows.dart --patched-engine` puts this one in the bundle
 in place of Flutter's, after checking the hashes it keeps: the bundle's must be
 the stock engine of the same Flutter. It only matters with Impeller
-(`BAOCODE_IMPELLER=1`).
+(`LANGSHENAGENT_IMPELLER=1`).
 
 When `FLUTTER_VERSION` changes, the check stops a `--patched-engine` build.
 Then:

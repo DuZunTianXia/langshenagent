@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/git/repository_scan.dart';
-import 'package:baocode/ide/ide_status_bar.dart';
-import 'package:baocode/ide/ide_workspace.dart';
+import 'package:langshenagent/ide/git/repository_scan.dart';
+import 'package:langshenagent/ide/ide_status_bar.dart';
+import 'package:langshenagent/ide/ide_workspace.dart';
 
 import '../git/fake_git.dart';
 import 'fake_files.dart';

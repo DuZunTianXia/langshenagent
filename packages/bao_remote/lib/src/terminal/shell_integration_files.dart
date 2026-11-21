@@ -48,7 +48,7 @@ class ShellIntegrationFolder {
     if (folder == null || !folder.existsSync()) {
       final temp =
           _temp ?? Directory(Directory.systemTemp.resolveSymbolicLinksSync());
-      folder = _folder = temp.createTempSync('baocode-shell-integration-');
+      folder = _folder = temp.createTempSync('langshenagent-shell-integration-');
     }
     writeShellIntegrationScripts(folder.path);
     return folder.path;

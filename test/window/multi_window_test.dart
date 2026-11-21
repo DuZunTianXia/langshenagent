@@ -1,20 +1,20 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/chat/chat_screen.dart';
-import 'package:baocode/ide/ide_chat_title.dart';
-import 'package:baocode/ide/ide_welcome.dart';
-import 'package:baocode/ide/ide_workbench.dart';
-import 'package:baocode/l10n/l10n.dart';
-import 'package:baocode/main.dart';
-import 'package:baocode/search/search_palette.dart';
-import 'package:baocode/sidebar/sidebar.dart';
-import 'package:baocode/theme/codicons.dart';
-import 'package:baocode/window/app_windows.dart';
-import 'package:baocode/window/window_settings.dart';
-import 'package:baocode/workbench.dart';
-import 'package:baocode/workspace/open_in_editor_button.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:langshenagent/chat/chat_screen.dart';
+import 'package:langshenagent/ide/ide_chat_title.dart';
+import 'package:langshenagent/ide/ide_welcome.dart';
+import 'package:langshenagent/ide/ide_workbench.dart';
+import 'package:langshenagent/l10n/l10n.dart';
+import 'package:langshenagent/main.dart';
+import 'package:langshenagent/search/search_palette.dart';
+import 'package:langshenagent/sidebar/sidebar.dart';
+import 'package:langshenagent/theme/codicons.dart';
+import 'package:langshenagent/window/app_windows.dart';
+import 'package:langshenagent/window/window_settings.dart';
+import 'package:langshenagent/workbench.dart';
+import 'package:langshenagent/workspace/open_in_editor_button.dart';
+import 'package:langshenagent/workspace/workspace.dart';
 
 import 'fake_window_host.dart';
 
@@ -29,8 +29,8 @@ Future<(AppWindows, FakeWindowHost, Workspace)> _pumpApp(
   addTearDown(tester.view.reset);
   final messenger = tester.binding.defaultBinaryMessenger;
   for (final name in [
-    'baocode/window',
-    for (var id = 1; id < 6; id++) 'baocode/window.$id',
+    'langshenagent/window',
+    for (var id = 1; id < 6; id++) 'langshenagent/window.$id',
   ]) {
     messenger.setMockMethodCallHandler(
       MethodChannel(name),
@@ -53,7 +53,7 @@ Future<(AppWindows, FakeWindowHost, Workspace)> _pumpApp(
   );
   await windows.start();
   await tester.pumpWidget(
-    BaoCodeApp(workspace: workspace, windows: windows),
+    LangshenAgentApp(workspace: workspace, windows: windows),
     wrapWithView: false,
   );
   await tester.pump();
@@ -93,13 +93,13 @@ void main() {
     expect(find.byType(Workbench), findsOneWidget);
     expect(find.byType(IdeWorkbench), findsNothing);
 
-    final window = await _open(tester, windows, '~/code/baocode');
+    final window = await _open(tester, windows, '~/code/langshenagent');
     expect(find.byType(Workbench), findsNWidgets(2));
     expect(_inView(window.viewId, find.byType(IdeWorkbench)), findsOneWidget);
     expect(_inView(0, find.byType(IdeWorkbench)), findsNothing);
     expect(window.delegate, isNotNull);
     expect(window.delegate!.ideSpace, isNotNull);
-    expect(host.titles[window.viewId], 'baocode — BaoCode');
+    expect(host.titles[window.viewId], 'langshenagent — LangshenAgent');
 
     // Asking the IDE in the chat's window goes to the IDE's.
     workspace.layout = WorkspaceLayout.ide;
@@ -129,10 +129,10 @@ void main() {
     expect(title.current, same(thread));
   });
 
-  _testWindows('an agent\'s window (Open with BaoCode): its agent\'s '
+  _testWindows('an agent\'s window (Open with LangshenAgent): its agent\'s '
       'conversation, a view of its own; closed, it goes', (tester) async {
     final (windows, host, workspace) = await _pumpApp(tester);
-    final opening = windows.openAgent(['~/code/baocode']);
+    final opening = windows.openAgent(['~/code/langshenagent']);
     for (var i = 0; i < 4; i++) {
       await tester.pump();
     }
@@ -165,7 +165,7 @@ void main() {
     'the window in place of its own',
     (tester) async {
       final (windows, host, workspace) = await _pumpApp(tester);
-      final opening = windows.openAgent(['~/code/baocode']);
+      final opening = windows.openAgent(['~/code/langshenagent']);
       for (var i = 0; i < 4; i++) {
         await tester.pump();
       }
@@ -226,7 +226,7 @@ void main() {
         tester,
         settings: () => WindowSettings(ideWindows: ideWindows),
       );
-      final opening = windows.openAgent(['~/code/baocode']);
+      final opening = windows.openAgent(['~/code/langshenagent']);
       for (var i = 0; i < 4; i++) {
         await tester.pump();
       }
@@ -247,7 +247,7 @@ void main() {
       }
       final ide = _inView(window.viewId, find.byType(IdeWorkbench));
       expect(ide, findsOneWidget);
-      expect(window.delegate!.ideSpace!.root, '~/code/baocode');
+      expect(window.delegate!.ideSpace!.root, '~/code/langshenagent');
       final title = tester.widget<IdeChatTitle>(
         _inView(window.viewId, find.byType(IdeChatTitle)),
       );
@@ -270,7 +270,7 @@ void main() {
     tester,
   ) async {
     final (windows, host, _) = await _pumpApp(tester);
-    final window = await _open(tester, windows, '~/code/baocode');
+    final window = await _open(tester, windows, '~/code/langshenagent');
     final closing = windows.requestClose(window);
     for (var i = 0; i < 3; i++) {
       await tester.pump();
@@ -285,7 +285,7 @@ void main() {
     tester,
   ) async {
     final (windows, _, _) = await _pumpApp(tester);
-    final window = await _open(tester, windows, '~/code/baocode');
+    final window = await _open(tester, windows, '~/code/langshenagent');
     final before = window.delegate;
     final replacing = windows.replaceFolder(window, '~/code/cursor-docs');
     for (var i = 0; i < 3; i++) {
@@ -302,7 +302,7 @@ void main() {
     tester,
   ) async {
     final (windows, _, _) = await _pumpApp(tester);
-    final window = await _open(tester, windows, '~/code/baocode');
+    final window = await _open(tester, windows, '~/code/langshenagent');
     windows.switchWindow(window);
     await tester.pump();
     await tester.pump();
@@ -319,7 +319,7 @@ void main() {
       'window, and back to a window of its own', (tester) async {
     var settings = const WindowSettings(ideWindows: IdeWindows.separate);
     final (windows, host, _) = await _pumpApp(tester, settings: () => settings);
-    final window = await _open(tester, windows, '~/code/baocode');
+    final window = await _open(tester, windows, '~/code/langshenagent');
 
     settings = const WindowSettings(ideWindows: IdeWindows.mainWindow);
     windows.settingsChanged();
@@ -331,7 +331,7 @@ void main() {
     expect(window.delegate, isNull);
     expect(find.byType(Workbench), findsOneWidget);
     expect(_inView(0, find.byType(IdeWorkbench)), findsOneWidget);
-    expect(windows.chat.delegate!.ideSpace!.root, '~/code/baocode');
+    expect(windows.chat.delegate!.ideSpace!.root, '~/code/langshenagent');
 
     settings = const WindowSettings(ideWindows: IdeWindows.separate);
     windows.settingsChanged();
@@ -341,7 +341,7 @@ void main() {
     expect(windows.multi, isTrue);
     expect(host.created, hasLength(2));
     final moved = windows.ideWindows.single;
-    expect(moved.folder, '~/code/baocode');
+    expect(moved.folder, '~/code/langshenagent');
     expect(_inView(moved.viewId, find.byType(IdeWorkbench)), findsOneWidget);
     // The main window's IDE is gone, not only hidden.
     expect(
@@ -374,7 +374,7 @@ void main() {
     tester,
   ) async {
     final (windows, _, _) = await _pumpApp(tester);
-    final opening = windows.openAgent(['~/code/baocode']);
+    final opening = windows.openAgent(['~/code/langshenagent']);
     for (var i = 0; i < 4; i++) {
       await tester.pump();
     }

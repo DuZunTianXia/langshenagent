@@ -2,9 +2,9 @@
 // on a task, ends its turn, is told by itself once the other is done, and
 // checks its work. For a person to start, with
 //
-//   BAOCODE_E2E_KEY    an upstream's key (an OpenCode one)
-//   BAOCODE_E2E_URL    the upstream (OpenCode's Anthropic API by default)
-//   BAOCODE_E2E_MODEL  its model (deepseek-v4.1-flash by default)
+//   LANGSHENAGENT_E2E_KEY    an upstream's key (an OpenCode one)
+//   LANGSHENAGENT_E2E_URL    the upstream (OpenCode's Anthropic API by default)
+//   LANGSHENAGENT_E2E_MODEL  its model (deepseek-v4.1-flash by default)
 //
 //   flutter test --run-skipped -t e2e test/workspace/session_tools_e2e_test.dart
 // ignore_for_file: avoid_print
@@ -13,17 +13,17 @@ library;
 
 import 'dart:io';
 
-import 'package:baocode/bots/bot_tools.dart';
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/kernel/claude_code/claude_core_setting.dart';
-import 'package:baocode/kernel/kernel_registry.dart';
-import 'package:baocode/models/model_provider.dart';
-import 'package:baocode/models/model_providers.dart';
-import 'package:baocode/network/network_proxy_io.dart';
-import 'package:baocode/network/proxy_settings.dart';
-import 'package:baocode/workspace/session_tools.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:langshenagent/bots/bot_tools.dart';
+import 'package:langshenagent/chat/chat_models.dart';
+import 'package:langshenagent/chat/chat_session.dart';
+import 'package:langshenagent/kernel/claude_code/claude_core_setting.dart';
+import 'package:langshenagent/kernel/kernel_registry.dart';
+import 'package:langshenagent/models/model_provider.dart';
+import 'package:langshenagent/models/model_providers.dart';
+import 'package:langshenagent/network/network_proxy_io.dart';
+import 'package:langshenagent/network/proxy_settings.dart';
+import 'package:langshenagent/workspace/session_tools.dart';
+import 'package:langshenagent/workspace/workspace.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
@@ -31,15 +31,15 @@ import 'package:path/path.dart' as p;
 final _env = Platform.environment;
 
 const _lead = '''
-You are testing BaoCode's tools for coordinating conversations. Do exactly this:
-1. Call the tool mcp__baocode__session_new with title "Worker" and text: "Create a file named hello.txt in the project folder containing exactly the line: hi from worker. Then reply WORKER DONE."
+You are testing LangshenAgent's tools for coordinating conversations. Do exactly this:
+1. Call the tool mcp__langshenagent__session_new with title "Worker" and text: "Create a file named hello.txt in the project folder containing exactly the line: hi from worker. Then reply WORKER DONE."
 2. Then end your turn at once, replying only: WAITING. Do not call session_wait, and do not create the file yourself.
-Later a report from Worker comes to you as a message of its own. When it says Worker is done, call mcp__baocode__session_changes for it, then reply ALL DONE followed by the files it lists.''';
+Later a report from Worker comes to you as a message of its own. When it says Worker is done, call mcp__langshenagent__session_changes for it, then reply ALL DONE followed by the files it lists.''';
 
 void main() {
-  final key = _env['BAOCODE_E2E_KEY'];
-  final skip = key == null ? 'BAOCODE_E2E_KEY not set' : null;
-  final model = _env['BAOCODE_E2E_MODEL'] ?? 'deepseek-v4.1-flash';
+  final key = _env['LANGSHENAGENT_E2E_KEY'];
+  final skip = key == null ? 'LANGSHENAGENT_E2E_KEY not set' : null;
+  final model = _env['LANGSHENAGENT_E2E_MODEL'] ?? 'deepseek-v4.1-flash';
 
   late String cwd;
   late Workspace workspace;
@@ -52,7 +52,7 @@ void main() {
     HttpOverrides.global = null;
     addTearDown(() => HttpOverrides.global = overrides);
     final root = Directory.systemTemp
-        .createTempSync('baocode-sessions-e2e-')
+        .createTempSync('langshenagent-sessions-e2e-')
         .resolveSymbolicLinksSync();
     addTearDown(() => Directory(root).delete(recursive: true));
     cwd = p.join(root, 'project');
@@ -66,7 +66,7 @@ void main() {
           id: 'oc',
           name: 'OpenCode',
           baseUrl:
-              _env['BAOCODE_E2E_URL'] ??
+              _env['LANGSHENAGENT_E2E_URL'] ??
               'https://opencode.ai/inference/anthropic',
           models: [ProviderModel(id: model)],
         ),

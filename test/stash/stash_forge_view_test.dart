@@ -1,14 +1,14 @@
-import 'package:baocode/forge/forge_accounts.dart';
-import 'package:baocode/forge/forge_ref.dart';
-import 'package:baocode/l10n/l10n.dart';
-import 'package:baocode/models/secret_store.dart';
-import 'package:baocode/stash/stash_disk.dart';
-import 'package:baocode/stash/stash_forge.dart';
-import 'package:baocode/stash/stash_forge_view.dart';
-import 'package:baocode/stash/stash_note.dart';
-import 'package:baocode/stash/stash_store.dart';
-import 'package:baocode/theme/codicons.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:langshenagent/forge/forge_accounts.dart';
+import 'package:langshenagent/forge/forge_ref.dart';
+import 'package:langshenagent/l10n/l10n.dart';
+import 'package:langshenagent/models/secret_store.dart';
+import 'package:langshenagent/stash/stash_disk.dart';
+import 'package:langshenagent/stash/stash_forge.dart';
+import 'package:langshenagent/stash/stash_forge_view.dart';
+import 'package:langshenagent/stash/stash_note.dart';
+import 'package:langshenagent/stash/stash_store.dart';
+import 'package:langshenagent/theme/codicons.dart';
+import 'package:langshenagent/workspace/workspace.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -80,7 +80,7 @@ void main() {
       workspace: Workspace.mock(),
       accounts: accounts,
       remotes: (folder) async => switch (folder) {
-        '~/code/baocode' => ['git@github.com:o/r.git'],
+        '~/code/langshenagent' => ['git@github.com:o/r.git'],
         _ => const [],
       },
     );
@@ -202,7 +202,7 @@ void main() {
             onPressed: () async => imported = await showStashImportDialog(
               context,
               forge: forge,
-              project: '~/code/baocode',
+              project: '~/code/langshenagent',
             ),
             child: const Text('import'),
           ),
@@ -213,7 +213,7 @@ void main() {
     for (var i = 0; i < 5; i++) {
       await tester.pump();
     }
-    expect(find.text('o/r · baocode'), findsOneWidget);
+    expect(find.text('o/r · langshenagent'), findsOneWidget);
     expect(find.text('Dark mode'), findsOneWidget);
     // In Stash #1 already.
     expect(find.text('o/r#3 · @ann · in Stash #1'), findsOneWidget);
@@ -233,7 +233,7 @@ void main() {
     }
     final note = imported!.single;
     expect(note.title, 'Dark mode');
-    expect(note.project, '~/code/baocode');
+    expect(note.project, '~/code/langshenagent');
     expect(note.issues.single.url, 'https://github.com/o/r/issues/4');
     expect(store.notes, hasLength(2));
     expect(sent(), isEmpty);

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/lsp/lsp_server_definition.dart';
-import 'package:baocode/ide/lsp/vue_language_tools.dart';
+import 'package:langshenagent/ide/lsp/lsp_server_definition.dart';
+import 'package:langshenagent/ide/lsp/vue_language_tools.dart';
 import 'package:path/path.dart' as p;
 
 void main() {

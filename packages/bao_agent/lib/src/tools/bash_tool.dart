@@ -46,7 +46,7 @@ ${_shellNote(session)}- ${_search(session)} Keep a search narrow (a folder, a fi
 - End commit messages and pull request descriptions with the attribution lines the conversation gives in a <system-reminder>, when it gives any.''';
 
   /// What the shell is, where it is not what a model expects of the
-  /// platform: BaoCode Bash or PowerShell on Windows.
+  /// platform: LangshenAgent Bash or PowerShell on Windows.
   static String _shellNote(AgentSession session) => switch (session.shell) {
     Shell(baoBash: true) => '- ${Shell.baoBashNote}\n',
     Shell(kind: ShellKind.powershell) => '- ${Shell.powershellNote}\n',

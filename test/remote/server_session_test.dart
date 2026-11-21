@@ -20,13 +20,13 @@ void main() {
 
   setUpAll(() async {
     dir = await Directory.systemTemp.createTemp('bao session ');
-    server = p.join(dir.path, 'baocode_server.dill');
+    server = p.join(dir.path, 'langshenagent_server.dill');
     final built = await Process.run('dart', [
       'compile',
       'kernel',
       '-o',
       server,
-      'bin/baocode_server.dart',
+      'bin/langshenagent_server.dart',
     ], workingDirectory: 'packages/bao_remote');
     expect(built.exitCode, 0, reason: '${built.stdout}${built.stderr}');
   });

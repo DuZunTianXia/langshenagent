@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/git/ide_git_commit_panel.dart';
-import 'package:baocode/ide/ide_list.dart';
-import 'package:baocode/ide/ide_workbench.dart';
-import 'package:baocode/ide/ide_workspace.dart';
+import 'package:langshenagent/ide/git/ide_git_commit_panel.dart';
+import 'package:langshenagent/ide/ide_list.dart';
+import 'package:langshenagent/ide/ide_workbench.dart';
+import 'package:langshenagent/ide/ide_workspace.dart';
 import 'package:bao_editor/monaco/flutter/keybinding_entry.dart';
-import 'package:baocode/keybindings/keybinding_service.dart';
+import 'package:langshenagent/keybindings/keybinding_service.dart';
 
 import '../git/fake_git.dart';
 import 'fake_files.dart';

@@ -111,7 +111,7 @@ Uint8List? keyOfDeviceId(String id) {
 List<String> safetyCode(Uint8List desktopKey, Uint8List phoneKey) {
   final hash = Hash.sha256(
     Uint8List.fromList([
-      ...utf8.encode('baocode-safety-v2'),
+      ...utf8.encode('langshenagent-safety-v2'),
       ...desktopKey,
       ...phoneKey,
     ]),

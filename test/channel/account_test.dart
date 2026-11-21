@@ -1,15 +1,15 @@
-import 'package:baocode/channel/account/account_api.dart';
-import 'package:baocode/channel/account/channel_account.dart';
-import 'package:baocode/channel/account/newapi_adapter.dart';
-import 'package:baocode/channel/account/sub2api_adapter.dart';
-import 'package:baocode/channel/channel_gate.dart';
-import 'package:baocode/channel/channel_setup.dart';
-import 'package:baocode/models/model_provider.dart';
-import 'package:baocode/models/model_providers.dart';
-import 'package:baocode/models/upstream.dart';
-import 'package:baocode/l10n/l10n.dart';
-import 'package:baocode/settings/pages/channel_account_page.dart';
-import 'package:baocode/settings/pages/settings_dropdown.dart';
+import 'package:langshenagent/channel/account/account_api.dart';
+import 'package:langshenagent/channel/account/channel_account.dart';
+import 'package:langshenagent/channel/account/newapi_adapter.dart';
+import 'package:langshenagent/channel/account/sub2api_adapter.dart';
+import 'package:langshenagent/channel/channel_gate.dart';
+import 'package:langshenagent/channel/channel_setup.dart';
+import 'package:langshenagent/models/model_provider.dart';
+import 'package:langshenagent/models/model_providers.dart';
+import 'package:langshenagent/models/upstream.dart';
+import 'package:langshenagent/l10n/l10n.dart';
+import 'package:langshenagent/settings/pages/channel_account_page.dart';
+import 'package:langshenagent/settings/pages/settings_dropdown.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -101,7 +101,7 @@ void main() {
     });
 
     test('makes a key, unlimited and never ending', () async {
-      final made = await adapter.create('BaoCode');
+      final made = await adapter.create('LangshenAgent');
       expect(made.id, '8');
       final create = site.sent.firstWhere(
         (s) => s.method == 'POST' && s.url.path == '/api/token/',
@@ -169,11 +169,11 @@ void main() {
     test(
       'makes a key in an Anthropic group, with an idempotency key',
       () async {
-        await adapter.create('BaoCode');
+        await adapter.create('LangshenAgent');
         final create = site.sent.firstWhere(
           (s) => s.method == 'POST' && s.url.path == '/api/v1/keys',
         );
-        expect(create.json, {'name': 'BaoCode', 'group_id': 5});
+        expect(create.json, {'name': 'LangshenAgent', 'group_id': 5});
         expect(create.headers['Idempotency-Key'], hasLength(32));
       },
     );
@@ -560,7 +560,7 @@ void main() {
       (s) => s.method == 'POST' && s.url.path == '/api/token/',
     );
     expect(create.json, containsPair('group', 'vip'));
-    expect(create.json, containsPair('name', 'BaoCode'));
+    expect(create.json, containsPair('name', 'LangshenAgent'));
     expect(find.text('分组'), findsNothing);
     expect(tester.takeException(), isNull);
   });

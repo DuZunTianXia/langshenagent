@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 publish = false
 license = "MIT"
-description = "BaoCode's link transport: iroh endpoints, connections and framed streams behind a small C interface for Dart."
+description = "LangshenAgent's link transport: iroh endpoints, connections and framed streams behind a small C interface for Dart."
 
 [lib]
 # Said out loud: native_toolchain_rust reads the crate's name here, and a
@@ -13,7 +13,7 @@ name = "bao_iroh"
 crate-type = ["staticlib", "cdylib"]
 
 [dependencies]
-# The version both apps and the relay (baocode-relay) speak: kept the same.
+# The version both apps and the relay (langshenagent-relay) speak: kept the same.
 # No n0 defaults: no fast-apple-datapath (private Apple calls, kept out of
 # the App Store build), no metrics.
 iroh = { version = "=1.4.1", default-features = false, features = ["tls-ring", "portmapper"] }

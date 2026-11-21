@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:baocode/update/version.dart';
+import 'package:langshenagent/update/version.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../tool/build_changelog.dart';

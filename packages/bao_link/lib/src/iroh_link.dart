@@ -9,7 +9,7 @@ import 'node.dart';
 import 'pairing.dart';
 
 /// The link's ALPN: what both ends speak.
-const linkAlpn = 'baocode/link/2';
+const linkAlpn = 'langshenagent/link/2';
 
 /// A [LinkNode] over iroh: QUIC, straight to the other end when the
 /// network lets it, through a relay when not.

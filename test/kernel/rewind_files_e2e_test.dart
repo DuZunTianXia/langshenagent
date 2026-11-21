@@ -1,24 +1,24 @@
 // A message edited and sent again, the files put back as they were before
-// it: the app's Claude Code kernel on BaoCode's own core (its edits told
+// it: the app's Claude Code kernel on LangshenAgent's own core (its edits told
 // through the hooks, its conversation rewound), the Messages API a script
 // on this machine. No model is asked.
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:bao_agent/testing.dart';
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/chat/review/change_review.dart';
-import 'package:baocode/chat/review/review_store_io.dart';
-import 'package:baocode/kernel/agent_kernel.dart';
-import 'package:baocode/kernel/claude_code/claude_core_setting.dart';
-import 'package:baocode/kernel/claude_code/claude_environment.dart';
-import 'package:baocode/kernel/kernel_registry.dart';
-import 'package:baocode/kernel/kernel_types.dart';
-import 'package:baocode/models/model_provider.dart';
-import 'package:baocode/models/model_providers.dart';
-import 'package:baocode/network/network_proxy_io.dart';
-import 'package:baocode/network/proxy_settings.dart';
+import 'package:langshenagent/chat/chat_models.dart';
+import 'package:langshenagent/chat/chat_session.dart';
+import 'package:langshenagent/chat/review/change_review.dart';
+import 'package:langshenagent/chat/review/review_store_io.dart';
+import 'package:langshenagent/kernel/agent_kernel.dart';
+import 'package:langshenagent/kernel/claude_code/claude_core_setting.dart';
+import 'package:langshenagent/kernel/claude_code/claude_environment.dart';
+import 'package:langshenagent/kernel/kernel_registry.dart';
+import 'package:langshenagent/kernel/kernel_types.dart';
+import 'package:langshenagent/models/model_provider.dart';
+import 'package:langshenagent/models/model_providers.dart';
+import 'package:langshenagent/network/network_proxy_io.dart';
+import 'package:langshenagent/network/proxy_settings.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
@@ -39,7 +39,7 @@ void main() {
     HttpOverrides.global = null;
     addTearDown(() => HttpOverrides.global = overrides);
     root = Directory.systemTemp
-        .createTempSync('baocode-rewind-e2e-')
+        .createTempSync('langshenagent-rewind-e2e-')
         .resolveSymbolicLinksSync();
     cwd = p.join(root, 'project');
     checkpoints = p.join(root, 'checkpoints');

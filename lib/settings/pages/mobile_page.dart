@@ -286,7 +286,7 @@ class _MobileSettingsPageState extends State<MobileSettingsPage> {
     );
   }
 
-  /// The relay picked: one of BaoCode's, or Custom last.
+  /// The relay picked: one of LangshenAgent's, or Custom last.
   Widget _pinnedRelay(AppLocalizations l10n) {
     final host = _host;
     final picked = host.relays.single;

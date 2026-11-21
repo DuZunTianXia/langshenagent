@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:baocode/chat/widgets/inline_rename_field.dart';
-import 'package:baocode/l10n/app_localizations.dart';
-import 'package:baocode/theme/codicons.dart';
+import 'package:langshenagent/chat/widgets/inline_rename_field.dart';
+import 'package:langshenagent/l10n/app_localizations.dart';
+import 'package:langshenagent/theme/codicons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';

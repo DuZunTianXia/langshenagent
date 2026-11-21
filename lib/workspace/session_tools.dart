@@ -51,7 +51,7 @@ abstract interface class SessionToolsBots {
   String toldOf(String cwd);
 }
 
-/// The tools an agent coordinating others has (`mcp__baocode__session_*`),
+/// The tools an agent coordinating others has (`mcp__langshenagent__session_*`),
 /// with [SessionToolsSetting] on: the user's conversations listed, read
 /// (without waking them), started, written to (one with no process
 /// resumed as it was, one at work given it in its queue), stopped and
@@ -223,7 +223,7 @@ abstract final class SessionTools {
     return [
       tool(
         'session_list',
-        "Lists the user's other agent conversations in BaoCode, latest "
+        "Lists the user's other agent conversations in LangshenAgent, latest "
             'first: id | project | title | status (waiting = on the user; '
             'running; failed; idle) | when it last moved | its model, and '
             '"yours" for one you started or wrote to. Those with no process now are '
@@ -496,7 +496,7 @@ abstract final class SessionTools {
       tool(
         'session_models',
         'The models a conversation can be on, as the user picks them in '
-            'BaoCode (by upstream): id | name, and which new conversations '
+            'LangshenAgent (by upstream): id | name, and which new conversations '
             'start on and which you are on. For session_new and '
             "session_send's model.",
         const {},

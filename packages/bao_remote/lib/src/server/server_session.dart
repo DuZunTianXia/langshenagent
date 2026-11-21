@@ -86,7 +86,7 @@ class ServerSession {
   /// Hex, as the app makes them: nothing that would name another path.
   static bool isValidId(String id) => RegExp(r'^[0-9a-f]{8,64}$').hasMatch(id);
 
-  static String defaultRunDirectory(String home) => '$home/.baocode-server/run';
+  static String defaultRunDirectory(String home) => '$home/.langshenagent-server/run';
 
   /// Where the session's socket may be, in order: in [runDirectory], then
   /// in a folder of /tmp, for a path too long for a socket (which takes
@@ -94,7 +94,7 @@ class ServerSession {
   /// system with no sockets, or no modes to keep it the user's alone).
   List<String> get socketPaths => [
     if ('$runDirectory/$id'.length < 100) '$runDirectory/$id',
-    '${Directory.systemTemp.path}/baocode-server-${_uid()}/$id',
+    '${Directory.systemTemp.path}/langshenagent-server-${_uid()}/$id',
   ];
 
   /// The socket the daemon listens on, once it does.
@@ -166,7 +166,7 @@ class ServerSession {
       try {
         pid = await daemon();
       } on Object catch (error) {
-        stderr.writeln('baocode-server: the session did not start: $error');
+        stderr.writeln('langshenagent-server: the session did not start: $error');
       }
       if (pid != null) {
         final deadline = DateTime.now().add(const Duration(seconds: 20));
@@ -182,7 +182,7 @@ class ServerSession {
       }
       if (socket == null) {
         stderr.writeln(
-          'baocode-server: the session did not start (see $logPath); '
+          'langshenagent-server: the session did not start (see $logPath); '
           'serving this connection alone',
         );
         return _serveAlone(serve);

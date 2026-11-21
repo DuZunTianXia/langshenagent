@@ -2,19 +2,19 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:baocode/kernel/claude_code/claude_code_transport.dart';
-import 'package:baocode/kernel/claude_code/claude_core_setting.dart';
-import 'package:baocode/kernel/claude_code/claude_environment.dart';
-import 'package:baocode/icons/project_icon.dart';
-import 'package:baocode/models/codex/codex_api.dart';
-import 'package:baocode/models/launch_environment.dart';
-import 'package:baocode/models/model_provider.dart';
-import 'package:baocode/models/model_providers.dart';
-import 'package:baocode/models/model_runtime.dart';
-import 'package:baocode/models/secret_store.dart';
-import 'package:baocode/models/secret_store_io.dart';
-import 'package:baocode/models/upstream.dart';
-import 'package:baocode/settings/pages/models_page.dart'
+import 'package:langshenagent/kernel/claude_code/claude_code_transport.dart';
+import 'package:langshenagent/kernel/claude_code/claude_core_setting.dart';
+import 'package:langshenagent/kernel/claude_code/claude_environment.dart';
+import 'package:langshenagent/icons/project_icon.dart';
+import 'package:langshenagent/models/codex/codex_api.dart';
+import 'package:langshenagent/models/launch_environment.dart';
+import 'package:langshenagent/models/model_provider.dart';
+import 'package:langshenagent/models/model_providers.dart';
+import 'package:langshenagent/models/model_runtime.dart';
+import 'package:langshenagent/models/secret_store.dart';
+import 'package:langshenagent/models/secret_store_io.dart';
+import 'package:langshenagent/models/upstream.dart';
+import 'package:langshenagent/settings/pages/models_page.dart'
     show formatEnvironment, formatHeaders, parseEnvironment, parseHeaders;
 import 'package:flutter_test/flutter_test.dart';
 
@@ -588,7 +588,7 @@ void main() {
       expect(providers.auxiliaryModel, isNull);
     });
 
-    test('BaoCode\'s own core has no Claude Code of the machine\'s: its '
+    test('LangshenAgent\'s own core has no Claude Code of the machine\'s: its '
         'models and Haiku, picked on the CLI, stand for none', () async {
       final providers = ModelProviders.memory(providers: [_gateway]);
       await providers.setDefaultModel('opus');
@@ -1442,20 +1442,28 @@ void main() {
         },
       );
       await store.write('provider.gw', 'sk-é');
-      expect(calls.single.$1, ['-i']);
+      expect(calls.first.$1, [
+        'delete-generic-password',
+        '-s',
+        'LangshenAgent',
+        '-a',
+        'provider.gw',
+        _loginKeychain,
+      ]);
+      expect(calls.last.$1, ['-i']);
       expect(
-        calls.single.$2,
-        'add-generic-password -U -s BaoCode -a "provider.gw" -X 736b2dc3a9 '
+        calls.last.$2,
+        'add-generic-password -s LangshenAgent -a "provider.gw" -X 736b2dc3a9 '
         '"$_loginKeychain"\n',
       );
-      expect(calls.single.$1.join(' '), isNot(contains('sk-')));
+      expect(calls.last.$1.join(' '), isNot(contains('sk-')));
 
       stdout = 'sk-é\n';
       expect(await store.read('provider.gw'), 'sk-é');
       expect(calls.last.$1, [
         'find-generic-password',
         '-s',
-        'BaoCode',
+        'LangshenAgent',
         '-a',
         'provider.gw',
         '-w',
@@ -1532,10 +1540,10 @@ void main() {
       );
       await store.write('provider.gw', 'sk');
       expect(deleted, isTrue);
-      expect(inputs, hasLength(2));
+      expect(inputs, hasLength(1));
       expect(
-        inputs.last,
-        'add-generic-password -U -s BaoCode -a "provider.gw" -X 736b\n',
+        inputs.single,
+        'add-generic-password -s LangshenAgent -a "provider.gw" -X 736b\n',
       );
     });
 
@@ -1701,11 +1709,11 @@ void main() {
   });
 
   group('ClaudeEntrypoint', () {
-    test('names BaoCode on the user\'s own Claude sign-in', () {
-      expect(ClaudeEntrypoint.of(null), {'CLAUDE_CODE_ENTRYPOINT': 'baocode'});
+    test('names LangshenAgent on the user\'s own Claude sign-in', () {
+      expect(ClaudeEntrypoint.of(null), {'CLAUDE_CODE_ENTRYPOINT': 'langshenagent'});
       expect(
         ClaudeEntrypoint.of(null, {'PATH': '/bin', 'ANTHROPIC_API_KEY': ''}),
-        {'CLAUDE_CODE_ENTRYPOINT': 'baocode'},
+        {'CLAUDE_CODE_ENTRYPOINT': 'langshenagent'},
       );
     });
 

@@ -151,7 +151,7 @@ function evaluate({ pr, files, commits, issues, owner, repo }) {
 }
 
 function comment(result) {
-  const contributing = 'https://github.com/baocode-dev/baocode/blob/main/CONTRIBUTING.md';
+  const contributing = 'https://github.com/langshenagent-dev/langshenagent/blob/main/CONTRIBUTING.md';
   if (result.problems.length === 0) {
     return `${MARKER}\nThis pull request now follows [CONTRIBUTING.md](${contributing}). Thanks!\n\n这个 PR 现在符合 CONTRIBUTING.md 了，谢谢！`;
   }

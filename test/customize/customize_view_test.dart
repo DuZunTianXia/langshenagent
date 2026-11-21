@@ -7,23 +7,23 @@ import 'package:bao_markdown/bao_markdown.dart' show MarkdownEditor;
 import 'package:bao_editor/monaco/flutter/editor_surface.dart';
 import 'package:bao_editor/monaco/flutter/editor_surface_controller.dart';
 
-import 'package:baocode/chat/chat_screen.dart';
-import 'package:baocode/chat/side_panel/side_panel_view.dart';
-import 'package:baocode/customize/customization_store.dart';
-import 'package:baocode/customize/customizations.dart';
-import 'package:baocode/customize/customize_view.dart';
-import 'package:baocode/customize/mcp_probe.dart';
-import 'package:baocode/settings/pages/customize_page.dart';
-import 'package:baocode/ide/ide_code_editor.dart';
-import 'package:baocode/ide/ide_input.dart';
-import 'package:baocode/ide/ide_switch.dart';
-import 'package:baocode/kernel/extension_switches.dart';
-import 'package:baocode/ide/markdown/markdown_preview.dart';
-import 'package:baocode/keybindings/keybinding_service.dart';
-import 'package:baocode/main.dart';
-import 'package:baocode/sidebar/sidebar.dart';
-import 'package:baocode/theme/codicons.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:langshenagent/chat/chat_screen.dart';
+import 'package:langshenagent/chat/side_panel/side_panel_view.dart';
+import 'package:langshenagent/customize/customization_store.dart';
+import 'package:langshenagent/customize/customizations.dart';
+import 'package:langshenagent/customize/customize_view.dart';
+import 'package:langshenagent/customize/mcp_probe.dart';
+import 'package:langshenagent/settings/pages/customize_page.dart';
+import 'package:langshenagent/ide/ide_code_editor.dart';
+import 'package:langshenagent/ide/ide_input.dart';
+import 'package:langshenagent/ide/ide_switch.dart';
+import 'package:langshenagent/kernel/extension_switches.dart';
+import 'package:langshenagent/ide/markdown/markdown_preview.dart';
+import 'package:langshenagent/keybindings/keybinding_service.dart';
+import 'package:langshenagent/main.dart';
+import 'package:langshenagent/sidebar/sidebar.dart';
+import 'package:langshenagent/theme/codicons.dart';
+import 'package:langshenagent/workspace/workspace.dart';
 
 /// Skills kept in memory, by file.
 class _MemoryStore implements CustomizationStore {
@@ -126,7 +126,7 @@ Future<Workspace> _pumpApp(
   addTearDown(() => KeybindingService.instance = KeybindingService());
   final workspace = Workspace.mock();
   await tester.pumpWidget(
-    BaoCodeApp(workspace: workspace, customizations: store),
+    LangshenAgentApp(workspace: workspace, customizations: store),
   );
   await tester.pump();
   return workspace;

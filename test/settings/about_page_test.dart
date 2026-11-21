@@ -1,8 +1,8 @@
-import 'package:baocode/l10n/app_localizations.dart';
-import 'package:baocode/link/link_host.dart';
-import 'package:baocode/settings/pages/about_page.dart';
-import 'package:baocode/update/version.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:langshenagent/l10n/app_localizations.dart';
+import 'package:langshenagent/link/link_host.dart';
+import 'package:langshenagent/settings/pages/about_page.dart';
+import 'package:langshenagent/update/version.dart';
+import 'package:langshenagent/workspace/workspace.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -32,12 +32,12 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets('says what BaoCode is, which build, and where it is made', (
+  testWidgets('says what LangshenAgent is, which build, and where it is made', (
     tester,
   ) async {
     await show(tester, const Locale('zh'));
     expect(find.text('关于'), findsOneWidget);
-    expect(find.text('BaoCode'), findsOneWidget);
+    expect(find.text('LangshenAgent'), findsOneWidget);
     expect(
       find.text(
         '版本 ${currentAppVersion.marketing}（${currentAppVersion.build}）',
@@ -45,11 +45,11 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.text('github.com/baocode-dev/baocode · 免费开源，GPL-3.0 许可证'),
+      find.text('github.com/langshenagent-dev/langshenagent · 免费开源，GPL-3.0 许可证'),
       findsOneWidget,
     );
     expect(find.text('去 GitHub 点 Star'), findsOneWidget);
-    expect(find.text('baocode.dev'), findsOneWidget);
+    expect(find.text('langshenagent.dev'), findsOneWidget);
     expect(find.text('更新日志'), findsOneWidget);
     expect(find.text('反馈问题'), findsOneWidget);
     expect(find.text('设备 ID'), findsNothing);
@@ -99,7 +99,7 @@ void main() {
   test('its links', () {
     expect(
       AboutSettingsPage.issues,
-      Uri.parse('https://github.com/baocode-dev/baocode/issues'),
+      Uri.parse('https://github.com/langshenagent-dev/langshenagent/issues'),
     );
   });
 }

@@ -2,13 +2,13 @@ import 'dart:ui';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/ide_quick_input.dart';
-import 'package:baocode/ide/ide_workspace.dart';
-import 'package:baocode/window/app_windows.dart';
-import 'package:baocode/window/code_args.dart';
-import 'package:baocode/window/window_frame.dart';
-import 'package:baocode/window/window_host.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:langshenagent/ide/ide_quick_input.dart';
+import 'package:langshenagent/ide/ide_workspace.dart';
+import 'package:langshenagent/window/app_windows.dart';
+import 'package:langshenagent/window/code_args.dart';
+import 'package:langshenagent/window/window_frame.dart';
+import 'package:langshenagent/window/window_host.dart';
+import 'package:langshenagent/workspace/workspace.dart';
 
 /// A view of its own beside the test's, as the engine adds one per window
 /// (flutter/test/widgets/multi_view_testing.dart).
@@ -30,7 +30,7 @@ class FakeView extends TestFlutterView {
   void updateSemantics(SemanticsUpdate update) {}
 }
 
-/// The system's windows, as `baocode/windows` would answer: what was asked
+/// The system's windows, as `langshenagent/windows` would answer: what was asked
 /// is kept to look at.
 class FakeWindowHost extends WindowHost {
   FakeWindowHost(this.implicit, {this.available = true});

@@ -1,34 +1,34 @@
 import 'dart:async';
 
-import 'package:baocode/base/give_way_row.dart';
-import 'package:baocode/stash/stash_note_editor.dart';
-import 'package:baocode/stash/stash_ai.dart';
-import 'package:baocode/theme/codicons.dart';
-import 'package:baocode/models/model_providers.dart';
-import 'package:baocode/chat/composer/composer_files.dart';
-import 'package:baocode/chat/chat_models.dart' show oneLineExcerpt;
-import 'package:baocode/chat/chat_session.dart' show ComposerMessage;
-import 'package:baocode/l10n/l10n.dart';
-import 'package:baocode/stash/stash_actions.dart';
-import 'package:baocode/stash/stash_controller.dart';
-import 'package:baocode/stash/stash_disk.dart';
-import 'package:baocode/stash/stash_host.dart';
-import 'package:baocode/stash/stash_note.dart';
-import 'package:baocode/stash/stash_panel_view.dart';
-import 'package:baocode/stash/stash_settings.dart';
-import 'package:baocode/stash/stash_store.dart';
-import 'package:baocode/window/app_windows.dart';
-import 'package:baocode/ide/ide_list.dart';
-import 'package:baocode/keybindings/keybinding_service.dart';
-import 'package:baocode/platform/app_platform.dart';
-import 'package:baocode/theme/material_file_icons.dart';
+import 'package:langshenagent/base/give_way_row.dart';
+import 'package:langshenagent/stash/stash_note_editor.dart';
+import 'package:langshenagent/stash/stash_ai.dart';
+import 'package:langshenagent/theme/codicons.dart';
+import 'package:langshenagent/models/model_providers.dart';
+import 'package:langshenagent/chat/composer/composer_files.dart';
+import 'package:langshenagent/chat/chat_models.dart' show oneLineExcerpt;
+import 'package:langshenagent/chat/chat_session.dart' show ComposerMessage;
+import 'package:langshenagent/l10n/l10n.dart';
+import 'package:langshenagent/stash/stash_actions.dart';
+import 'package:langshenagent/stash/stash_controller.dart';
+import 'package:langshenagent/stash/stash_disk.dart';
+import 'package:langshenagent/stash/stash_host.dart';
+import 'package:langshenagent/stash/stash_note.dart';
+import 'package:langshenagent/stash/stash_panel_view.dart';
+import 'package:langshenagent/stash/stash_settings.dart';
+import 'package:langshenagent/stash/stash_store.dart';
+import 'package:langshenagent/window/app_windows.dart';
+import 'package:langshenagent/ide/ide_list.dart';
+import 'package:langshenagent/keybindings/keybinding_service.dart';
+import 'package:langshenagent/platform/app_platform.dart';
+import 'package:langshenagent/theme/material_file_icons.dart';
 import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/icons/brand_logos.dart' show BaoCodeLogo;
-import 'package:baocode/workspace/pin_window_button.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:langshenagent/icons/brand_logos.dart' show LangshenAgentLogo;
+import 'package:langshenagent/workspace/pin_window_button.dart';
+import 'package:langshenagent/workspace/workspace.dart';
 
 import '../window/fake_window_host.dart';
 
@@ -282,9 +282,9 @@ void main() {
     expect(inBar(find.text(l10n.stashAll)), findsNothing);
     expect(inBar(find.text(l10n.stashExpand)), findsNothing);
     expect(inBar(find.byIcon(Codicons.sparkle)), findsOneWidget);
-    // Implement in BaoCode stays, its icon at least: the stash's number
+    // Implement in LangshenAgent stays, its icon at least: the stash's number
     // gives way before it.
-    expect(inBar(find.byType(BaoCodeLogo)), findsOneWidget);
+    expect(inBar(find.byType(LangshenAgentLogo)), findsOneWidget);
     expect(inBar(find.text('#${note.id}')), findsNothing);
 
     // Wide, their words again.
@@ -305,7 +305,7 @@ void main() {
     tester,
   ) async {
     await setUpFlow(tester);
-    const window = MethodChannel('baocode/window.7');
+    const window = MethodChannel('langshenagent/window.7');
     final onTop = <Object?>[];
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(window, (
       call,

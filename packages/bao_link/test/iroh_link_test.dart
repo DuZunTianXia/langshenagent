@@ -1,5 +1,5 @@
 // The link over real iroh endpoints: on the loopback always; through real
-// baocode-relay processes (dev mode) when BAOCODE_RELAY names its binary.
+// langshenagent-relay processes (dev mode) when LANGSHENAGENT_RELAY names its binary.
 import 'dart:io';
 
 import 'package:bao_link/bao_link_io.dart';
@@ -126,10 +126,10 @@ void main() {
     await desktopNode.close();
   });
 
-  final relay = Platform.environment['BAOCODE_RELAY'];
+  final relay = Platform.environment['LANGSHENAGENT_RELAY'];
   group(
-    'through baocode-relay',
-    skip: relay == null ? 'BAOCODE_RELAY not set' : null,
+    'through langshenagent-relay',
+    skip: relay == null ? 'LANGSHENAGENT_RELAY not set' : null,
     () {
       test(
         'a relay alone carries it all, and again after a reconnect',

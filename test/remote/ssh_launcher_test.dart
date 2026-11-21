@@ -37,7 +37,7 @@ void main() {
   late String fakeBin;
 
   setUp(() {
-    sandbox = Directory.systemTemp.createTempSync('baocode-ssh-');
+    sandbox = Directory.systemTemp.createTempSync('langshenagent-ssh-');
     home = Directory(p.join(sandbox.path, 'home'))..createSync();
     log = File(p.join(sandbox.path, 'ssh.log'));
     fakeBin = p.join(sandbox.path, 'bin');
@@ -146,7 +146,7 @@ printf '%s\n' "$*" >> "$FAKE_LOG.keygen"
 
   /// A "server build" that runs the real server from source.
   List<int> serverScript() => utf8.encode('''#!/bin/sh
-exec '$dartExecutable' '${p.absolute('packages', 'bao_remote', 'bin', 'baocode_server.dart')}' --data "\$HOME/server-data" "\$@"
+exec '$dartExecutable' '${p.absolute('packages', 'bao_remote', 'bin', 'langshenagent_server.dart')}' --data "\$HOME/server-data" "\$@"
 ''');
 
   List<String> commands() => log.existsSync()
@@ -169,7 +169,7 @@ exec '$dartExecutable' '${p.absolute('packages', 'bao_remote', 'bin', 'baocode_s
     expect(connection.hello.home, home.path);
     expect(connection.hello.dataDir, p.join(home.path, 'server-data'));
     final installed = File(
-      p.join(home.path, '.baocode-server', '1-abc', 'baocode-server'),
+      p.join(home.path, '.langshenagent-server', '1-abc', 'langshenagent-server'),
     );
     expect(installed.existsSync(), isTrue);
     expect(installed.readAsBytesSync(), serverScript());
@@ -177,9 +177,9 @@ exec '$dartExecutable' '${p.absolute('packages', 'bao_remote', 'bin', 'baocode_s
     expect(progress.any((line) => line.contains('Installing')), isTrue);
     expect(commands(), [
       'sh -s',
-      startsWith("sh -c 'mkdir -p .baocode-server/1-abc && gzip -dc >"),
+      startsWith("sh -c 'mkdir -p .langshenagent-server/1-abc && gzip -dc >"),
       matches(
-        r'^\.baocode-server/1-abc/baocode-server --session [0-9a-f]{32}$',
+        r'^\.langshenagent-server/1-abc/langshenagent-server --session [0-9a-f]{32}$',
       ),
     ]);
 
@@ -198,7 +198,7 @@ exec '$dartExecutable' '${p.absolute('packages', 'bao_remote', 'bin', 'baocode_s
     expect(binaries.reads, ['linux-x64']);
     expect(commands(), [
       'sh -s',
-      startsWith('.baocode-server/1-abc/baocode-server --session '),
+      startsWith('.langshenagent-server/1-abc/langshenagent-server --session '),
     ]);
     await again.close();
   }, timeout: const Timeout(Duration(minutes: 2)));
@@ -410,7 +410,7 @@ exec '$dartExecutable' '${p.absolute('packages', 'bao_remote', 'bin', 'baocode_s
     expect(connection.linked, isTrue);
     expect(
       commands().last,
-      '.baocode-server/1-abc/baocode-server '
+      '.langshenagent-server/1-abc/langshenagent-server '
       '--session $id --resume',
     );
 
@@ -488,7 +488,7 @@ exec '$dartExecutable' '${p.absolute('packages', 'bao_remote', 'bin', 'baocode_s
     // machine's architecture; what was put there is the riscv64 build.
     expect(binaries.reads, ['linux-riscv64']);
     final installed = File(
-      p.join(home.path, '.baocode-server', '1-abc', 'baocode-server'),
+      p.join(home.path, '.langshenagent-server', '1-abc', 'langshenagent-server'),
     );
     expect(installed.existsSync(), isTrue);
     await connection.close();
@@ -519,7 +519,7 @@ exec '$dartExecutable' '${p.absolute('packages', 'bao_remote', 'bin', 'baocode_s
     );
     expect(
       launcher.windowsServerPath,
-      r'.baocode-server\9.9-abc\baocode-server.exe',
+      r'.langshenagent-server\9.9-abc\langshenagent-server.exe',
     );
     expect(launcher.windowsProbeScript, contains('PROCESSOR_ARCHITECTURE'));
     // ssh's options sftp takes: -o's alone (not -T, -e).
@@ -674,7 +674,7 @@ exec /bin/sh -c "$6"
     expect(File('${log.path}.wsl').readAsLinesSync(), [
       '--distribution Ubuntu --exec sh -c cd && sh -s',
       startsWith('--distribution Ubuntu --exec sh -c cd && sh -c '),
-      startsWith('--distribution Ubuntu --exec sh -c cd && .baocode-server/'),
+      startsWith('--distribution Ubuntu --exec sh -c cd && .langshenagent-server/'),
     ]);
 
     // No WSL here.
@@ -735,7 +735,7 @@ exec /bin/sh -c "$6"
     expect(arguments, containsAllInOrder(['-T', '-o', 'BatchMode=yes']));
     expect(arguments, contains('ServerAliveInterval=15'));
     expect(arguments.sublist(arguments.length - 2), ['dev', 'cmd']);
-    expect(launcher.serverPath, '.baocode-server/7/baocode-server');
+    expect(launcher.serverPath, '.langshenagent-server/7/langshenagent-server');
     expect(launcher.uploadCommand('n', gzip: false), contains('cat >'));
   });
 

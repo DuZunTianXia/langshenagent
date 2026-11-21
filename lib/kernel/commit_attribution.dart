@@ -2,9 +2,9 @@
 /// `chat.commitAttribution` setting. Read as each agent starts, so a change
 /// applies to the agents started after it.
 enum CommitAttribution {
-  /// BaoCode: a `Co-Authored-By` trailer for its GitHub account, and a line
+  /// LangshenAgent: a `Co-Authored-By` trailer for its GitHub account, and a line
   /// naming it under a pull request.
-  baocode,
+  langshenagent,
 
   /// What the agent adds of its own (Claude Code: itself), as its own
   /// settings have it.
@@ -16,11 +16,11 @@ enum CommitAttribution {
   static const settingKey = 'chat.commitAttribution';
 
   /// When the setting is unset, or not one of these.
-  static const fallback = baocode;
+  static const fallback = langshenagent;
 
-  static const baoCodeCommit = 'Co-Authored-By: BaoCode <noreply@baocode.dev>';
+  static const baoCodeCommit = 'Co-Authored-By: LangshenAgent <noreply@langshenagent.dev>';
   static const baoCodePullRequest =
-      '🤖 Generated with [BaoCode](https://baocode.dev)';
+      '🤖 Generated with [LangshenAgent](https://langshenagent.dev)';
 
   static CommitAttribution parse(Object? setting) =>
       values.where((value) => value.name == setting).firstOrNull ?? fallback;

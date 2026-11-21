@@ -6,7 +6,7 @@
 # each page on the way out: its script, and where it reports. Any site may
 # show the pages in a frame, but for /import and /activate (below).
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self'; media-src 'self'; connect-src 'self' https://dl.baocode.dev https://stats.baocode.dev https://cloudflareinsights.com; frame-ancestors *; base-uri 'self'; form-action 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self'; media-src 'self'; connect-src 'self' https://dl.langshenagent.dev https://stats.langshenagent.dev https://cloudflareinsights.com; frame-ancestors *; base-uri 'self'; form-action 'none'
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
@@ -21,7 +21,7 @@
 /icon.png
   Cache-Control: public, max-age=86400, stale-while-revalidate=604800
 
-# BaoCode's icons, loaded by upstreams' key pages (/upstreams): from any
+# LangshenAgent's icons, loaded by upstreams' key pages (/upstreams): from any
 # site, kept a day as the rest.
 /brand/*
   Cache-Control: public, max-age=86400, stale-while-revalidate=604800

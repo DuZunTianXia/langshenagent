@@ -8,15 +8,15 @@ import 'dart:io';
 import 'package:bao_remote/client.dart';
 import 'package:bao_remote/local.dart'
     show ClaudeEnvironment, CliLocator, ManagedClaude;
-import 'package:baocode/kernel/claude_code/claude_code_transport.dart';
-import 'package:baocode/kernel/claude_code/claude_core_setting.dart';
-import 'package:baocode/l10n/l10n.dart';
-import 'package:baocode/remote/remote_binaries.dart';
-import 'package:baocode/remote/remote_claude.dart';
-import 'package:baocode/remote/remote_claude_install.dart';
-import 'package:baocode/remote/remote_location.dart';
-import 'package:baocode/remote/remote_status.dart';
-import 'package:baocode/remote/ssh_host.dart';
+import 'package:langshenagent/kernel/claude_code/claude_code_transport.dart';
+import 'package:langshenagent/kernel/claude_code/claude_core_setting.dart';
+import 'package:langshenagent/l10n/l10n.dart';
+import 'package:langshenagent/remote/remote_binaries.dart';
+import 'package:langshenagent/remote/remote_claude.dart';
+import 'package:langshenagent/remote/remote_claude_install.dart';
+import 'package:langshenagent/remote/remote_location.dart';
+import 'package:langshenagent/remote/remote_status.dart';
+import 'package:langshenagent/remote/ssh_host.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -44,8 +44,8 @@ void main() {
     addTearDown(() => ClaudeCore.current = () => ClaudeCore.fallback);
     // flutter_test answers every HttpClient request with a 400.
     HttpOverrides.global = null;
-    dataDir = Directory.systemTemp.createTempSync('baocode-install-data-');
-    home = Directory.systemTemp.createTempSync('baocode-install-home-');
+    dataDir = Directory.systemTemp.createTempSync('langshenagent-install-data-');
+    home = Directory.systemTemp.createTempSync('langshenagent-install-home-');
     marks = Directory(p.join(home.path, 'marks'))..createSync();
     final project = Directory(p.join(home.path, 'project'))..createSync();
     root = project.resolveSymbolicLinksSync();
@@ -325,7 +325,7 @@ void main() {
 
     setUp(() {
       checkout = Directory(p.join(home.path, 'checkout'));
-      File(p.join(checkout.path, 'packages/bao_remote/bin/baocode_server.dart'))
+      File(p.join(checkout.path, 'packages/bao_remote/bin/langshenagent_server.dart'))
         ..createSync(recursive: true)
         ..writeAsStringSync('void main() {}');
       File(p.join(checkout.path, 'packages/bao_remote/pubspec.yaml'))
@@ -348,7 +348,7 @@ echo built >> "$MARKS/builds"
 
     Future<SourceServerBinaries?> find() => SourceServerBinaries.find(
       current: p.join(checkout.path, 'packages'),
-      executable: '/Applications/Nowhere.app/Contents/MacOS/BaoCode',
+      executable: '/Applications/Nowhere.app/Contents/MacOS/LangshenAgent',
       environment: {
         'FLUTTER_ROOT': p.join(home.path, 'sdk'),
         'MARKS': marks.path,
@@ -362,14 +362,14 @@ echo built >> "$MARKS/builds"
       expect(binaries.version, startsWith('dev-'));
       final built = utf8.decode((await binaries.read('linux-arm64'))!);
       expect(built, contains('--target-os linux --target-arch arm64'));
-      expect(built, contains('-Dbaocode.version=${binaries.version}'));
+      expect(built, contains('-Dlangshenagent.version=${binaries.version}'));
       await binaries.read('linux-arm64');
       expect((await find())!.version, binaries.version);
       final again = await (await find())!.read('linux-arm64');
       expect(utf8.decode(again!), built);
       expect(mark('builds').split('\n'), hasLength(1));
 
-      File(p.join(checkout.path, 'packages/bao_remote/bin/baocode_server.dart'))
+      File(p.join(checkout.path, 'packages/bao_remote/bin/langshenagent_server.dart'))
           .writeAsStringSync('void main() { print(1); }');
       expect((await find())!.version, isNot(binaries.version));
     });
@@ -407,7 +407,7 @@ echo built >> "$MARKS/builds"
       expect(
         await SourceServerBinaries.find(
           current: home.path,
-          executable: '/Applications/Nowhere.app/Contents/MacOS/BaoCode',
+          executable: '/Applications/Nowhere.app/Contents/MacOS/LangshenAgent',
           environment: {'FLUTTER_ROOT': p.join(home.path, 'sdk')},
         ),
         isNull,

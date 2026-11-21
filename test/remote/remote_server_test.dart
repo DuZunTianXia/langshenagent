@@ -29,7 +29,7 @@ void main() {
 
   setUp(() async {
     remote = await RemoteHarness.start();
-    project = Directory.systemTemp.createTempSync('baocode-remote-project-');
+    project = Directory.systemTemp.createTempSync('langshenagent-remote-project-');
     root = project.resolveSymbolicLinksSync();
   });
   tearDown(() async {
@@ -455,7 +455,7 @@ void main() {
     late File fake;
 
     setUp(() {
-      home = Directory.systemTemp.createTempSync('baocode-remote-claude-');
+      home = Directory.systemTemp.createTempSync('langshenagent-remote-claude-');
       fake = File(p.join(home.path, 'fake-claude'))
         ..writeAsStringSync(r'''#!/bin/sh
 settings=""
@@ -476,8 +476,8 @@ printf '%s\n' "$line"
         'PATH': '/usr/bin:/bin',
         'HOME': home.path,
         'ANTHROPIC_MODEL': 'from-the-shell',
-        'BAOCODE_CLAUDE_PATH': fake.path,
-        'BAOCODE_CLAUDE_DATA_PATH': p.join(home.path, '.claude'),
+        'LANGSHENAGENT_CLAUDE_PATH': fake.path,
+        'LANGSHENAGENT_CLAUDE_DATA_PATH': p.join(home.path, '.claude'),
       });
     });
     tearDown(() {
@@ -520,7 +520,7 @@ printf '%s\n' "$line"
       CliLocator.use({
         'PATH': '/nowhere',
         'HOME': home.path,
-        'BAOCODE_CLAUDE_PATH': p.join(home.path, 'not-there'),
+        'LANGSHENAGENT_CLAUDE_PATH': p.join(home.path, 'not-there'),
       });
       await expectLater(
         client().locateClaude(),

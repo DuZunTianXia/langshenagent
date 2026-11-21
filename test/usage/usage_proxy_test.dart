@@ -2,12 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:baocode/models/model_provider.dart';
-import 'package:baocode/models/proxy/model_proxy.dart';
-import 'package:baocode/models/proxy/watched_socket.dart';
-import 'package:baocode/usage/usage_capture.dart';
-import 'package:baocode/usage/usage_ledger.dart';
-import 'package:baocode/usage/usage_record.dart';
+import 'package:langshenagent/models/model_provider.dart';
+import 'package:langshenagent/models/proxy/model_proxy.dart';
+import 'package:langshenagent/models/proxy/watched_socket.dart';
+import 'package:langshenagent/usage/usage_capture.dart';
+import 'package:langshenagent/usage/usage_ledger.dart';
+import 'package:langshenagent/usage/usage_record.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// An upstream on this machine (never a real API): answers with [reply],

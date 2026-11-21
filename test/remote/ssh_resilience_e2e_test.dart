@@ -14,8 +14,8 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:bao_remote/client.dart';
-import 'package:baocode/remote/remote_binaries.dart';
-import 'package:baocode/remote/ssh_host.dart';
+import 'package:langshenagent/remote/remote_binaries.dart';
+import 'package:langshenagent/remote/ssh_host.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
@@ -76,17 +76,17 @@ Future<(RemoteProcess, List<String>)> counter(
 }
 
 void main() {
-  final setup = Platform.environment['BAOCODE_SSH_E2E'];
+  final setup = Platform.environment['LANGSHENAGENT_SSH_E2E'];
   if (setup == null) {
     test(
       'ssh resilience end to end',
       () {},
-      skip: 'BAOCODE_SSH_E2E is not set',
+      skip: 'LANGSHENAGENT_SSH_E2E is not set',
     );
     return;
   }
   final key = p.join(setup, 'testkey');
-  final address = Platform.environment['BAOCODE_SSH_E2E_HOST'] ?? '127.0.0.1';
+  final address = Platform.environment['LANGSHENAGENT_SSH_E2E_HOST'] ?? '127.0.0.1';
   const timeout = Timeout(Duration(minutes: 3));
 
   late Directory dir;
@@ -133,7 +133,7 @@ void main() {
     dir = await Directory.systemTemp.createTemp('bao-flaky-');
     proxy = await FaultProxy.start(address, _port);
     reconnected = [];
-    await docker(['exec', _container, 'pkill', '-f', 'baocode-server']);
+    await docker(['exec', _container, 'pkill', '-f', 'langshenagent-server']);
     // What an earlier run wrote there.
     await docker([
       'exec',
@@ -161,13 +161,13 @@ void main() {
       'eth0',
       'root',
     ]);
-    await docker(['exec', _container, 'pkill', '-f', 'baocode-server']);
+    await docker(['exec', _container, 'pkill', '-f', 'langshenagent-server']);
     await docker([
       'exec',
       _container,
       'rm',
       '-rf',
-      '/home/tester/.baocode-server/run',
+      '/home/tester/.langshenagent-server/run',
     ]);
     await dir.delete(recursive: true);
   });
@@ -208,7 +208,7 @@ void main() {
     expect([
       for (final file in await listed.timeout(const Duration(seconds: 30)))
         file.name,
-    ], contains('.baocode-server'));
+    ], contains('.langshenagent-server'));
     await until(() => host.state == SshHostState.connected);
     expect(identical(host.client, client), isTrue);
     expect(reconnected, isEmpty);
@@ -332,7 +332,7 @@ void main() {
       _container,
       'pkill',
       '-f',
-      'baocode-server --daemon',
+      'langshenagent-server --daemon',
     ]);
     expect(
       await process.exitCode.timeout(const Duration(seconds: 30)),
@@ -376,7 +376,7 @@ void main() {
       _container,
       'sh',
       '-c',
-      'ls /home/tester/.baocode-server/run 2>/dev/null | grep -v log | wc -l',
+      'ls /home/tester/.langshenagent-server/run 2>/dev/null | grep -v log | wc -l',
     ]);
     expect(sockets, '0');
   }, timeout: timeout);

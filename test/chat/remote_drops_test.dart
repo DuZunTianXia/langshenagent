@@ -6,14 +6,14 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:bao_markdown/bao_markdown.dart';
-import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/chat/composer/composer.dart';
-import 'package:baocode/chat/composer/composer_embeds.dart';
-import 'package:baocode/chat/composer/composer_files.dart';
-import 'package:baocode/chat/composer/remote_drops.dart';
-import 'package:baocode/ide/file_service.dart';
-import 'package:baocode/kernel/agent_kernel.dart';
-import 'package:baocode/theme/app_theme.dart';
+import 'package:langshenagent/chat/chat_session.dart';
+import 'package:langshenagent/chat/composer/composer.dart';
+import 'package:langshenagent/chat/composer/composer_embeds.dart';
+import 'package:langshenagent/chat/composer/composer_files.dart';
+import 'package:langshenagent/chat/composer/remote_drops.dart';
+import 'package:langshenagent/ide/file_service.dart';
+import 'package:langshenagent/kernel/agent_kernel.dart';
+import 'package:langshenagent/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
@@ -24,7 +24,7 @@ void main() {
   late Directory temp;
 
   setUp(() {
-    temp = Directory.systemTemp.createTempSync('baocode_drops_');
+    temp = Directory.systemTemp.createTempSync('langshenagent_drops_');
   });
   tearDown(() => temp.deleteSync(recursive: true));
 

@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:baocode/images/image_tools.dart';
-import 'package:baocode/models/image_api.dart';
-import 'package:baocode/models/model_provider.dart';
-import 'package:baocode/models/model_providers.dart';
-import 'package:baocode/models/model_runtime.dart' show UpstreamException;
-import 'package:baocode/models/upstream.dart';
+import 'package:langshenagent/images/image_tools.dart';
+import 'package:langshenagent/models/image_api.dart';
+import 'package:langshenagent/models/model_provider.dart';
+import 'package:langshenagent/models/model_providers.dart';
+import 'package:langshenagent/models/model_runtime.dart' show UpstreamException;
+import 'package:langshenagent/models/upstream.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 final _png = Uint8List.fromList([

@@ -1,6 +1,6 @@
 # Desktop code navigation E2E
 
-This launches the real macOS BaoCode window. It uses the production app,
+This launches the real macOS LangshenAgent window. It uses the production app,
 standard language catalog, a temporary project on disk, and the real Dart SDK
 language server. It does not use `flutter_test`, a fake LSP server, or call the
 editor's navigation methods to simulate a result.
@@ -15,11 +15,11 @@ Run with an output directory and the **SDK binary**, rather than the Flutter
 `bin/dart` shell wrapper:
 
 ```sh
-navigation_out="$(mktemp -d /private/tmp/baocode-navigation-e2e.XXXXXX)"
-BAOCODE_DATA_DIR="$navigation_out/data" \
-BAOCODE_E2E_OUT="$navigation_out" \
-BAOCODE_E2E_DART=/absolute/path/to/flutter/bin/cache/dart-sdk/bin/dart \
-  build/macos/Build/Products/Debug/BaoCode.app/Contents/MacOS/BaoCode
+navigation_out="$(mktemp -d /private/tmp/langshenagent-navigation-e2e.XXXXXX)"
+LANGSHENAGENT_DATA_DIR="$navigation_out/data" \
+LANGSHENAGENT_E2E_OUT="$navigation_out" \
+LANGSHENAGENT_E2E_DART=/absolute/path/to/flutter/bin/cache/dart-sdk/bin/dart \
+  build/macos/Build/Products/Debug/LangshenAgent.app/Contents/MacOS/LangshenAgent
 ```
 
 The app creates its own workspace and data folder, brings its window forward,

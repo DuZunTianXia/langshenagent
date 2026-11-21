@@ -8,17 +8,17 @@ library;
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/file_service.dart';
-import 'package:baocode/ide/ide_workspace.dart';
-import 'package:baocode/ide/lsp/catalog/bundled_lsp_catalog.dart';
-import 'package:baocode/ide/lsp/language_features.dart';
-import 'package:baocode/ide/lsp/lsp_manager.dart';
-import 'package:baocode/ide/lsp/lsp_process.dart';
-import 'package:baocode/ide/lsp/lsp_process_io.dart';
-import 'package:baocode/ide/lsp/lsp_protocol.dart';
-import 'package:baocode/ide/lsp/lsp_server_definition.dart';
-import 'package:baocode/kernel/claude_code/claude_environment.dart';
-import 'package:baocode/platform/child_process_registry.dart';
+import 'package:langshenagent/ide/file_service.dart';
+import 'package:langshenagent/ide/ide_workspace.dart';
+import 'package:langshenagent/ide/lsp/catalog/bundled_lsp_catalog.dart';
+import 'package:langshenagent/ide/lsp/language_features.dart';
+import 'package:langshenagent/ide/lsp/lsp_manager.dart';
+import 'package:langshenagent/ide/lsp/lsp_process.dart';
+import 'package:langshenagent/ide/lsp/lsp_process_io.dart';
+import 'package:langshenagent/ide/lsp/lsp_protocol.dart';
+import 'package:langshenagent/ide/lsp/lsp_server_definition.dart';
+import 'package:langshenagent/kernel/claude_code/claude_environment.dart';
+import 'package:langshenagent/platform/child_process_registry.dart';
 import 'package:path/path.dart' as p;
 
 import '../../../fixtures/lsp/fake_lsp.dart';
@@ -50,10 +50,10 @@ class _ModulesProvider implements LspServerProvider {
 /// the script into what it imports.
 ///
 /// Needs a folder with `npm install @vue/language-server
-/// typescript-language-server typescript vue` in `BAOCODE_VUE_SMOKE`; the
+/// typescript-language-server typescript vue` in `LANGSHENAGENT_VUE_SMOKE`; the
 /// project is made inside it, so its `node_modules` resolve.
 void main() {
-  final modules = Platform.environment['BAOCODE_VUE_SMOKE'];
+  final modules = Platform.environment['LANGSHENAGENT_VUE_SMOKE'];
 
   test(
     'vue: template props, events and imports go to their definitions',
@@ -223,6 +223,6 @@ void main() {
       print('vuels completion in <Child>: ${fromVue.take(6)}');
       expect(fromVue.any((label) => label.contains('caption')), isTrue);
     },
-    skip: modules == null ? 'BAOCODE_VUE_SMOKE is not set' : false,
+    skip: modules == null ? 'LANGSHENAGENT_VUE_SMOKE is not set' : false,
   );
 }

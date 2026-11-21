@@ -2,11 +2,11 @@ import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/diagnostics/app_event_watch.dart';
-import 'package:baocode/diagnostics/diagnostics_bundle.dart';
-import 'package:baocode/platform/error_log.dart';
-import 'package:baocode/platform/event_log.dart';
-import 'package:baocode/update/version.dart';
+import 'package:langshenagent/diagnostics/app_event_watch.dart';
+import 'package:langshenagent/diagnostics/diagnostics_bundle.dart';
+import 'package:langshenagent/platform/error_log.dart';
+import 'package:langshenagent/platform/event_log.dart';
+import 'package:langshenagent/update/version.dart';
 
 void main() {
   late Directory folder;
@@ -32,7 +32,7 @@ void main() {
     expect(
       lines.first,
       startsWith(
-        '--- BaoCode $appVersionString · ${Platform.operatingSystem} ',
+        '--- LangshenAgent $appVersionString · ${Platform.operatingSystem} ',
       ),
     );
     expect(lines.first, endsWith('pid $pid ---'));
@@ -47,7 +47,7 @@ void main() {
     log().record('app', 'second run');
 
     final text = File(log().path).readAsStringSync();
-    expect(RegExp('--- BaoCode').allMatches(text), hasLength(2));
+    expect(RegExp('--- LangshenAgent').allMatches(text), hasLength(2));
     expect(text.indexOf('first run'), lessThan(text.indexOf('second run')));
   });
 
@@ -103,7 +103,7 @@ void main() {
       clock: () => DateTime(2026, 10, 16, 12, 40),
       crashSince: (since) {
         asked = since;
-        return 'BaoCode-2026-10-16-123320.ips: EXC_BAD_ACCESS (SIGSEGV)';
+        return 'LangshenAgent-2026-10-16-123320.ips: EXC_BAD_ACCESS (SIGSEGV)';
       },
     ).record('app', 'started again');
 
@@ -112,7 +112,7 @@ void main() {
       File(log().path).readAsStringSync(),
       contains(
         'ended without saying how, after 2026-10-16T12:33:19.000: crash '
-        'report BaoCode-2026-10-16-123320.ips: EXC_BAD_ACCESS (SIGSEGV)\n',
+        'report LangshenAgent-2026-10-16-123320.ips: EXC_BAD_ACCESS (SIGSEGV)\n',
       ),
     );
   });

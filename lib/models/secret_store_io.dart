@@ -53,7 +53,7 @@ Future<ProcessResult> _run(
 }
 
 /// The macOS login keychain, through `security`: generic passwords of
-/// the service `BaoCode`, by account. The secret goes on its stdin (in
+/// the service `LangshenAgent`, by account. The secret goes on its stdin (in
 /// hex), never in a command line.
 class KeychainSecretStore implements SecretStore {
   KeychainSecretStore({@visibleForTesting SecretCommand? run})
@@ -61,7 +61,7 @@ class KeychainSecretStore implements SecretStore {
 
   final SecretCommand _command;
 
-  static const service = 'BaoCode';
+  static const service = 'LangshenAgent';
 
   /// `security`'s "not found".
   static const _notFound = 44;
@@ -102,30 +102,26 @@ class KeychainSecretStore implements SecretStore {
   @override
   Future<void> write(String id, String value) async {
     final keychain = await _keychain;
+    await _deleteAll(id, keychain);
     final hex = [
       for (final byte in utf8.encode(value))
         byte.toRadixString(16).padLeft(2, '0'),
     ].join();
     final target = keychain == null ? '' : ' ${_quote(keychain)}';
     // Interactive: the command, the secret in it, read from stdin.
-    Future<ProcessResult> add() => _command(
+    // `-U` does not update when the secret is hex (`-X`), so clear first.
+    final result = await _command(
       '/usr/bin/security',
       ['-i'],
       input:
-          'add-generic-password -U -s $service -a ${_quote(id)} -X $hex$target\n',
+          'add-generic-password -s $service -a ${_quote(id)} -X $hex$target\n',
     );
-    bool failed(ProcessResult result) =>
-        result.exitCode != 0 || '${result.stderr}'.contains('error');
-    var result = await add();
-    if (failed(result) && '${result.stderr}'.contains('-25299')) {
-      // There and not found all the same: replaced.
-      await _delete(id, keychain);
-      result = await add();
+    if (result.exitCode != 0 || '${result.stderr}'.contains('error')) {
+      throw _failed('kept', result);
     }
-    if (failed(result)) throw _failed('kept', result);
   }
 
-  Future<void> _delete(String id, String? keychain) async {
+  Future<bool> _deleteOnce(String id, String? keychain) async {
     final result = await _command('/usr/bin/security', [
       'delete-generic-password',
       '-s',
@@ -134,21 +130,27 @@ class KeychainSecretStore implements SecretStore {
       id,
       ?keychain,
     ]);
-    if (result.exitCode != 0 && result.exitCode != _notFound) {
-      throw _failed('removed', result);
+    if (result.exitCode == _notFound) return false;
+    if (result.exitCode != 0) throw _failed('removed', result);
+    return true;
+  }
+
+  Future<void> _deleteAll(String id, String? keychain) async {
+    while (await _deleteOnce(id, keychain)) {}
+    if (keychain == null) return;
+    while (true) {
+      try {
+        if (!await _deleteOnce(id, null)) return;
+      } on SecretStoreException catch (_) {
+        return;
+      }
     }
   }
 
   @override
   Future<void> delete(String id) async {
     final keychain = await _keychain;
-    await _delete(id, keychain);
-    if (keychain == null) return;
-    // A copy an older version left elsewhere; a search list that fails is
-    // no reason the key was not removed.
-    try {
-      await _delete(id, null);
-    } on SecretStoreException catch (_) {}
+    await _deleteAll(id, keychain);
   }
 
   static String _quote(String text) => '"${text.replaceAll('"', '')}"';
@@ -229,7 +231,7 @@ class SecretServiceStore implements SecretStore {
     'secret-tool',
   ]).then((result) => result.exitCode == 0, onError: (_) => false);
 
-  List<String> _attributes(String id) => ['service', 'baocode', 'account', id];
+  List<String> _attributes(String id) => ['service', 'langshenagent', 'account', id];
 
   @override
   Future<String?> read(String id) async {
@@ -252,7 +254,7 @@ class SecretServiceStore implements SecretStore {
     if (!await _hasTool) return fallback.write(id, value);
     final result = await _command('secret-tool', [
       'store',
-      '--label=BaoCode: $id',
+      '--label=LangshenAgent: $id',
       ..._attributes(id),
     ], input: value);
     if (result.exitCode != 0) throw _failed('kept', result);

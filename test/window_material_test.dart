@@ -3,14 +3,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/chat/chat_screen.dart';
-import 'package:baocode/chat/chat_history_view.dart';
-import 'package:baocode/chat/widgets/user_message_bubble.dart';
-import 'package:baocode/main.dart';
-import 'package:baocode/sidebar/sidebar.dart';
-import 'package:baocode/theme/app_theme.dart';
-import 'package:baocode/theme/window_blur.dart';
-import 'package:baocode/workspace/workspace.dart';
+import 'package:langshenagent/chat/chat_screen.dart';
+import 'package:langshenagent/chat/chat_history_view.dart';
+import 'package:langshenagent/chat/widgets/user_message_bubble.dart';
+import 'package:langshenagent/main.dart';
+import 'package:langshenagent/sidebar/sidebar.dart';
+import 'package:langshenagent/theme/app_theme.dart';
+import 'package:langshenagent/theme/window_blur.dart';
+import 'package:langshenagent/workspace/workspace.dart';
 
 import 'first_frame_test.dart' show LongTurnFeed;
 
@@ -23,7 +23,7 @@ Future<void> pumpMacApp(WidgetTester tester, {double width = 1400}) async {
   // The material is a setting, off by default (Settings → Appearance).
   WindowBlur.enabled.value = true;
   addTearDown(() => WindowBlur.enabled.value = false);
-  await tester.pumpWidget(BaoCodeApp(workspace: Workspace.mock()));
+  await tester.pumpWidget(LangshenAgentApp(workspace: Workspace.mock()));
   await tester.pump();
 }
 
@@ -114,7 +114,7 @@ void main() {
     await tester.pumpWidget(
       RepaintBoundary(
         key: _app,
-        child: BaoCodeApp(workspace: Workspace.mock()),
+        child: LangshenAgentApp(workspace: Workspace.mock()),
       ),
     );
     await tester.pump();
@@ -204,7 +204,7 @@ void main() {
     tester.view.physicalSize = const Size(1400, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(BaoCodeApp(workspace: Workspace.mock()));
+    await tester.pumpWidget(LangshenAgentApp(workspace: Workspace.mock()));
     await tester.pump();
     expect(colorsUnder(tester, find.byType(Sidebar)).first.a, 1);
     expect(AppColors.sidebarSurface.a, 1);

@@ -1,9 +1,9 @@
 import 'package:bao_editor/monaco/flutter/keybinding_entry.dart'
     show KeybindingPlatform;
-import 'package:baocode/keybindings/key_chord.dart';
-import 'package:baocode/l10n/l10n.dart';
-import 'package:baocode/settings/pages/stash_hotkey_field.dart';
-import 'package:baocode/stash/stash_settings.dart';
+import 'package:langshenagent/keybindings/key_chord.dart';
+import 'package:langshenagent/l10n/l10n.dart';
+import 'package:langshenagent/settings/pages/stash_hotkey_field.dart';
+import 'package:langshenagent/stash/stash_settings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';

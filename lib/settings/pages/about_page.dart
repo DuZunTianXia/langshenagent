@@ -14,7 +14,7 @@ import '../../workspace/editor_launcher.dart' show openExternal;
 import '../../workspace/window_header/about_dialog.dart' show aboutIconAsset;
 import 'settings_widgets.dart';
 
-/// Settings → About: what BaoCode is, which build this is, and where it
+/// Settings → About: what LangshenAgent is, which build this is, and where it
 /// is made in the open: its repository (a star there helps others find
 /// it), its site, its changelog, and where to tell of a problem; and this
 /// computer's device id, for a relay's list of devices admitted.
@@ -24,7 +24,7 @@ class AboutSettingsPage extends StatelessWidget {
   /// The phones' link, whose key is the device id; none, none shown.
   final LinkHost? host;
 
-  static final website = Uri.parse('https://baocode.dev');
+  static final website = Uri.parse('https://langshenagent.dev');
   static final issues = StarPrompt.repository.replace(
     path: '${StarPrompt.repository.path}/issues',
   );
@@ -64,7 +64,7 @@ class AboutSettingsPage extends StatelessWidget {
                     textBaseline: TextBaseline.alphabetic,
                     children: [
                       Text(
-                        'BaoCode',
+                        'LangshenAgent',
                         style: TextStyle(
                           color: AppColors.textPrimary,
                           fontSize: 17,

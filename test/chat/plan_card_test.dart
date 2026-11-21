@@ -1,6 +1,6 @@
-import 'package:baocode/chat/chat_models.dart';
-import 'package:baocode/chat/widgets/plan_card.dart';
-import 'package:baocode/theme/app_theme.dart';
+import 'package:langshenagent/chat/chat_models.dart';
+import 'package:langshenagent/chat/widgets/plan_card.dart';
+import 'package:langshenagent/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

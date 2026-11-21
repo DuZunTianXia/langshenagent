@@ -5,11 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/chat/widgets/code_citation.dart';
-import 'package:baocode/chat/widgets/table_selection.dart';
-import 'package:baocode/chat/widgets/markdown_view.dart';
-import 'package:baocode/theme/codicons.dart';
-import 'package:baocode/theme/workbench_theme.dart';
+import 'package:langshenagent/chat/widgets/code_citation.dart';
+import 'package:langshenagent/chat/widgets/table_selection.dart';
+import 'package:langshenagent/chat/widgets/markdown_view.dart';
+import 'package:langshenagent/theme/codicons.dart';
+import 'package:langshenagent/theme/workbench_theme.dart';
 
 Future<void> pumpMarkdown(
   WidgetTester tester,

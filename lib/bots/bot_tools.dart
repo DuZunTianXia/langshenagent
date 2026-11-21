@@ -38,7 +38,7 @@ class BotToolAccess {
       (!assistant || bot.assistant) && (ability == null || bot.can(ability!));
 }
 
-/// The bots' tools (`mcp__baocode__bot_*`): the user's agents retried and
+/// The bots' tools (`mcp__langshenagent__bot_*`): the user's agents retried and
 /// archived (seen, written to and started with the session tools, as a
 /// project's agent does them); what the bot remembers kept. Each for the
 /// bots with its ability on (see [Bots.offersTool]); none for the agents

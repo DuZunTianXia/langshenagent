@@ -2,11 +2,11 @@ import 'dart:io';
 
 import 'package:bao_editor/monaco/flutter/language_assets.dart';
 import 'package:bao_editor/monaco/flutter/language_overrides.dart';
-import 'package:baocode/ide/ide_quick_input.dart';
-import 'package:baocode/ide/ide_status_bar.dart';
-import 'package:baocode/ide/language_mode.dart';
-import 'package:baocode/l10n/l10n.dart';
-import 'package:baocode/settings/user_settings.dart';
+import 'package:langshenagent/ide/ide_quick_input.dart';
+import 'package:langshenagent/ide/ide_status_bar.dart';
+import 'package:langshenagent/ide/language_mode.dart';
+import 'package:langshenagent/l10n/l10n.dart';
+import 'package:langshenagent/settings/user_settings.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

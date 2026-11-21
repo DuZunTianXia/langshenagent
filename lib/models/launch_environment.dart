@@ -213,7 +213,7 @@ abstract final class ClaudeModelVariables {
 /// twice the interactive CLI's (anthropics/claude-code#97074).
 abstract final class ClaudeEntrypoint {
   static const variable = 'CLAUDE_CODE_ENTRYPOINT';
-  static const name = 'baocode';
+  static const name = 'langshenagent';
 
   /// What the CLI goes with other than the user's Claude sign-in: a key,
   /// a server not Anthropic's, a cloud's.

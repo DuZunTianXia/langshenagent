@@ -1,4 +1,4 @@
-import 'package:baocode/bots/bot_life.dart';
+import 'package:langshenagent/bots/bot_life.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

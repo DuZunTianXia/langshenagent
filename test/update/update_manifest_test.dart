@@ -1,13 +1,13 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/update/update_manifest.dart';
-import 'package:baocode/update/version.dart';
+import 'package:langshenagent/update/update_manifest.dart';
+import 'package:langshenagent/update/version.dart';
 
 final _signature = base64.encode(List.filled(64, 7));
 
 Map<String, Object?> _asset({
-  String url = 'https://baocode.dev/releases/1.2.0/BaoCode-1.2.0-setup.exe',
+  String url = 'https://langshenagent.dev/releases/1.2.0/LangshenAgent-1.2.0-setup.exe',
   Object? size = 1000,
   Object? sha256,
   Object? signature,
@@ -33,7 +33,7 @@ String _manifest({
       {
         'windows-x64': _asset(),
         'macos-arm64': _asset(
-          url: 'https://baocode.dev/releases/1.2.0/BaoCode-1.2.0-mac.zip',
+          url: 'https://langshenagent.dev/releases/1.2.0/LangshenAgent-1.2.0-mac.zip',
         ),
       },
 });
@@ -60,7 +60,7 @@ void main() {
       final asset = manifest.assetFor('windows-x64')!;
       expect(asset.size, 1000);
       expect(asset.sha256, 'a' * 64);
-      expect(asset.fileName, 'BaoCode-1.2.0-setup.exe');
+      expect(asset.fileName, 'LangshenAgent-1.2.0-setup.exe');
       expect(manifest.platforms, containsAll(['windows-x64', 'macos-arm64']));
     });
 
@@ -74,18 +74,18 @@ void main() {
             platforms: {
               'windows-x64': _asset(
                 url:
-                    'https://dl.baocode.dev/releases/1.2.0/'
-                    'BaoCode-1.2.0-setup.exe?sha256=0123456789abcdef',
+                    'https://dl.langshenagent.dev/releases/1.2.0/'
+                    'LangshenAgent-1.2.0-setup.exe?sha256=0123456789abcdef',
               ),
             },
           ),
         ),
         'downloads': {
-          'macos': {'url': 'https://dl.baocode.dev/x.dmg', 'size': 1},
+          'macos': {'url': 'https://dl.langshenagent.dev/x.dmg', 'size': 1},
         },
       });
       final asset = UpdateManifest.parse(text).assetFor('windows-x64')!;
-      expect(asset.fileName, 'BaoCode-1.2.0-setup.exe');
+      expect(asset.fileName, 'LangshenAgent-1.2.0-setup.exe');
       expect(asset.url.query, 'sha256=0123456789abcdef');
     });
 
@@ -131,7 +131,7 @@ void main() {
           platforms: {
             'windows-x64': _asset(size: null),
             'macos-arm64': _asset(
-              url: 'https://baocode.dev/releases/1.2.0/BaoCode-1.2.0-mac.zip',
+              url: 'https://langshenagent.dev/releases/1.2.0/LangshenAgent-1.2.0-mac.zip',
             ),
           },
         ),
@@ -160,18 +160,18 @@ void main() {
       }
     });
 
-    test('downloads have to be https links on baocode.dev', () {
+    test('downloads have to be https links on langshenagent.dev', () {
       UpdateManifest at(String url) => UpdateManifest.parse(
         _manifest(platforms: {'windows-x64': _asset(url: url)}),
       );
       for (final url in [
-        'http://baocode.dev/releases/x.exe',
+        'http://langshenagent.dev/releases/x.exe',
         'https://evil.example/x.exe',
-        'https://baocode.dev.evil.example/x.exe',
-        'https://notbaocode.dev/x.exe',
-        'https://baocode.dev:8443/x.exe',
-        'https://user@baocode.dev/x.exe',
-        'ftp://baocode.dev/x.exe',
+        'https://langshenagent.dev.evil.example/x.exe',
+        'https://notlangshenagent.dev/x.exe',
+        'https://langshenagent.dev:8443/x.exe',
+        'https://user@langshenagent.dev/x.exe',
+        'ftp://langshenagent.dev/x.exe',
         'file:///tmp/x.exe',
         '/releases/x.exe',
       ]) {
@@ -182,9 +182,9 @@ void main() {
         );
       }
       for (final url in [
-        'https://baocode.dev/releases/x.exe',
-        'https://BAOCODE.dev/releases/x.exe',
-        'https://cdn.baocode.dev/x.exe',
+        'https://langshenagent.dev/releases/x.exe',
+        'https://LANGSHENAGENT.dev/releases/x.exe',
+        'https://cdn.langshenagent.dev/x.exe',
       ]) {
         expect(at(url).assetFor('windows-x64'), isNotNull, reason: url);
       }
@@ -203,7 +203,7 @@ void main() {
         isNotNull,
       );
       expect(
-        at('https://baocode.dev/x.exe').assetFor('windows-x64'),
+        at('https://langshenagent.dev/x.exe').assetFor('windows-x64'),
         isNotNull,
       );
       expect(

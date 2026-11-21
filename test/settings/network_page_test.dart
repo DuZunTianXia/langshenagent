@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:baocode/network/network_proxy.dart';
-import 'package:baocode/settings/pages/network_page.dart';
-import 'package:baocode/settings/pages/network_test_view.dart';
-import 'package:baocode/settings/pages/settings_dropdown.dart';
-import 'package:baocode/settings/pages/settings_widgets.dart';
-import 'package:baocode/settings/user_settings.dart';
+import 'package:langshenagent/network/network_proxy.dart';
+import 'package:langshenagent/settings/pages/network_page.dart';
+import 'package:langshenagent/settings/pages/network_test_view.dart';
+import 'package:langshenagent/settings/pages/settings_dropdown.dart';
+import 'package:langshenagent/settings/pages/settings_widgets.dart';
+import 'package:langshenagent/settings/user_settings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
@@ -22,7 +22,7 @@ void main() {
   late Map<String, Object> answers;
 
   setUp(() async {
-    data = await Directory.systemTemp.createTemp('baocode-network');
+    data = await Directory.systemTemp.createTemp('langshenagent-network');
     settings = UserSettings(p.join(data.path, 'settings.json'));
     await settings.load();
     route = ProxyRoute(

@@ -4,13 +4,13 @@ library;
 import 'dart:io';
 import 'dart:ui' show Locale;
 
-import 'package:baocode/kernel/claude_code/claude_sdk_tools.dart';
-import 'package:baocode/kernel/kernel_types.dart';
-import 'package:baocode/l10n/app_localizations.dart';
-import 'package:baocode/remote/local_tools.dart';
-import 'package:baocode/remote/port_forwards.dart';
-import 'package:baocode/remote/remote_host_settings.dart';
-import 'package:baocode/remote/ssh_host.dart';
+import 'package:langshenagent/kernel/claude_code/claude_sdk_tools.dart';
+import 'package:langshenagent/kernel/kernel_types.dart';
+import 'package:langshenagent/l10n/app_localizations.dart';
+import 'package:langshenagent/remote/local_tools.dart';
+import 'package:langshenagent/remote/port_forwards.dart';
+import 'package:langshenagent/remote/remote_host_settings.dart';
+import 'package:langshenagent/remote/ssh_host.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
@@ -34,7 +34,7 @@ void main() {
   );
 
   setUp(() {
-    dir = Directory.systemTemp.createTempSync('baocode-local-tools-');
+    dir = Directory.systemTemp.createTempSync('langshenagent-local-tools-');
     final made = Directory(p.join(dir.path, 'project'))..createSync();
     project = made.resolveSymbolicLinksSync();
     hosts = SshHosts.instance = SshHosts(
@@ -174,7 +174,7 @@ void main() {
       ),
     );
     expect(
-      ClaudeSdkTools.called('mcp__baocode__local_run')!.asksItself,
+      ClaudeSdkTools.called('mcp__langshenagent__local_run')!.asksItself,
       isTrue,
     );
 

@@ -1,7 +1,7 @@
 import 'package:bao_editor/monaco/flutter/keybinding_entry.dart';
-import 'package:baocode/keybindings/default_keybindings.dart';
-import 'package:baocode/keybindings/window_keybindings.dart';
-import 'package:baocode/theme/code_font.dart';
+import 'package:langshenagent/keybindings/default_keybindings.dart';
+import 'package:langshenagent/keybindings/window_keybindings.dart';
+import 'package:langshenagent/theme/code_font.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Zoom In / Zoom Out: the Interface Size setting, from the keys VS Code

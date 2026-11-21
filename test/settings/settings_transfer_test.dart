@@ -1,14 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:baocode/models/model_provider.dart';
-import 'package:baocode/models/model_providers.dart';
-import 'package:baocode/models/secret_store.dart';
-import 'package:baocode/settings/jsonc_file.dart';
-import 'package:baocode/platform/data_dir.dart';
-import 'package:baocode/settings/settings_transfer.dart';
-import 'package:baocode/settings/user_settings.dart';
-import 'package:baocode/settings/pages/settings_transfer_group.dart';
+import 'package:langshenagent/models/model_provider.dart';
+import 'package:langshenagent/models/model_providers.dart';
+import 'package:langshenagent/models/secret_store.dart';
+import 'package:langshenagent/settings/jsonc_file.dart';
+import 'package:langshenagent/platform/data_dir.dart';
+import 'package:langshenagent/settings/settings_transfer.dart';
+import 'package:langshenagent/settings/user_settings.dart';
+import 'package:langshenagent/settings/pages/settings_transfer_group.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
@@ -158,7 +158,7 @@ void main() {
     await tester.tap(find.text('Import…').last);
     await settle();
     expect(
-      find.text('Imported. Some settings take effect once BaoCode restarts.'),
+      find.text('Imported. Some settings take effect once LangshenAgent restarts.'),
       findsOneWidget,
     );
     final imported = await tester.runAsync(() async {
@@ -167,12 +167,12 @@ void main() {
     });
     expect((imported! as List).single, containsPair('id', 'gw'));
 
-    // Not one of BaoCode's: said so.
+    // Not one of LangshenAgent's: said so.
     await tester.runAsync(() => File(exported).writeAsString('{}'));
     await tester.tap(find.text('Import…'));
     await settle();
     expect(
-      find.text('Not done: This is not a settings file BaoCode exported.'),
+      find.text('Not done: This is not a settings file LangshenAgent exported.'),
       findsOneWidget,
     );
   });

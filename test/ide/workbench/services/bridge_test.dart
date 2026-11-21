@@ -1,10 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:baocode/ide/ide_status_bar.dart';
-import 'package:baocode/ide/ide_workbench.dart';
-import 'package:baocode/ide/workbench/actions.dart';
-import 'package:baocode/ide/workbench/context_keys.dart';
-import 'package:baocode/ide/workbench/statusbar.dart';
-import 'package:baocode/keybindings/keybinding_service.dart';
+import 'package:langshenagent/ide/ide_status_bar.dart';
+import 'package:langshenagent/ide/ide_workbench.dart';
+import 'package:langshenagent/ide/workbench/actions.dart';
+import 'package:langshenagent/ide/workbench/context_keys.dart';
+import 'package:langshenagent/ide/workbench/statusbar.dart';
+import 'package:langshenagent/keybindings/keybinding_service.dart';
 
 import '../fake_files.dart';
 

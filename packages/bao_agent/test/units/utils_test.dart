@@ -426,10 +426,10 @@ void main() {
       expect(windows({}, {}).executable, 'cmd.exe');
     });
 
-    test('on Windows: BaoCode Bash, where the app installed it, before '
+    test('on Windows: LangshenAgent Bash, where the app installed it, before '
         'Git\'s; the one set before both', () {
       const bao =
-          r'C:\Users\me\AppData\Roaming\BaoCode\tools\bash-exe\bash.exe';
+          r'C:\Users\me\AppData\Roaming\LangshenAgent\tools\bash-exe\bash.exe';
       const git = r'C:\Program Files\Git\bin\bash.exe';
       final found = windows({Shell.baoBashVariable: bao}, {bao, git});
       expect((found.executable, found.posix, found.baoBash), (bao, true, true));
@@ -447,7 +447,7 @@ void main() {
 
     test('on Windows: the shell the app\'s settings pick, before all', () {
       const bao =
-          r'C:\Users\me\AppData\Roaming\BaoCode\tools\bash-exe\bash.exe';
+          r'C:\Users\me\AppData\Roaming\LangshenAgent\tools\bash-exe\bash.exe';
       const git = r'C:\Program Files\Git\bin\bash.exe';
       const ps = r'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe';
       final env = {
