@@ -53,7 +53,7 @@ abstract final class Updates {
   /// Where it tells what the newest build is: the Pages manifest the
   /// release writes (langshen-release.yml's publish-mobile).
   static const manifest =
-      'https://duzuntianxia.github.io/langshenagent/releases/mobile/latest.json';
+      'https://agent.langshen.xyz/releases/mobile/latest.json';
 
   /// Whether the manifest names a build newer than this one; null when the
   /// service can't be asked (offline, down) — not an update.

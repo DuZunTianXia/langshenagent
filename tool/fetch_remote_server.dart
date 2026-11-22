@@ -17,7 +17,7 @@ import 'dart:io';
 // latest.json is Pages', the builds the server-<VERSION> release's assets
 // (langshen-release.yml's publish).
 const _latest =
-    'https://duzuntianxia.github.io/langshenagent/releases/remote/latest.json';
+    'https://agent.langshen.xyz/releases/remote/latest.json';
 const _releases =
     'https://github.com/DuZunTianXia/langshenagent/releases/download';
 

@@ -16,8 +16,8 @@ import 'browser_bridge.dart';
 /// answer the page the extension's id makes.
 abstract final class ExtensionStore {
   static final manifest = Uri.https(
-    'duzuntianxia.github.io',
-    '/baocode/releases/extension/latest.json',
+    'agent.langshen.xyz',
+    '/releases/extension/latest.json',
   );
 
   /// The extension's page, by its id: the store's address for it.

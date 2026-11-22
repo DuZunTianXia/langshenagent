@@ -22,7 +22,7 @@ class BaoBashRelease {
 
   /// Where the builds are named.
   static final latestUrl = Uri.parse(
-    'https://duzuntianxia.github.io/langshenagent/tools/bash-exe/latest.json',
+    'https://agent.langshen.xyz/tools/bash-exe/latest.json',
   );
 
   /// The build for [arch] (`x64`, `arm64`) in [json], `latest.json`; null
@@ -364,7 +364,7 @@ class BaoBash extends ChangeNotifier {
       if (_latest == null) await check(force: true);
       final release = _latest;
       if (release == null) {
-        throw StateError('duzuntianxia.github.io could not be reached');
+        throw StateError('agent.langshen.xyz could not be reached');
       }
       _installed = await host.install(release, (done) {
         _progress = done;

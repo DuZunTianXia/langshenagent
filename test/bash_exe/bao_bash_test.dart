@@ -233,7 +233,7 @@ void main() {
     final bash = BaoBash(host: _Host());
     await bash.install();
     expect(bash.installed, isNull);
-    expect(bash.error, contains('duzuntianxia.github.io'));
+    expect(bash.error, contains('agent.langshen.xyz'));
     expect(bash.busy, isFalse);
   });
 

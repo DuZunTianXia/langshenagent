@@ -1,8 +1,8 @@
 #!/bin/bash
 # Copies site/ into a GitHub Pages tree ($1, default pages-site/) and rewires
-# it for https://duzuntianxia.github.io/langshenagent — the site is written for a
-# domain root, Pages serves it under /langshenagent/. Manifest fetches go to the
-# Pages latest.json files langshen-release.yml publishes, /dl/* links to the
+# it for https://agent.langshen.xyz — the site is written for a domain root,
+# and the custom domain serves it at one. Manifest fetches go to the Pages
+# latest.json files langshen-release.yml publishes, /dl/* links to the
 # GitHub releases (site.js rewrites data-file anchors from the manifest
 # anyway; these are the no-JS fallbacks).
 set -e
@@ -11,16 +11,16 @@ out="${1:-$root/pages-site}"
 mkdir -p "$out"
 cp -R "$root/site/." "$out/"
 
-pages="/langshenagent"
+pages=""
 releases="https://github.com/DuZunTianXia/langshenagent/releases"
-manifests="https://duzuntianxia.github.io/langshenagent/releases"
+manifests="https://agent.langshen.xyz/releases"
 files=$(find "$out" -name '*.html' -o -name '*.js' -o -name '*.css')
 
 # The manifests' and the framed-channel fallback's hosts.
 sed -i '' \
   -e "s|https://dl\.langshenagent\.dev/releases/|$manifests/|g" \
   -e "s|https://langshenagent\.dev/dl/|$releases/|g" \
-  -e "s|https://langshenagent\.dev/|https://duzuntianxia.github.io/langshenagent/|g" \
+  -e "s|https://langshenagent\.dev/|https://agent.langshen.xyz/|g" \
   $files
 
 # /dl/<target> links: site.js rewrites data-file ones from the manifest;
