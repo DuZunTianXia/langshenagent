@@ -36,13 +36,13 @@ class AgentPage extends StatelessWidget {
             ),
             Text(
               [
-                if (agent.agentType case final type?) type,
+                ?agent.agentType,
                 switch (agent.status) {
                   CommandStatus.running => '进行中',
                   CommandStatus.succeeded => '已完成',
                   CommandStatus.failed => '失败',
                 },
-                if (agent.model case final model?) model,
+                ?agent.model,
               ].join(' · '),
               style: TextStyle(fontSize: 12, color: AppColors.textMuted),
             ),

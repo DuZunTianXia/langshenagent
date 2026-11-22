@@ -190,7 +190,9 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
         );
       };
       link.onReadMarks!();
-    } on Object {}
+    } on Object {
+      // Marks are best-effort: a computer away loses nothing.
+    }
   }
 
   /// Pairs with the computer [offer] (a QR code's or a pasted link's) or

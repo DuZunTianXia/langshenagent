@@ -48,7 +48,9 @@ abstract final class PhonePlatform {
     if (!native) return;
     try {
       await _app.invokeMethod('letGo');
-    } on Object {}
+    } on Object {
+      // Platform calls are best-effort: absent elsewhere.
+    }
   }
 
   /// What another app shared into LangshenAgent (`SEND`/`VIEW` intents), as
@@ -72,7 +74,9 @@ abstract final class PhonePlatform {
     if (!native) return;
     try {
       await _haptics.invokeMethod('play', {'kind': kind});
-    } on Object {}
+    } on Object {
+      // Platform calls are best-effort: absent elsewhere.
+    }
   }
 
   /// Whether this build can install an update over itself.
@@ -102,7 +106,9 @@ abstract final class PhonePlatform {
     if (!Platform.isAndroid) return;
     try {
       await _update.invokeMethod('openInstallSettings');
-    } on Object {}
+    } on Object {
+      // Platform calls are best-effort: absent elsewhere.
+    }
   }
 
   /// Installs the update package at [path] (downloaded by the app).
@@ -110,7 +116,9 @@ abstract final class PhonePlatform {
     if (!Platform.isAndroid) return;
     try {
       await _update.invokeMethod('install', {'path': path});
-    } on Object {}
+    } on Object {
+      // Platform calls are best-effort: absent elsewhere.
+    }
   }
 
   // --- Notifications ------------------------------------------------------------
@@ -133,7 +141,9 @@ abstract final class PhonePlatform {
             AndroidFlutterLocalNotificationsPlugin
           >()
           ?.requestNotificationsPermission();
-    } on Object {}
+    } on Object {
+      // Platform calls are best-effort: absent elsewhere.
+    }
   }
 
   /// Local notifications for a session needing the user while the app is
@@ -180,6 +190,8 @@ abstract final class PhonePlatform {
           ),
         ),
       );
-    } on Object {}
+    } on Object {
+      // Platform calls are best-effort: absent elsewhere.
+    }
   }
 }

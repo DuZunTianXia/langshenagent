@@ -85,7 +85,7 @@ abstract final class InteractionCodec {
         ApprovalAnswer(:final decision, :final message) => {
           't': 'approval',
           'decision': decision.name,
-          if (message != null) 'message': message,
+          'message': ?message,
         },
       };
 

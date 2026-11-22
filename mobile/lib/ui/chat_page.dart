@@ -142,7 +142,9 @@ class _ChatPageState extends State<ChatPage> {
     if (id == null) return;
     try {
       await widget.link.stop(id);
-    } on Object {}
+    } on Object {
+      // Stopping is best-effort: the session may be gone already.
+    }
   }
 
   /// The + menu: a picture joins the message's images; another file goes
@@ -181,7 +183,7 @@ class _ChatPageState extends State<ChatPage> {
           name: file.name,
           data: bytes,
         );
-        final path = reply?['path'] as String?;
+        final path = reply['path'] as String?;
         if (path != null) {
           final text = _text.text;
           final mention = '@$path ';
@@ -268,7 +270,9 @@ class _ChatPageState extends State<ChatPage> {
     if (id == null) return;
     try {
       await widget.link.earlier(id);
-    } on Object {}
+    } on Object {
+      // Best-effort too: nothing else asks for the page now.
+    }
   }
 
   @override

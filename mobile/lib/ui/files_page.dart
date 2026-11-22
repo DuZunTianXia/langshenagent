@@ -187,7 +187,12 @@ class _ProjectIconState extends State<_ProjectIcon> {
 /// `/`-separated path from the project's root (`""` its top, where a
 /// workspace's folders are named).
 class FolderPage extends StatefulWidget {
-  const FolderPage({required this.link, required this.project, this.path = ''});
+  const FolderPage({
+    super.key,
+    required this.link,
+    required this.project,
+    this.path = '',
+  });
 
   final PhoneLink link;
   final ProjectInfo project;

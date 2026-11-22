@@ -526,10 +526,10 @@ class _CountBadge extends StatelessWidget {
 /// A name's avatar tile: its first letter on a color its hash picks, as
 /// the official app draws conversation icons.
 class _Tile extends StatelessWidget {
-  const _Tile({required this.name, this.size = 44});
+  const _Tile({required this.name});
 
   final String name;
-  final double size;
+  static const size = 44.0;
 
   static const _colors = [
     Color(0xFF5B8FF9),

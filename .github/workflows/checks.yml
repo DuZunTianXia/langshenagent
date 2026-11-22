@@ -52,6 +52,10 @@ jobs:
           cache: true
           pub-cache: true
       - run: flutter pub get
+      # The phone app is a package of its own: the analyzer reaches it,
+      # so its dependencies have to be there too.
+      - run: flutter pub get
+        working-directory: mobile
       - run: flutter analyze --fatal-infos
       # The files changed alone: many older ones are not formatted yet.
       - name: Format the Dart files changed
@@ -91,6 +95,7 @@ jobs:
           - { dir: packages/bao_markdown }
           - { dir: packages/bao_pty }
           - { dir: packages/bao_xterm }
+          - { dir: mobile }
     steps:
       - uses: actions/checkout@v5
       - uses: subosito/flutter-action@v2

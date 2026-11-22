@@ -143,12 +143,11 @@ class PhoneLink extends ChangeNotifier {
   PhoneLink({
     required this.store,
     required this.computer,
-    required Future<LinkNode> Function() node,
+    required this._node,
     required this.phoneName,
     required this.phoneSystem,
     LinkSessionMirror? mirror,
-  }) : _node = node,
-       mirror = mirror ?? LinkSessionMirror();
+  }) : mirror = mirror ?? LinkSessionMirror();
 
   /// The computers paired, kept by the app.
   final LinkStore store;
@@ -716,14 +715,14 @@ class PhoneLink extends ChangeNotifier {
     String? id,
   }) async {
     final result = _map(await _call(LinkMethods.send, {
-      if (sessionId != null) 'session': sessionId,
-      if (projectId != null) 'project': projectId,
-      if (botId != null) 'bot': botId,
+      'session': ?sessionId,
+      'project': ?projectId,
+      'bot': ?botId,
       'text': text,
       if (images.isNotEmpty) 'images': images,
       if (mentions.isNotEmpty) 'mentions': mentions,
       if (now) 'now': true,
-      if (id != null) 'id': id,
+      'id': ?id,
     }));
     return result['session'] as String?;
   }
@@ -817,21 +816,21 @@ class PhoneLink extends ChangeNotifier {
   /// desktop's Keep.
   Future<void> keep(String sessionId, [List<String>? paths]) => _call(
     LinkMethods.keep,
-    {'session': sessionId, if (paths != null) 'paths': paths},
+    {'session': sessionId, 'paths': ?paths},
   );
 
   /// Undoes them, as the desktop's Undo.
   Future<void> undo(String sessionId, [List<String>? paths]) => _call(
     LinkMethods.undo,
-    {'session': sessionId, if (paths != null) 'paths': paths},
+    {'session': sessionId, 'paths': ?paths},
   );
 
   /// Stops a task left running, or the subagent [agent] started.
   Future<void> stopTask(String sessionId, {String? task, String? agent}) =>
       _call(LinkMethods.stopTask, {
         'session': sessionId,
-        if (task != null) 'task': task,
-        if (agent != null) 'agent': agent,
+        'task': ?task,
+        'agent': ?agent,
       });
 
   /// A command task's output as it is now, the end of it (up to
@@ -920,8 +919,8 @@ class PhoneLink extends ChangeNotifier {
     required String name,
     required Uint8List data,
   }) => _call(LinkMethods.upload, {
-    if (projectId != null) 'project': projectId,
-    if (botId != null) 'bot': botId,
+    'project': ?projectId,
+    'bot': ?botId,
     'name': name,
     'data': base64Encode(data),
   }).then(_map);
@@ -931,7 +930,7 @@ class PhoneLink extends ChangeNotifier {
   /// The folders under [path] on the desktop (its home, null): `{"path",
   /// "parent"?, "home", "dirs": [{"name", "path"}], "truncated"?}`.
   Future<Map<String, Object?>> browse([String? path]) =>
-      _call(LinkMethods.browse, {if (path != null) 'path': path}).then(_map);
+      _call(LinkMethods.browse, {'path': ?path}).then(_map);
 
   /// [path] listed as a workspace; the project it made.
   Future<ProjectInfo> addProject(String path) async {
@@ -1070,8 +1069,8 @@ class PhoneLink extends ChangeNotifier {
       'group': groupId,
       'text': text,
       if (images.isNotEmpty) 'images': images,
-      if (id != null) 'id': id,
-      if (ref != null) 'ref': ref,
+      'id': ?id,
+      'ref': ?ref,
     }));
     return result['seq'] as int?;
   }
@@ -1087,7 +1086,7 @@ class PhoneLink extends ChangeNotifier {
   /// The bot changed, or a new one (no [botId]).
   Future<LinkBot?> saveBot(Map<String, Object?> bot, {String? botId}) async {
     final result = _map(await _call(LinkMethods.saveBot, {
-      if (botId != null) 'bot': botId,
+      'bot': ?botId,
       ...bot,
     }));
     final saved = result['bot'];
@@ -1125,7 +1124,7 @@ class PhoneLink extends ChangeNotifier {
     'name': ?name,
     'gender': ?gender,
     'signature': ?signature,
-    if (picture != null) 'picture': picture,
+    'picture': ?picture,
   });
 
   /// What the desktop pushes the phone while it is away: its words for
@@ -1144,7 +1143,7 @@ class PhoneLink extends ChangeNotifier {
   /// The group chat changed, or a new one.
   Future<LinkGroup?> saveGroup(Map<String, Object?> group, {String? groupId}) async {
     final result = _map(await _call(LinkMethods.saveGroup, {
-      if (groupId != null) 'group': groupId,
+      'group': ?groupId,
       ...group,
     }));
     final saved = result['group'];

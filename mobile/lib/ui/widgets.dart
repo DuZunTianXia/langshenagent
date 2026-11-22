@@ -37,7 +37,7 @@ class BTextField extends StatelessWidget {
     double radius = 12,
     EdgeInsetsGeometry? contentPadding,
   }) {
-    final border = (Color color, double width) => OutlineInputBorder(
+    OutlineInputBorder border(Color color, double width) => OutlineInputBorder(
       borderRadius: BorderRadius.circular(radius),
       borderSide: color == Colors.transparent
           ? BorderSide.none
@@ -255,7 +255,7 @@ class BCell extends StatelessWidget {
               ],
             ),
           ),
-          if (trailing != null) trailing!,
+          ?trailing,
           if (onTap != null && showChevron)
             Icon(Icons.chevron_right, size: 20, color: AppColors.textFaint),
         ],

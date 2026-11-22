@@ -39,7 +39,9 @@ class _GroupPageState extends State<GroupPage> {
     try {
       final feed = await widget.link.openGroup(widget.group.id);
       if (mounted) setState(() => _feed = feed);
-    } on Object {}
+    } on Object {
+      // A feed that failed to open stays empty; retried on reopen.
+    }
   }
 
   Future<void> _send() async {

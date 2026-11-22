@@ -55,6 +55,7 @@ Future<void> _downloadAndInstall(
 ) async {
   // The system's "install unknown apps" permission comes first.
   if (!await PhonePlatform.canInstall()) {
+    if (!context.mounted) return;
     final go =
         await showDialog<bool>(
           context: context,
