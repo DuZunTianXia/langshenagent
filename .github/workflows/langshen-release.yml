@@ -476,9 +476,6 @@ jobs:
               "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           fi
           mkdir -p pages-site/releases/remote
-      # The site itself too: every release keeps Pages current with it.
-      - name: Put the site on Pages
-        run: tool/pages_site.sh pages-site
       - name: Put the Rust toolchain's bin ahead on PATH
         run: echo "$HOME/.rustup/toolchains/1.97.1-aarch64-apple-darwin/bin" >> "$GITHUB_PATH"
       - name: Sign the release into latest.json
@@ -506,6 +503,10 @@ jobs:
               --linux-arm64 "out/LangshenAgent-$MARKETING-linux-arm64.deb" \
               --manifest pages-site/releases/latest.json \
               "${notes[@]}"
+      # The site itself too, after the manifest it bakes download links
+      # from is signed: every release keeps Pages current with it.
+      - name: Put the site on Pages
+        run: tool/pages_site.sh pages-site
       - name: Commit the manifests to Pages
         run: |
           jq -n --arg version "$(cat dist/remote/VERSION)" --arg tag "$GITHUB_REF_NAME" --arg commit "$GITHUB_SHA" \

@@ -65,10 +65,12 @@ sed -i '' "s|\"$pages/zh\"|\"$pages/zh/\"|g" $files
 # site.js still upgrades them live, but a click before it does — or with
 # no JavaScript — already downloads the file, not the releases page.
 tmp="$(mktemp -d)"
-latest="$tmp/latest.json"
-mobile="$tmp/mobile.json"
-curl -fsS --max-time 20 "$manifests/latest.json" -o "$latest" 2>/dev/null || latest=
-curl -fsS --max-time 20 "$manifests/mobile/latest.json" -o "$mobile" 2>/dev/null || mobile=
+# The manifest already in $out wins — publish signs it before this runs,
+# so the links are the release being published, not the one before.
+latest="$out/releases/latest.json"
+mobile="$out/releases/mobile/latest.json"
+[ -f "$latest" ] || { latest="$tmp/latest.json"; curl -fsS --max-time 20 "$manifests/latest.json" -o "$latest" 2>/dev/null || latest=; }
+[ -f "$mobile" ] || { mobile="$tmp/mobile.json"; curl -fsS --max-time 20 "$manifests/mobile/latest.json" -o "$mobile" 2>/dev/null || mobile=; }
 [ -n "$latest$mobile" ] && python3 - "$latest" "$mobile" "$releases" "$out" <<'PY'
 import json, re, sys, urllib.parse
 
