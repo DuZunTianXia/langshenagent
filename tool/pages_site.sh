@@ -60,3 +60,46 @@ for page in download changelog browser-privacy mobile-privacy upstreams \
 done
 # The bare /zh link gets its trailing slash back.
 sed -i '' "s|\"$pages/zh\"|\"$pages/zh/\"|g" $files
+
+# Direct-download hrefs baked into the HTML from the published manifests:
+# site.js still upgrades them live, but a click before it does — or with
+# no JavaScript — already downloads the file, not the releases page.
+tmp="$(mktemp -d)"
+latest="$tmp/latest.json"
+mobile="$tmp/mobile.json"
+curl -fsS --max-time 20 "$manifests/latest.json" -o "$latest" 2>/dev/null || latest=
+curl -fsS --max-time 20 "$manifests/mobile/latest.json" -o "$mobile" 2>/dev/null || mobile=
+[ -n "$latest$mobile" ] && python3 - "$latest" "$mobile" "$releases" "$out" <<'PY'
+import json, re, sys, urllib.parse
+
+latest_path, mobile_path, releases, out = sys.argv[1:5]
+urls = {}
+if latest_path:
+    try:
+        downloads = json.load(open(latest_path)).get('downloads') or {}
+        for name, file in downloads.items():
+            if isinstance(file, dict) and file.get('url'):
+                urls[name] = file['url']
+    except Exception:
+        pass
+if mobile_path:
+    try:
+        apk = json.load(open(mobile_path)).get('apk', '')
+        url = apk if apk.startswith('http') else f'{releases}/download{apk}'
+        urls['android'] = urls['androidArm64'] = url
+    except Exception:
+        pass
+if not urls:
+    sys.exit(0)
+
+import pathlib
+anchor = re.compile(r'<a\b[^>]*data-file="([^"]+)"[^>]*>')
+href = re.compile(r'href="[^"]*"')
+for page in pathlib.Path(out).rglob('*.html'):
+    text = page.read_text(encoding='utf-8')
+    def swap(match):
+        url = urls.get(match.group(1))
+        return href.sub(f'href="{url}"', match.group(0), count=1) if url else match.group(0)
+    page.write_text(anchor.sub(swap, text), encoding='utf-8')
+PY
+rm -rf "$tmp"
