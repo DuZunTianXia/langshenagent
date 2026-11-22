@@ -8,7 +8,7 @@
 // left on the page they asked for, to list each.
 (() => {
   const path = location.pathname;
-  const zh = path === '/langshenagent/zh' || path.startsWith('/langshenagent/zh/');
+  const zh = path === '/zh' || path.startsWith('/zh/');
   document.addEventListener('click', (event) => {
     const link = event.target.closest?.('a.lang[hreflang]');
     if (link) try { localStorage.setItem('langshenagent.lang', link.hreflang); } catch {}
@@ -37,6 +37,6 @@
   if (kept?.source !== 'channel' && location.search.length < 2) return;
   const root = document.documentElement;
   root.classList.add('channel-pending');
-  window.channelsJson = fetch('/langshenagent/channels.json').then((res) => res.json()).catch(() => null);
+  window.channelsJson = fetch('/channels.json').then((res) => res.json()).catch(() => null);
   setTimeout(() => root.classList.remove('channel-pending'), 2000);
 })();

@@ -1,7 +1,7 @@
 // The one-click import of an upstream (docs/upstream-import.md): a site's
 // "Import to LangshenAgent" link comes here, what to import after the # —
 //
-//   https://duzuntianxia.github.io/langshenagent/import#v=1&name=…&protocol=…&url=…&key=…
+//   https://agent.langshen.xyz/import#v=1&name=…&protocol=…&url=…&key=…
 //
 // which browsers never send to langshenagent.dev — and goes on to the app as
 // langshenagent://provider/import?…, LangshenAgent asking before it adds anything. The

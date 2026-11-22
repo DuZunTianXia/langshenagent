@@ -131,7 +131,7 @@ const attribution = (() => {
 // the places hidden meanwhile, and channels.json asked for.
 const listedChannel = attribution.ready.then(async (kept) => {
   if (kept?.source !== 'channel') return null;
-  const channels = await (window.channelsJson || fetch('/langshenagent/channels.json').then((res) => res.json()).catch(() => null));
+  const channels = await (window.channelsJson || fetch('/channels.json').then((res) => res.json()).catch(() => null));
   // Own keys only: ?constructor is not a channel.
   const channel = channels && Object.hasOwn(channels, kept.value) ? channels[kept.value] : null;
   return channel && typeof channel === 'object' ? channel : null;
@@ -154,7 +154,7 @@ listedChannel.then((channel) => {
   if (name) {
     for (const el of document.querySelectorAll('.top .brand')) el.replaceChildren(...side(logo, name).childNodes);
     for (const el of document.querySelectorAll('[data-channel-title]')) {
-      el.replaceChildren(side(logo, name), ' ', span('channel-x', '×'), ' ', side('/langshenagent/icon.png', 'LangshenAgent'));
+      el.replaceChildren(side(logo, name), ' ', span('channel-x', '×'), ' ', side('/icon.png', 'LangshenAgent'));
     }
   }
   if (subtitle) for (const el of document.querySelectorAll('[data-channel-subtitle]')) el.textContent = subtitle;
@@ -261,7 +261,7 @@ for (const pick of document.querySelectorAll('.pick')) {
     a.innerHTML = sample.innerHTML;
     for (const img of a.querySelectorAll('img')) {
       img.setAttribute('src', 'https://langshenagent.dev' + img.getAttribute('src'));
-      img.setAttribute('srcset', img.getAttribute('srcset').replaceAll('/langshenagent/brand/', 'https://duzuntianxia.github.io/langshenagent/brand/'));
+      img.setAttribute('srcset', img.getAttribute('srcset').replaceAll('/brand/', 'https://agent.langshen.xyz/brand/'));
     }
     const style = styles.dataset.template
       .replace('{url}', `${styles.dataset.page}#${pick.id}`)
@@ -297,7 +297,7 @@ for (const button of document.querySelectorAll('[data-sound]')) {
   try {
     const ctl = new AbortController();
     setTimeout(() => ctl.abort(), 4000);
-    const res = await fetch('https://duzuntianxia.github.io/langshenagent/releases/latest.json', { signal: ctl.signal, cache: 'no-store' });
+    const res = await fetch('https://agent.langshen.xyz/releases/latest.json', { signal: ctl.signal, cache: 'no-store' });
     const m = await res.json();
     const v = String(m.version).split('+')[0];
     const zh = document.documentElement.lang.startsWith('zh');
@@ -320,7 +320,7 @@ for (const button of document.querySelectorAll('[data-sound]')) {
   try {
     const ctl = new AbortController();
     setTimeout(() => ctl.abort(), 4000);
-    const res = await fetch('https://duzuntianxia.github.io/langshenagent/releases/mobile/latest.json', { signal: ctl.signal, cache: 'no-store' });
+    const res = await fetch('https://agent.langshen.xyz/releases/mobile/latest.json', { signal: ctl.signal, cache: 'no-store' });
     const m = await res.json();
     const v = String(m.version).split('+')[0];
     const zh = document.documentElement.lang.startsWith('zh');
@@ -337,7 +337,7 @@ for (const button of document.querySelectorAll('[data-sound]')) {
   try {
     const ctl = new AbortController();
     setTimeout(() => ctl.abort(), 4000);
-    const res = await fetch('https://duzuntianxia.github.io/langshenagent/releases/extension/latest.json', { signal: ctl.signal, cache: 'no-store' });
+    const res = await fetch('https://agent.langshen.xyz/releases/extension/latest.json', { signal: ctl.signal, cache: 'no-store' });
     const m = await res.json();
     const zh = document.documentElement.lang.startsWith('zh');
     for (const el of document.querySelectorAll('[data-extension-version]')) el.textContent = zh ? `版本 ${m.version}` : `Version ${m.version}`;
