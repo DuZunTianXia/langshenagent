@@ -27,16 +27,30 @@ abstract final class ClaudeEnvironment {
 
   static Future<Map<String, String>>? _environment;
 
-  /// The login shell's environment over the app's own.
-  static Future<Map<String, String>> of() => _environment ??= _login();
+  /// Where Claude Code's state goes when the environment names none: the
+  /// app's own directory for it, set where the app's data folder is known
+  /// (main, the remote server) so two apps do not share `~/.claude` — and
+  /// so its sessions. Null leaves `~/.claude`, as before.
+  static String? defaultDataPath;
+
+  /// The login shell's environment over the app's own, [dataPathVariable]
+  /// filled with [defaultDataPath] where nothing set it.
+  static Future<Map<String, String>> of() async {
+    final environment = await (_environment ??= _login());
+    final fallback = defaultDataPath;
+    if (fallback == null || fallback.isEmpty) return environment;
+    if ((environment[dataPathVariable] ?? '').isNotEmpty) return environment;
+    return {...environment, dataPathVariable: fallback};
+  }
 
   /// Where Claude Code keeps its state: [dataPathVariable], else
-  /// `CLAUDE_CONFIG_DIR`, else `<home>/.claude`.
+  /// `CLAUDE_CONFIG_DIR`, else [defaultDataPath], else `<home>/.claude`.
   static Future<String> configDir() async {
     final environment = await of();
     for (final name in const [dataPathVariable, 'CLAUDE_CONFIG_DIR']) {
       if (environment[name] case final dir? when dir.isNotEmpty) return dir;
     }
+    if (defaultDataPath?.isNotEmpty == true) return defaultDataPath!;
     final home = AppPaths.home(environment);
     return home.isEmpty ? '' : p.join(home, '.claude');
   }
@@ -44,7 +58,7 @@ abstract final class ClaudeEnvironment {
   /// The state directory for the CLI to run with, from [environment]:
   /// pointed at one, it keeps its sessions there; else where it would.
   static Map<String, String> stateDirectory(Map<String, String> environment) {
-    final dir = environment[dataPathVariable];
+    final dir = environment[dataPathVariable] ?? defaultDataPath;
     return dir == null || dir.isEmpty ? const {} : {'CLAUDE_CONFIG_DIR': dir};
   }
 

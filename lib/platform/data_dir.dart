@@ -95,6 +95,11 @@ class DataDirectory {
   /// agents' changes are kept or undone against (see change_review.dart).
   String get checkpointsDir => p.join(path, 'checkpoints');
 
+  /// Claude Code's home the app runs it against ([ClaudeEnvironment]'s
+  /// [defaultDataPath]): its sessions and settings, kept apart from the
+  /// `~/.claude` another program's would use.
+  String get claudeDataDir => p.join(path, 'claude-data');
+
   /// What is kept only to be quicker, made again if lost (e.g. the
   /// summaries of Claude Code's sessions).
   String get cacheDir => p.join(path, 'cache');

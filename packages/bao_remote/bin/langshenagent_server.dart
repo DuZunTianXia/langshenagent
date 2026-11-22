@@ -18,6 +18,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:bao_agent/bao_agent.dart' show runAgentCommandLine;
+import 'package:bao_remote/local.dart' show ClaudeEnvironment;
 import 'package:bao_remote/server.dart';
 
 /// The app's version the server came with (`-Dlangshenagent.version=…`).
@@ -62,6 +63,9 @@ Future<void> main(List<String> arguments) async {
       ? arguments[at + 1]
       : '$home/.langshenagent-server/data';
   Directory(dataDir).createSync(recursive: true);
+  // Its own Claude Code home, so a host's ~/.claude — another program's
+  // sessions — is not the one its sessions live in.
+  ClaudeEnvironment.defaultDataPath = '$dataDir/claude';
   // A key Claude Code is given stays in memory where there is a place for
   // it, not on disk. A session's daemon outlives the login, whose
   // XDG_RUNTIME_DIR systemd removes as the last connection goes: /dev/shm.

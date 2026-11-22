@@ -56,6 +56,7 @@ import 'icons/icon_storage.dart';
 import 'icons/site_icons.dart';
 import 'kernel/claude_code/claude_code_kernel.dart';
 import 'kernel/claude_code/claude_core_setting.dart';
+import 'kernel/claude_code/claude_environment.dart';
 import 'kernel/claude_code/claude_onboarding.dart';
 import 'kernel/claude_code/claude_path_setting.dart';
 import 'kernel/claude_code/process_transport.dart';
@@ -163,6 +164,9 @@ Future<void> main(List<String> arguments) async {
       AppBinding.ensureInitialized();
       DataDirectory.current = await recoverDataDirectory(resolution);
     }
+    // The agent home this app's alone, so its sessions are not the ones
+    // `~/.claude` shares with another program (ClaudeEnvironment).
+    ClaudeEnvironment.defaultDataPath = DataDirectory.current.claudeDataDir;
     // What goes wrong unseen from here on, kept for the user to send.
     errors = ErrorLog(DataDirectory.current.logsDir)..install();
     // And what the app went through, to read what led to it; how the run
