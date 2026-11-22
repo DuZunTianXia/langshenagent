@@ -15033,6 +15033,24 @@ abstract class AppLocalizations {
   /// **'A port from 1024 to 65535.'**
   String get mobileDirectPortInvalid;
 
+  /// No description provided for @mobileDirectDomain.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct Domain'**
+  String get mobileDirectDomain;
+
+  /// No description provided for @mobileDirectDomainDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'A domain name resolving to this computer (your DDNS, say). The phone looks it up fresh on every dial, so a moving IPv6 breaks nothing. Empty: IPs only.'**
+  String get mobileDirectDomainDescription;
+
+  /// No description provided for @mobileDirectDomainInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Not a valid domain: letters, digits, dots and dashes only.'**
+  String get mobileDirectDomainInvalid;
+
   /// No description provided for @mobileDirectAddress.
   ///
   /// In en, this message translates to:

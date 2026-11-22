@@ -1,7 +1,9 @@
 import 'package:bao_link/bao_link.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
+import '../codicons.dart';
 import 'md/md_theme.dart';
 
 /// The app's own widget kit — every input, button, card, sheet and toast
@@ -378,6 +380,7 @@ Future<LinkOption?> showBChoicePicker(
   required String title,
   required List<LinkOption> options,
   String? selected,
+  String? initialGroup,
   Widget? Function(String id)? iconOf,
   String Function(String label)? labelOf,
 }) => showModalBottomSheet<LinkOption>(
@@ -388,6 +391,7 @@ Future<LinkOption?> showBChoicePicker(
     title: title,
     options: options,
     selected: selected,
+    initialGroup: initialGroup,
     iconOf: iconOf,
     labelOf: labelOf,
   ),
@@ -398,6 +402,7 @@ class _ChoiceSheet extends StatefulWidget {
     required this.title,
     required this.options,
     this.selected,
+    this.initialGroup,
     this.iconOf,
     this.labelOf,
   });
@@ -405,6 +410,9 @@ class _ChoiceSheet extends StatefulWidget {
   final String title;
   final List<LinkOption> options;
   final String? selected;
+
+  /// Opens the sheet drilled into this group instead of the group list.
+  final String? initialGroup;
   final Widget? Function(String id)? iconOf;
   final String Function(String label)? labelOf;
 
@@ -426,7 +434,7 @@ class _ChoiceSheetState extends State<_ChoiceSheet> {
   @override
   void initState() {
     super.initState();
-    if (!_grouped) _group = '';
+    _group = _grouped ? widget.initialGroup : '';
   }
 
   @override
@@ -607,6 +615,190 @@ class _ChoiceSheetState extends State<_ChoiceSheet> {
   }
 }
 
+/// An action sheet in the app's look: each row a tinted icon box (or a
+/// custom [leadingOf] widget, or none when the tuple's icon is null), a
+/// label and an optional subtitle. Rows whose value is in [danger]
+/// render in the error tone; [selected] gets an accent check. Returns
+/// the tapped action's value.
+Future<T?> showBActions<T>(
+  BuildContext context, {
+  required List<(IconData? icon, String label, String? subtitle, T value)>
+  actions,
+  String? title,
+  T? selected,
+  Set<T> danger = const {},
+  Widget? Function(T value)? leadingOf,
+}) => showModalBottomSheet<T>(
+  context: context,
+  showDragHandle: true,
+  builder: (sheet) => SafeArea(
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (title != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            child: Text(
+              title,
+              style: TextStyle(fontSize: 12.5, color: AppColors.textMuted),
+            ),
+          ),
+        for (final (icon, label, subtitle, value) in actions)
+          InkWell(
+            onTap: () => Navigator.of(sheet).pop(value),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              child: Builder(
+                builder: (context) {
+                  final isDanger = danger.contains(value);
+                  final tint = isDanger
+                      ? Theme.of(context).colorScheme.error
+                      : AppColors.accent;
+                  final leading = leadingOf?.call(value);
+                  return Row(
+                    children: [
+                      if (leading != null) ...[
+                        leading,
+                        const SizedBox(width: 12),
+                      ] else if (icon != null) ...[
+                        Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: tint.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(icon, size: 20, color: tint),
+                        ),
+                        const SizedBox(width: 12),
+                      ],
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              label,
+                              style: TextStyle(
+                                fontSize: 15,
+                                color: isDanger
+                                    ? tint
+                                    : AppColors.textPrimary,
+                              ),
+                            ),
+                            if (subtitle != null) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                subtitle,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textMuted,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      if (selected == value)
+                        Icon(Icons.check, size: 18, color: AppColors.accent),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ),
+        const SizedBox(height: 8),
+      ],
+    ),
+  ),
+);
+
+/// A one-line input dialog in the app's look — rename-a-thing prompts.
+/// Returns the trimmed text, or null when cancelled or left empty.
+Future<String?> showBPrompt(
+  BuildContext context, {
+  required String title,
+  String? initial,
+  String? hint,
+  String confirm = '保存',
+  int lines = 1,
+}) async {
+  final controller = TextEditingController(text: initial);
+  final result = await showDialog<String>(
+    context: context,
+    builder: (context) => _BPromptDialog(
+      title: title,
+      controller: controller,
+      hint: hint,
+      confirm: confirm,
+      lines: lines,
+    ),
+  );
+  controller.dispose();
+  return result;
+}
+
+class _BPromptDialog extends StatefulWidget {
+  const _BPromptDialog({
+    required this.title,
+    required this.controller,
+    required this.confirm,
+    required this.lines,
+    this.hint,
+  });
+
+  final String title;
+  final TextEditingController controller;
+  final String? hint;
+  final String confirm;
+  final int lines;
+
+  @override
+  State<_BPromptDialog> createState() => _BPromptDialogState();
+}
+
+class _BPromptDialogState extends State<_BPromptDialog> {
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(() => setState(() {}));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final text = widget.controller.text.trim();
+    return AlertDialog(
+      backgroundColor: AppColors.surfaceRaised,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Text(widget.title, style: const TextStyle(fontSize: 16)),
+      content: TextField(
+        controller: widget.controller,
+        autofocus: true,
+        minLines: 1,
+        maxLines: widget.lines,
+        decoration: BTextField.decoration(hint: widget.hint),
+        onSubmitted: (_) {
+          if (text.isNotEmpty) Navigator.of(context).pop(text);
+        },
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text('取消', style: TextStyle(color: AppColors.textMuted)),
+        ),
+        BButton(
+          label: widget.confirm,
+          primary: true,
+          onPressed: text.isEmpty
+              ? null
+              : () => Navigator.of(context).pop(text),
+        ),
+      ],
+    );
+  }
+}
+
 /// A confirm dialog in the app's look: [danger] paints the action red.
 /// Returns whether confirmed.
 Future<bool> showBConfirm(
@@ -776,4 +968,347 @@ class BDropdown<T> extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The chat's input pill: a quiet +, the growing field, and a bare
+/// send or stop glyph that springs in when there is something to act
+/// on — send while [canSend], stop while [live].
+class BComposer extends StatelessWidget {
+  const BComposer({
+    super.key,
+    required this.controller,
+    this.hint = '发消息…',
+    this.live = false,
+    this.canSend = false,
+    this.onAttach,
+    this.onChanged,
+    this.onSend,
+    this.onStop,
+  });
+
+  final TextEditingController controller;
+  final String hint;
+  final bool live;
+  final bool canSend;
+  final VoidCallback? onAttach;
+  final VoidCallback? onChanged;
+  final VoidCallback? onSend;
+  final VoidCallback? onStop;
+
+  @override
+  Widget build(BuildContext context) {
+    final action = live
+        ? _ComposerGlyph(
+            icon: Codicons.debugStop,
+            color: Theme.of(context).colorScheme.error,
+            onPressed: onStop,
+          )
+        : canSend
+        ? _ComposerGlyph(
+            icon: Codicons.send,
+            color: AppColors.accent,
+            onPressed: onSend,
+          )
+        : const SizedBox.shrink();
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.bubbleFill,
+        borderRadius: BorderRadius.circular(25),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (onAttach != null)
+            _ComposerGlyph(
+              icon: Codicons.plus,
+              color: AppColors.textMuted,
+              onPressed: onAttach,
+            ),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              minLines: 1,
+              maxLines: 5,
+              textInputAction: TextInputAction.send,
+              cursorColor: AppColors.accent,
+              style: TextStyle(fontSize: 15, color: AppColors.text),
+              onChanged: (_) => onChanged?.call(),
+              onSubmitted: (_) {
+                if (canSend) onSend?.call();
+              },
+              decoration: InputDecoration(
+                hintText: hint,
+                hintStyle: TextStyle(color: AppColors.textFaint, fontSize: 15),
+                isDense: true,
+                filled: false,
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                focusedErrorBorder: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 10,
+                ),
+              ),
+            ),
+          ),
+          action,
+        ],
+      ),
+    );
+  }
+}
+
+/// A bare icon inside [BComposer] — no circle, no border, just the
+/// glyph in its color with a small ripple on tap.
+class _ComposerGlyph extends StatelessWidget {
+  const _ComposerGlyph({
+    required this.icon,
+    required this.color,
+    this.onPressed,
+  });
+
+  final IconData icon;
+  final Color color;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkResponse(
+      onTap: onPressed,
+      radius: 22,
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Icon(icon, size: 23, color: color),
+      ),
+    );
+  }
+}
+
+/// A file-type icon: the official / widely-used brand SVG for the
+/// file's language or format (Material Icon Theme set, bundled in
+/// `assets/file_icons/`), falling back to a generic file glyph.
+class BFileIcon extends StatelessWidget {
+  const BFileIcon({super.key, required this.name, this.size = 24});
+
+  final String name;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => SvgPicture.asset(
+    'assets/file_icons/${_icon(name)}.svg',
+    width: size,
+    height: size,
+  );
+
+  static String _icon(String path) {
+    final name = path.split('/').last.toLowerCase();
+    if (name.startsWith('docker') || name.startsWith('containerfile')) {
+      return 'docker';
+    }
+    if (name.startsWith('makefile') || name == 'gnumakefile') {
+      return 'makefile';
+    }
+    if (name.startsWith('cmakelists')) return 'cmake';
+    if (name.startsWith('jenkins')) return 'jenkins';
+    if (name.startsWith('gradle')) return 'gradle';
+    if (name.startsWith('.env')) return 'tune';
+    if (_names[name] case final icon?) return icon;
+    final dot = name.lastIndexOf('.');
+    final ext = dot < 0 ? '' : name.substring(dot + 1);
+    if (dot <= 0) {
+      if (_names[ext] case final icon?) return icon;
+    }
+    return _icons[ext] ?? 'file';
+  }
+
+  /// Whole filenames that carry their type.
+  static const _names = {
+    'license': 'license', 'licence': 'license', 'copying': 'license',
+    'notice': 'license', 'unlicense': 'unlicense',
+    'changelog': 'changelog', 'history': 'changelog',
+    'news': 'changelog', 'readme': 'readme',
+    'authors': 'authors', 'contributing': 'contributing',
+    'codeowners': 'codeowners', 'robots.txt': 'robots',
+    'gemfile': 'gemfile', 'gemfile.lock': 'ruby',
+    'rakefile': 'ruby', 'podfile': 'ruby', 'podfile.lock': 'ruby',
+    'brewfile': 'ruby', 'vagrantfile': 'vagrant',
+    'fastfile': 'fastlane', 'appfile': 'fastlane',
+    'guardfile': 'ruby', 'capfile': 'ruby', 'thorfile': 'ruby',
+    'meson.build': 'meson', 'sconstruct': 'scons',
+    'sconscript': 'scons', 'wscript': 'scons',
+    'build': 'bazel', 'build.bazel': 'bazel', 'workspace': 'bazel',
+    'workspace.bazel': 'bazel', 'buck': 'buck',
+    'go.mod': 'go-mod', 'go.sum': 'go-mod',
+    'pubspec.yaml': 'dart', 'pubspec.lock': 'dart',
+    'package-lock.json': 'npm', 'yarn.lock': 'yarn',
+    'pnpm-lock.yaml': 'pnpm', 'bun.lockb': 'bun', 'bun.lock': 'bun',
+    'deno.lock': 'deno', 'cargo.lock': 'rust', 'cargo.toml': 'rust',
+    'poetry.lock': 'python', 'pyproject.toml': 'python',
+    'composer.lock': 'php', 'composer.json': 'php',
+    'tsconfig.json': 'tsconfig', 'jsconfig.json': 'jsconfig',
+    'docker-compose.yml': 'docker', 'docker-compose.yaml': 'docker',
+    'compose.yml': 'docker', 'compose.yaml': 'docker',
+    'cmakelists.txt': 'cmake',
+    'ssh_config': 'key', 'sshd_config': 'key',
+    'vimrc': 'vim', 'gvimrc': 'vim',
+    'zshrc': 'console', 'bashrc': 'console', 'bash_profile': 'console',
+    'bash_login': 'console', 'profile': 'console', 'zprofile': 'console',
+    'zshenv': 'console', 'zlogin': 'console', 'shrc': 'console',
+    'kshrc': 'console', 'xinitrc': 'console', 'xsession': 'console',
+    'bash_aliases': 'console', 'envrc': 'console',
+    'gdbinit': 'console', 'lldbinit': 'console', 'inputrc': 'console',
+    'gitconfig': 'git', 'gitattributes': 'git', 'gitmodules': 'git',
+    'gitignore': 'git', 'gitignore_global': 'git',
+    'dockerignore': 'docker', 'npmignore': 'npm',
+    'prettierignore': 'prettier', 'eslintignore': 'eslint',
+    'editorconfig': 'editorconfig',
+    'condarc': 'yaml', 'clang-format': 'yaml', 'clang-tidy': 'yaml',
+    'yamllint': 'yaml', 'folder': 'folder',
+  };
+
+  /// Extension → bundled icon name.
+  static const _icons = {
+    'dart': 'dart',
+    'js': 'javascript', 'mjs': 'javascript', 'cjs': 'javascript',
+    'jsx': 'react', 'ts': 'typescript', 'mts': 'typescript',
+    'cts': 'typescript', 'tsx': 'react_ts',
+    'sol': 'solidity',
+    'html': 'html', 'htm': 'html', 'xhtml': 'html', 'shtml': 'html',
+    'mdoc': 'html', 'jsp': 'html', 'asp': 'html', 'aspx': 'html',
+    'css': 'css', 'wxss': 'css', 'pcss': 'css', 'postcss': 'postcss',
+    'scss': 'sass', 'sass': 'sass', 'styl': 'stylus', 'less': 'less',
+    'vue': 'vue', 'svelte': 'svelte', 'astro': 'astro',
+    'jinja': 'jinja', 'jinja2': 'jinja', 'j2': 'jinja',
+    'eta': 'html', 'njk': 'nunjucks', 'ejs': 'ejs', 'erb': 'ruby',
+    'hbs': 'handlebars', 'handlebars': 'handlebars',
+    'mustache': 'handlebars', 'twig': 'twig', 'liquid': 'liquid',
+    'xml': 'xml', 'wxml': 'xml', 'xsd': 'xml', 'dtd': 'xml',
+    'rss': 'xml', 'atom': 'xml', 'opml': 'xml', 'plist': 'xml',
+    'resx': 'xml', 'iml': 'xml', 'pbxproj': 'xml', 'ui': 'xml',
+    'storyboard': 'xml', 'xib': 'xml', 'entitlements': 'xml',
+    'xaml': 'xaml', 'wsf': 'xml', 'svg': 'svg',
+    'csproj': 'visualstudio', 'vbproj': 'visualstudio',
+    'fsproj': 'visualstudio', 'vcxproj': 'visualstudio',
+    'json': 'json', 'jsonc': 'json', 'json5': 'json', 'jsonl': 'json',
+    'ndjson': 'json', 'hjson': 'hjson', 'jsonnet': 'json',
+    'map': 'javascript-map', 'ipynb': 'jupyter', 'arb': 'i18n',
+    'tfstate': 'terraform', 'mcmeta': 'minecraft', 'har': 'json',
+    'geojson': 'json', 'jsonld': 'json', 'webmanifest': 'json',
+    'babelrc': 'babel', 'eslintrc': 'eslint', 'prettierrc': 'prettier',
+    'swcrc': 'swc', 'lintstagedrc': 'lintstaged', 'vuerc': 'vue-config',
+    'jscsrc': 'json', 'jslintrc': 'json', 'jshintrc': 'json',
+    'hintrc': 'webhint', 'bowerrc': 'bower', 'tsbuildinfo': 'tsconfig',
+    'yaml': 'yaml', 'yml': 'yaml', 'eyaml': 'yaml', 'eyml': 'yaml',
+    'cff': 'yaml', 'lock': 'lock',
+    'toml': 'toml', 'env': 'tune', 'cfg': 'settings', 'conf': 'settings',
+    'properties': 'settings', 'ini': 'settings',
+    'editorconfig': 'editorconfig',
+    'reg': 'regedit', 'url': 'url', 'desktop': 'settings',
+    'service': 'systemd', 'socket': 'systemd', 'timer': 'systemd',
+    'path': 'systemd', 'mount': 'systemd', 'automount': 'systemd',
+    'slice': 'systemd', 'scope': 'systemd', 'device': 'systemd',
+    'htaccess': 'settings', 'npmrc': 'npm', 'yarnrc': 'yarn',
+    'gitmodules': 'git', 'xcconfig': 'settings',
+    'gitignore': 'git', 'dockerignore': 'docker', 'npmignore': 'npm',
+    'prettierignore': 'prettier', 'eslintignore': 'eslint',
+    'nomad': 'hcl', 'cue': 'cue', 'tf': 'hcl', 'tfvars': 'hcl',
+    'hcl': 'hcl', 'bicep': 'bicep',
+    'py': 'python', 'pyw': 'python', 'pyi': 'python', 'pyx': 'python',
+    'vpy': 'python', 'nim': 'nim', 'star': 'bazel', 'bzl': 'bazel',
+    'starlark': 'bazel', 'gyp': 'python', 'gypi': 'python',
+    'java': 'java', 'jav': 'java', 'kt': 'kotlin', 'kts': 'kotlin',
+    'scala': 'scala', 'sc': 'scala', 'sbt': 'sbt',
+    'gradle': 'gradle', 'gvy': 'groovy', 'groovy': 'groovy',
+    'nf': 'nextflow',
+    'go': 'go', 'rs': 'rust', 'rlib': 'rust', 'move': 'rust',
+    'cairo': 'cairo',
+    'c': 'c', 'h': 'h', 'i': 'c',
+    'cpp': 'cpp', 'cc': 'cpp', 'cxx': 'cpp', 'cppm': 'cpp',
+    'hpp': 'hpp', 'hh': 'hpp', 'hxx': 'hpp', 'inl': 'hpp',
+    'cu': 'cuda', 'cuh': 'cuda', 'ino': 'arduino', 'metal': 'cpp',
+    'd': 'd', 'di': 'd',
+    'glsl': 'shader', 'vert': 'shader', 'frag': 'shader',
+    'geom': 'shader', 'comp': 'shader', 'cg': 'shader',
+    'cginc': 'shader', 'shader': 'shader', 'fx': 'shader',
+    'fxh': 'shader', 'hlsl': 'shader', 'hlsli': 'shader',
+    'compute': 'shader', 'vsh': 'shader', 'psh': 'shader',
+    'wgsl': 'shader',
+    'cs': 'csharp', 'csx': 'csharp', 'cake': 'cake',
+    'vala': 'vala', 'pas': 'pascal', 'p': 'pascal', 'pp': 'pascal',
+    'fs': 'fsharp', 'fsi': 'fsharp', 'fsx': 'fsharp',
+    'fsscript': 'fsharp',
+    'hs': 'haskell', 'elm': 'elm', 'ml': 'ocaml', 'mli': 'ocaml',
+    'rb': 'ruby', 'rbx': 'ruby', 'rjs': 'ruby', 'gemspec': 'ruby',
+    'rake': 'ruby', 'ru': 'ruby', 'podspec': 'ruby', 'rbi': 'ruby',
+    'cr': 'crystal',
+    'php': 'php', 'php4': 'php', 'php5': 'php', 'phtml': 'php',
+    'ctp': 'php', 'hack': 'hack',
+    'lua': 'lua', 'luau': 'luau', 'fnl': 'lua', 'wlua': 'lua',
+    'swift': 'swift', 'm': 'objective-c', 'mm': 'objective-cpp',
+    'r': 'r', 'rhistory': 'r', 'rprofile': 'r', 'rt': 'r', 'rmd': 'r',
+    'jl': 'julia', 'jmd': 'julia',
+    'ex': 'elixir', 'exs': 'elixir', 'erl': 'erlang', 'hrl': 'erlang',
+    'pl': 'perl', 'pm': 'perl', 'pod': 'perl', 't': 'perl',
+    'awk': 'console', 'tcl': 'tcl',
+    'clj': 'clojure', 'cljs': 'clojure', 'cljc': 'clojure',
+    'edn': 'clojure', 'cljx': 'clojure',
+    'scm': 'scheme', 'ss': 'scheme', 'lisp': 'lisp', 'lsp': 'lisp',
+    'el': 'lisp', 'sld': 'scheme', 'rkt': 'racket',
+    'coffee': 'coffee', 'asm': 'assembly', 's': 'assembly',
+    'proto': 'proto', 'thrift': 'proto', 'capnp': 'capnp',
+    'graphql': 'graphql', 'gql': 'graphql',
+    'nix': 'nix', 'zig': 'zig', 'v': 'verilog', 'vh': 'verilog',
+    'sv': 'verilog', 'svh': 'verilog', 'vlang': 'vlang',
+    'sh': 'console', 'bash': 'console', 'zsh': 'console',
+    'fish': 'console', 'csh': 'console', 'ksh': 'console',
+    'ash': 'console', 'envrc': 'console', 'shrc': 'console',
+    'kshrc': 'console', 'xinitrc': 'console',
+    'ps1': 'powershell', 'psm1': 'powershell', 'psd1': 'powershell',
+    'ps1xml': 'powershell',
+    'bat': 'command', 'cmd': 'command', 'btm': 'command',
+    'mk': 'makefile', 'mak': 'makefile', 'am': 'makefile',
+    'cmake': 'cmake',
+    'sql': 'database', 'psql': 'database', 'pgsql': 'database',
+    'plsql': 'database', 'mysql': 'database', 'hql': 'database',
+    'db': 'database', 'sqlite': 'database', 'sqlite3': 'database',
+    'md': 'markdown', 'markdown': 'markdown', 'mkd': 'markdown',
+    'mdown': 'markdown', 'mdx': 'mdx', 'adoc': 'asciidoc',
+    'asciidoc': 'asciidoc', 'org': 'markdown', 'wiki': 'markdown',
+    'rst': 'markdown',
+    'tex': 'tex', 'sty': 'tex', 'cls': 'tex', 'bib': 'bibliography',
+    'diff': 'diff', 'patch': 'diff', 'rej': 'diff',
+    'png': 'image', 'jpg': 'image', 'jpeg': 'image', 'gif': 'image',
+    'webp': 'image', 'bmp': 'image', 'ico': 'image', 'heic': 'image',
+    'heif': 'image', 'avif': 'image', 'tiff': 'image', 'tif': 'image',
+    'mp4': 'video', 'mov': 'video', 'mkv': 'video', 'avi': 'video',
+    'webm': 'video', 'flv': 'video', 'wmv': 'video', 'm4v': 'video',
+    'mp3': 'audio', 'wav': 'audio', 'ogg': 'audio', 'flac': 'audio',
+    'm4a': 'audio', 'aac': 'audio', 'opus': 'audio',
+    'zip': 'zip', 'tar': 'zip', 'gz': 'zip', 'tgz': 'zip',
+    'bz2': 'zip', 'xz': 'zip', 'rar': 'zip', '7z': 'zip',
+    'jar': 'jar', 'war': 'jar', 'aar': 'jar',
+    'pdf': 'pdf',
+    'doc': 'word', 'docx': 'word', 'pages': 'word', 'rtf': 'word',
+    'odt': 'word',
+    'xls': 'table', 'xlsx': 'table', 'numbers': 'table',
+    'ods': 'table', 'csv': 'table', 'tsv': 'table',
+    'ppt': 'powerpoint', 'pptx': 'powerpoint', 'odp': 'powerpoint',
+    'exe': 'exe', 'msi': 'exe', 'dmg': 'exe', 'pkg': 'exe',
+    'app': 'exe', 'bin': 'exe', 'deb': 'exe', 'rpm': 'exe',
+    'ipa': 'exe', 'apk': 'android', 'aab': 'android',
+    'so': 'dll', 'dll': 'dll', 'dylib': 'dll', 'wasm': 'webassembly',
+    'ttf': 'font', 'otf': 'font', 'woff': 'font', 'woff2': 'font',
+    'eot': 'font',
+    'key': 'key', 'pem': 'key', 'p12': 'key', 'pfx': 'key',
+    'pub': 'key', 'asc': 'key', 'gpg': 'key',
+    'crt': 'certificate', 'cer': 'certificate', 'der': 'certificate',
+    'sig': 'certificate',
+    'sketch': 'sketch', 'fig': 'figma', 'xd': 'palette',
+    'psd': 'adobe-photoshop', 'ai': 'adobe-illustrator',
+    'log': 'log', 'txt': 'document', 'out': 'document',
+  };
 }

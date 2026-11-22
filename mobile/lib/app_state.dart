@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'chat/edit_detail.dart';
 import 'chat/user_message_style.dart';
 import 'link/phone_link.dart';
 import 'link/link_store.dart';
@@ -97,6 +98,10 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
           prefs.getString('userMessageStyle') == 'bubble'
           ? UserMessageStyle.bubble
           : UserMessageStyle.sticky;
+      EditDetail.current.value =
+          prefs.getString('editDetail') == 'card'
+          ? EditDetail.card
+          : EditDetail.compact;
       final info = DeviceInfoPlugin();
       if (Platform.isAndroid) {
         final android = await info.androidInfo;
@@ -232,6 +237,13 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
     UserMessageStyle.current.value = style;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('userMessageStyle', style.name);
+  }
+
+  /// Settings → 编辑详情样式.
+  Future<void> setEditDetail(EditDetail detail) async {
+    EditDetail.current.value = detail;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('editDetail', detail.name);
   }
 
   /// Unpairs the computer: forgotten here, and unpaired on it.

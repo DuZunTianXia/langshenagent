@@ -78,37 +78,19 @@ class _ProjectTile extends StatelessWidget {
   }
 
   Future<void> _menu(BuildContext context) async {
-    final action = await showModalBottomSheet<String>(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.chat_bubble_outline),
-              title: const Text('新建对话'),
-              onTap: () => Navigator.of(context).pop('chat'),
-            ),
-            ListTile(
-              leading: Icon(
-                project.pinned == true
-                    ? Icons.push_pin_outlined
-                    : Icons.push_pin,
-              ),
-              title: Text(
-                project.pinned == true ? '取消置顶项目' : '置顶项目',
-              ),
-              onTap: () =>
-                  Navigator.of(context).pop(project.pinned == true ? 'unpin' : 'pin'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.visibility_off_outlined),
-              title: const Text('隐藏项目'),
-              onTap: () => Navigator.of(context).pop('hide'),
-            ),
-          ],
+    final pinned = project.pinned == true;
+    final action = await showBActions<String>(
+      context,
+      actions: [
+        (Icons.chat_bubble_outline, '新建对话', null, 'chat'),
+        (
+          pinned ? Icons.push_pin_outlined : Icons.push_pin,
+          pinned ? '取消置顶项目' : '置顶项目',
+          null,
+          pinned ? 'unpin' : 'pin',
         ),
-      ),
+        (Icons.visibility_off_outlined, '隐藏项目', null, 'hide'),
+      ],
     );
     if (!context.mounted || action == null) return;
     try {
@@ -323,14 +305,14 @@ class FolderPageState extends State<FolderPage> {
                   for (final name in folders)
                     ListTile(
                       dense: true,
-                      leading: const Icon(Icons.folder_outlined),
+                      leading: const BFileIcon(name: 'folder', size: 26),
                       title: Text(name),
                       onTap: () => _openFolder(name),
                     ),
                   for (final name in files)
                     ListTile(
                       dense: true,
-                      leading: Icon(_fileIcon(name)),
+                      leading: BFileIcon(name: name, size: 26),
                       title: Text(name),
                       onTap: () => _openFile(name),
                     ),
@@ -341,23 +323,6 @@ class FolderPageState extends State<FolderPage> {
   }
 
   static String _base(String path) => path.split('/').last;
-
-  static IconData _fileIcon(String name) {
-    final dot = name.lastIndexOf('.');
-    final ext = dot < 0 ? '' : name.substring(dot + 1).toLowerCase();
-    return switch (ext) {
-      'png' || 'jpg' || 'jpeg' || 'gif' || 'webp' || 'svg' || 'bmp' =>
-        Icons.image_outlined,
-      'md' || 'markdown' || 'txt' || 'log' => Icons.article_outlined,
-      'json' || 'yaml' || 'yml' || 'toml' || 'xml' || 'plist' =>
-        Icons.data_object_outlined,
-      'dart' || 'kt' || 'java' || 'swift' || 'py' || 'js' || 'ts' || 'tsx' ||
-      'jsx' || 'rs' || 'go' || 'c' || 'h' || 'cpp' || 'hpp' || 'cs' ||
-      'rb' || 'php' || 'sh' || 'zsh' || 'bash' || 'lua' =>
-        Icons.code_outlined,
-      _ => Icons.insert_drive_file_outlined,
-    };
-  }
 }
 
 /// Opens [path] of [project] the right way: a picture as an image, a text

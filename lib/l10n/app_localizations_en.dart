@@ -9323,6 +9323,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mobileDirectPortInvalid => 'A port from 1024 to 65535.';
 
   @override
+  String get mobileDirectDomain => 'Direct Domain';
+
+  @override
+  String get mobileDirectDomainDescription =>
+      'A domain name resolving to this computer (your DDNS, say). The phone looks it up fresh on every dial, so a moving IPv6 breaks nothing. Empty: IPs only.';
+
+  @override
+  String get mobileDirectDomainInvalid =>
+      'Not a valid domain: letters, digits, dots and dashes only.';
+
+  @override
   String get mobileDirectAddress => 'Direct Address';
 
   @override

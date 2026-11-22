@@ -2,9 +2,7 @@ import 'dart:convert';
 
 import 'package:bao_link/bao_link.dart';
 import 'package:bao_editor/monaco/flutter/editor_document_model.dart';
-import 'package:bao_editor/monaco/flutter/editor_surface.dart';
 import 'package:bao_editor/monaco/flutter/editor_surface_controller.dart';
-import 'package:bao_editor/monaco/flutter/editor_view_theme.dart';
 import 'package:bao_editor/monaco/flutter/monaco_syntax.dart';
 import 'package:bao_editor/monaco/flutter/theme_assets.dart';
 import 'package:bao_editor/monaco/vs/editor/common/diff/default_lines_diff_computer/default_lines_diff_computer.dart';
@@ -115,17 +113,36 @@ class _FileViewerState extends State<FileViewer> {
   TokenizedDocument? _tokenized;
   int _tokenizeRequest = 0;
 
+  /// The text [_styledLines] was painted for; editing makes it stale,
+  /// and stale spans would show the old text in the field.
+  String? _styledText;
+  Timer? _retokenizeTimer;
+  final _editScroll = ScrollController();
+  final _gutterScroll = ScrollController();
+
   String get _name => widget.path.split('/').last;
 
   @override
   void initState() {
     super.initState();
+    _editScroll.addListener(_syncGutter);
     _load();
+  }
+
+  /// The editor's own scroll drives its line-number gutter.
+  void _syncGutter() {
+    if (_gutterScroll.hasClients) {
+      _gutterScroll.jumpTo(_editScroll.offset);
+    }
   }
 
   @override
   void dispose() {
     _controller?.dispose();
+    _editText?.dispose();
+    _retokenizeTimer?.cancel();
+    _editScroll.dispose();
+    _gutterScroll.dispose();
     super.dispose();
   }
 
@@ -157,10 +174,25 @@ class _FileViewerState extends State<FileViewer> {
     if (text is! String) return;
     _controller?.dispose();
     _editText?.dispose();
-    _editText = null;
+    _editText = _HighlightingController(
+      text: text,
+      styledFor: () =>
+          _styledText == _editText?.text ? _styledLines : null,
+    )..addListener(_scheduleRetokenize);
     final document = EditorDocumentModel(text);
     _controller = EditorSurfaceController(document: document);
     _tokenize(document, widget.path);
+  }
+
+  /// Retokenize a moment after the last edit so the editor's
+  /// highlighting follows typing without tokenizing per keystroke.
+  void _scheduleRetokenize() {
+    _retokenizeTimer?.cancel();
+    _retokenizeTimer = Timer(const Duration(milliseconds: 200), () {
+      final text = _editText?.text;
+      if (!mounted || text == null || text == _styledText) return;
+      _tokenize(EditorDocumentModel(text), widget.path);
+    });
   }
 
   Future<MonacoBuiltinTheme> _loadTheme() {
@@ -170,55 +202,150 @@ class _FileViewerState extends State<FileViewer> {
 
   /// Monarch highlighting for the file's language, reusing the last
   /// tokenization of the same document where it still fits.
-  /// Extensions with no language registration mapped to the nearest
-  /// bundled grammar's.
+  /// Extensions and names with no registration of their own fall back to
+  /// the nearest bundled grammar's extension ([_extensionAlias]).
   static const _extAliases = {
-    'vue': 'html', 'svelte': 'html', 'astro': 'html', 'wxml': 'xml',
-    'svg': 'xml', 'xaml': 'xml', 'csproj': 'xml', 'plist': 'xml',
-    'iml': 'xml', 'ui': 'xml',
-    'jsonc': 'json', 'ipynb': 'json', 'map': 'json',
-    'toml': 'ini', 'env': 'ini', 'cfg': 'ini', 'properties': 'ini',
-    'editorconfig': 'ini', 'conf': 'ini',
-    'lock': 'yaml',
-    'jsx': 'js', 'mjs': 'js', 'cjs': 'js',
-    'tsx': 'ts', 'mts': 'ts', 'cts': 'ts',
-    'kts': 'kt', 'gradle': 'groovy',
-    'mm': 'm', 'hxx': 'cpp', 'hh': 'cpp', 'cc': 'cpp', 'cxx': 'cpp',
-    'zsh': 'sh', 'bash': 'sh', 'fish': 'sh',
-    'pyi': 'py', 'pyw': 'py',
-    'mk': 'makefile', 'mak': 'makefile',
-    'patch': 'diff', 'diff': 'diff',
+    // No bundled JSON grammar: JavaScript's object-literal tokens are
+    // the closest fit (strings, numbers, true/false/null, comments).
+    'json': 'js', 'jsonc': 'js', 'json5': 'js', 'jsonl': 'js',
+    'ndjson': 'js', 'hjson': 'js', 'jsonnet': 'js', 'map': 'js',
+    'ipynb': 'js', 'arb': 'js', 'tfstate': 'js', 'mcmeta': 'js',
+    'tsbuildinfo': 'js', 'webmanifest': 'js', 'har': 'js',
+    'geojson': 'js', 'jsonld': 'js', 'bowerrc': 'js', 'jscsrc': 'js',
+    'jslintrc': 'js', 'jshintrc': 'js', 'hintrc': 'js', 'babelrc': 'js',
+    'eslintrc': 'js', 'prettierrc': 'js', 'swcrc': 'js',
+    'lintstagedrc': 'js', 'vuerc': 'js', 'qml': 'js',
+    // Config formats.
+    'toml': 'ini', 'env': 'ini', 'cfg': 'ini', 'conf': 'ini',
+    'properties': 'ini', 'editorconfig': 'ini', 'reg': 'ini',
+    'url': 'ini', 'desktop': 'ini', 'service': 'ini', 'socket': 'ini',
+    'timer': 'ini', 'path': 'ini', 'mount': 'ini', 'automount': 'ini',
+    'slice': 'ini', 'scope': 'ini', 'device': 'ini', 'htaccess': 'ini',
+    'npmrc': 'ini', 'yarnrc': 'ini', 'gitmodules': 'ini',
+    'xcconfig': 'ini', 'gitignore': 'ini', 'dockerignore': 'ini',
+    'npmignore': 'ini', 'prettierignore': 'ini', 'eslintignore': 'ini',
+    'nomad': 'tf', 'cue': 'tf', 'tfbackend': 'tf',
+    'lock': 'yaml', 'condarc': 'yaml',
+    // Languages without a bundled grammar.
+    'hs': 'fs', 'elm': 'fs',
+    'cr': 'rb',
+    'erl': 'pl', 'hrl': 'pl', 'awk': 'pl',
+    'nim': 'py', 'vpy': 'py', 'pyx': 'py', 'pyi': 'py',
+    'star': 'py', 'bzl': 'py', 'starlark': 'py',
+    'thrift': 'proto', 'capnp': 'proto',
+    'move': 'rs', 'cairo': 'rs',
+    'nix': 'yaml',
+    'hack': 'php',
+    'luau': 'lua', 'fnl': 'lua', 'wlua': 'lua',
+    'lisp': 'scm', 'lsp': 'scm', 'el': 'scm', 'sld': 'scm',
+    'd': 'cpp', 'metal': 'cpp', 'ino': 'cpp', 'cu': 'cpp', 'cuh': 'cpp',
+    'mm': 'm',
+    'glsl': 'cpp', 'vert': 'cpp', 'frag': 'cpp', 'geom': 'cpp',
+    'comp': 'cpp', 'cg': 'cpp', 'cginc': 'cpp', 'shader': 'cpp',
+    'fx': 'cpp', 'fxh': 'cpp', 'hlsl': 'cpp', 'hlsli': 'cpp',
+    'compute': 'cpp', 'vsh': 'cpp', 'psh': 'cpp',
+    'vala': 'cs',
+    'gradle': 'java', 'gvy': 'java', 'nf': 'java',
+    // Markup and templates.
+    'vue': 'html', 'svelte': 'html', 'astro': 'html',
+    'jinja': 'html', 'jinja2': 'html', 'j2': 'html', 'eta': 'html',
+    'njk': 'html', 'ejs': 'html', 'erb': 'html',
+    'mustache': 'handlebars',
+    'wxml': 'xml', 'wxss': 'css', 'ui': 'xml', 'resx': 'xml',
+    'plist': 'xml', 'storyboard': 'xml', 'xib': 'xml',
+    'entitlements': 'xml', 'pbxproj': 'xml', 'vbproj': 'xml',
+    'fsproj': 'xml', 'iml': 'xml', 'rss': 'xml', 'atom': 'xml',
+    'opml': 'xml', 'wsf': 'xml',
+    // Shells and scripting.
+    'zsh': 'sh', 'fish': 'sh', 'csh': 'sh', 'ksh': 'sh', 'ash': 'sh',
+    'shrc': 'sh', 'kshrc': 'sh', 'xinitrc': 'sh', 'envrc': 'sh',
+    'ps1xml': 'ps1', 'btm': 'bat',
+    'mk': 'sh', 'mak': 'sh', 'am': 'sh', 'cmake': 'sh',
+    // Docs and styles.
+    'adoc': 'md', 'asciidoc': 'md', 'org': 'md', 'wiki': 'md',
+    'styl': 'scss', 'sass': 'scss', 'postcss': 'css', 'pcss': 'css',
+    'lessc': 'less',
+    'psql': 'sql', 'pgsql': 'sql', 'plsql': 'sql', 'hql': 'sql',
   };
 
+  /// Dotfiles and extensionless names whose language comes from the
+  /// name itself, not the extension.
+  static const _nameAliases = {
+    'podfile': 'rb', 'brewfile': 'rb', 'vagrantfile': 'rb',
+    'fastfile': 'rb', 'appfile': 'rb', 'guardfile': 'rb',
+    'capfile': 'rb', 'thorfile': 'rb',
+    'jenkinsfile': 'java',
+    'cmakelists.txt': 'sh', 'cmakelists': 'sh',
+    'meson.build': 'py', 'sconstruct': 'py', 'sconscript': 'py',
+    'wscript': 'py', 'build': 'py', 'build.bazel': 'py',
+    'workspace': 'py', 'workspace.bazel': 'py', 'buck': 'py',
+    'gradlew': 'sh',
+    'zshrc': 'sh', 'bashrc': 'sh', 'bash_profile': 'sh',
+    'bash_login': 'sh', 'profile': 'sh', 'zprofile': 'sh',
+    'zshenv': 'sh', 'zlogin': 'sh', 'shrc': 'sh', 'kshrc': 'sh',
+    'xinitrc': 'sh', 'xsession': 'sh', 'bash_aliases': 'sh',
+    'vimrc': 'ini', 'gvimrc': 'ini',
+    'gitmodules': 'ini', 'sshd_config': 'ini', 'ssh_config': 'ini',
+    'gdbinit': 'ini', 'lldbinit': 'ini', 'inputrc': 'ini',
+    'condarc': 'yaml', 'clang-format': 'yaml', 'clang-tidy': 'yaml',
+    'yamllint': 'yaml',
+    'composer.lock': 'js', 'podfile.lock': 'yaml',
+    'license': 'md', 'copying': 'md', 'notice': 'md',
+    'changelog': 'md', 'history': 'md', 'news': 'md',
+  };
+
+  /// The bundled grammar's extension [path] falls back to: null when
+  /// its own (or no) extension resolves — the bundled names checked
+  /// here, then the alias map above.
   static String? _extensionAlias(String path) {
-    final dot = path.lastIndexOf('.');
-    if (dot < 0) {
-      final name = path.split('/').last.toLowerCase();
-      return switch (name) {
-        'makefile' || 'gnumakefile' => 'mk',
-        'podfile' || 'gemfile' || 'rakefile' => 'rb',
-        'dockerfile' => 'dockerfile',
-        _ => null,
-      };
+    final name = path.split('/').last.toLowerCase();
+    if (name.startsWith('dockerfile') || name.startsWith('containerfile')) {
+      return 'dockerfile';
     }
-    return _extAliases[path.substring(dot + 1).toLowerCase()];
+    if (name.startsWith('.env')) return 'ini';
+    if (name.startsWith('makefile') || name == 'gnumakefile') {
+      return 'sh';
+    }
+    final named = _nameAliases[name];
+    if (named != null) return named;
+    final dot = name.lastIndexOf('.');
+    if (dot <= 0) {
+      // No extension, or a dotfile like ".zshrc": try the name after
+      // the leading dot as both a name and an extension (".env").
+      final bare = dot == 0 ? name.substring(1) : name;
+      return _nameAliases[bare] ?? _extAliases[bare];
+    }
+    return _extAliases[name.substring(dot + 1)];
   }
 
   Future<void> _tokenize(EditorDocumentModel document, String path) async {
     final request = ++_tokenizeRequest;
     try {
       final theme = await _theme;
-      final tokenized = await _syntax.tokenizeFileIncremental(
+      var tokenized = await _syntax.tokenizeFileIncremental(
         document.snapshot,
         path,
         previous: _tokenized,
       );
+      // The extension registered no language: the nearest bundled
+      // grammar's extension may ("main.kts" → "main.kts.java").
+      if (tokenized == null) {
+        final alias = _extensionAlias(path);
+        if (alias != null) {
+          tokenized = await _syntax.tokenizeFileIncremental(
+            document.snapshot,
+            '$path.$alias',
+          );
+        }
+      }
       if (!mounted || request != _tokenizeRequest || tokenized == null) return;
+      final result = tokenized;
       setState(() {
-        _tokenized = tokenized;
+        _tokenized = result;
+        _styledText = document.text;
         _styledLines = _syntax.styledLines(
           document.snapshot,
-          tokenized.lines,
+          result.lines,
           theme.styleForToken,
         );
       });
@@ -233,7 +360,19 @@ class _FileViewerState extends State<FileViewer> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text(_name, maxLines: 1, overflow: TextOverflow.ellipsis),
+        title: Row(
+          children: [
+            BFileIcon(name: _name, size: 22),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                _name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(38),
           child: Padding(
@@ -356,60 +495,110 @@ class _FileViewerState extends State<FileViewer> {
     }
     // The desktop editor's gestures are mouse-shaped (drag = selection);
     // on a phone a plain field scrolls and selects like users expect.
+    final body = TextStyle(
+      fontFamily: 'monospace',
+      fontSize: 13,
+      height: 1.5,
+      color: theme.colorScheme.onSurface,
+    );
     if (!_editing) {
       // No wrap: one source line stays one line, scrolled sideways,
       // with the syntax colors the tokenizer already painted.
       final lines = controller.document.text.split('\n');
       final styled = _styledLines;
-      final body = TextStyle(
-        fontFamily: 'monospace',
-        fontSize: 13,
-        height: 1.5,
-        color: theme.colorScheme.onSurface,
+      final gutter = _Gutter(
+        lines: lines.length,
+        style: body.copyWith(color: AppColors.textFaint),
       );
-      return SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: SelectableText.rich(
-            TextSpan(
-              children: [
-                for (var i = 0; i < lines.length; i++) ...[
-                  if (styled?[i] != null)
-                    TextSpan(children: styled![i])
-                  else
-                    TextSpan(text: lines[i]),
-                  if (i < lines.length - 1) const TextSpan(text: '\n'),
-                ],
-              ],
-            ),
-            style: body,
+      // Scrollable everywhere, even when the file is short: the text
+      // spans at least the viewport so empty space still drags both
+      // axes instead of dead space under and right of the lines.
+      return LayoutBuilder(
+        builder: (context, viewport) => SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              gutter,
+              const SizedBox(width: 12),
+              Expanded(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minWidth:
+                          viewport.maxWidth - 48 - gutter.width,
+                      minHeight: viewport.maxHeight - 16,
+                    ),
+                    child: SelectableText.rich(
+                      TextSpan(
+                        children: [
+                          for (var i = 0; i < lines.length; i++) ...[
+                            // The styled map is keyed 1-based.
+                            if (styled?[i + 1] != null)
+                              TextSpan(children: styled![i + 1])
+                            else
+                              TextSpan(text: lines[i]),
+                            if (i < lines.length - 1)
+                              const TextSpan(text: '\n'),
+                          ],
+                        ],
+                      ),
+                      style: body,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       );
     }
-    _editText ??= TextEditingController(
-      text: controller.document.text,
-    );
+    final editText = _editText;
+    if (editText == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-      child: TextField(
-        controller: _editText,
-        readOnly: !_editing,
-        expands: true,
-        maxLines: null,
-        minLines: null,
-        textAlignVertical: TextAlignVertical.top,
-        style: TextStyle(
-          fontFamily: 'monospace',
-          fontSize: 13,
-          height: 1.5,
-          color: theme.colorScheme.onSurface,
-        ),
-        decoration: const InputDecoration(
-          border: InputBorder.none,
-          isCollapsed: true,
-        ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SingleChildScrollView(
+            controller: _gutterScroll,
+            physics: const NeverScrollableScrollPhysics(),
+            child: ValueListenableBuilder(
+              valueListenable: editText,
+              builder: (context, value, _) => _Gutter(
+                lines: value.text.split('\n').length,
+                style: body.copyWith(color: AppColors.textFaint),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: TextField(
+              controller: editText,
+              scrollController: _editScroll,
+              expands: true,
+              maxLines: null,
+              minLines: null,
+              textAlignVertical: TextAlignVertical.top,
+              style: body,
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                focusedErrorBorder: InputBorder.none,
+                isCollapsed: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -455,13 +644,7 @@ class _FileViewerState extends State<FileViewer> {
       }
       if (!mounted) return;
       // Saved where the user picks; nothing leaves the phone otherwise.
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '已下载（${_size(base64Decode(data).length)}）'
-          ),
-        ),
-      );
+      showBToast(context, '已下载（${_size(base64Decode(data).length)}）');
     } on Object catch (failure) {
       if (mounted) {
         showBToast(context, '$failure');
@@ -617,6 +800,63 @@ class _DiffViewState extends State<_DiffView> {
     return ListView.builder(
       itemCount: rows.length,
       itemBuilder: (context, index) => rows[index],
+    );
+  }
+}
+
+/// A line-number column in the code font's metrics; [width] is what the
+/// caller leaves for it beside the text.
+class _Gutter extends StatelessWidget {
+  const _Gutter({required this.lines, required this.style});
+
+  final int lines;
+  final TextStyle style;
+
+  double get width => lines.toString().length * 8 + 4;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: width,
+    child: Text(
+      [for (var i = 1; i <= lines; i++) '$i'].join('\n'),
+      style: style,
+      textAlign: TextAlign.right,
+    ),
+  );
+}
+
+/// A [TextEditingController] painting the file's Monaco-styled spans.
+/// [styledFor] returns null while the painted lines no longer match the
+/// text — stale spans carry their own text and would resurrect the
+/// pre-edit content.
+class _HighlightingController extends TextEditingController {
+  _HighlightingController({super.text, required this.styledFor});
+
+  final Map<int, List<TextSpan>>? Function() styledFor;
+
+  @override
+  TextSpan buildTextSpan({
+    required BuildContext context,
+    TextStyle? style,
+    required bool withComposing,
+  }) {
+    final styled = styledFor();
+    if (styled == null) {
+      return TextSpan(style: style, text: text);
+    }
+    final lines = text.split('\n');
+    return TextSpan(
+      style: style,
+      children: [
+        for (var i = 0; i < lines.length; i++) ...[
+          // The styled map is keyed 1-based.
+          if (styled[i + 1] case final spans?)
+            TextSpan(children: spans)
+          else
+            TextSpan(text: lines[i]),
+          if (i < lines.length - 1) const TextSpan(text: '\n'),
+        ],
+      ],
     );
   }
 }

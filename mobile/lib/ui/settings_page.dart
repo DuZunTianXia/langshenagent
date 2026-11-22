@@ -3,11 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../chat/edit_detail.dart';
 import '../chat/user_message_style.dart';
+import '../link/link_store.dart';
 import '../link/phone_link.dart';
 import '../main.dart';
 import 'bot_edit_page.dart';
 import 'md/md_theme.dart';
+import 'profile_edit_page.dart';
 import 'providers_page.dart';
 import 'update_dialog.dart';
 import 'widgets.dart';
@@ -25,9 +28,8 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  final _name = TextEditingController();
-  final _signature = TextEditingController();
-  String _gender = '';
+  String _meName = '';
+  String _meSignature = '';
   String _version = '';
 
   @override
@@ -43,56 +45,60 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
-    final name = prefs.getString('phoneName');
     if (mounted) {
       setState(() {
-        if (name != null && name.isNotEmpty) _name.text = name;
-        _signature.text = prefs.getString('meSignature') ?? '';
-        _gender = prefs.getString('meGender') ?? '';
+        _meName = prefs.getString('phoneName') ?? '';
+        _meSignature = prefs.getString('meSignature') ?? '';
       });
     }
   }
 
-  Future<void> _saveProfile() async {
-    final name = _name.text.trim();
-    await AppScope.of(context).setMeProfile(
-      name: name,
-      gender: _gender,
-      signature: _signature.text.trim(),
+  Future<void> _editProfile() async {
+    final saved = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => const ProfileEditPage()),
     );
-    if (mounted) showBToast(context, '已保存');
-  }
-
-  Future<void> _pickMessageStyle(BuildContext context) async {
-    final picked = await showModalBottomSheet<UserMessageStyle>(
-      context: context,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final entry in const [
-              (UserMessageStyle.sticky, '整宽滚动吸顶', '整宽显示，滚动时当前这轮的消息停在顶部'),
-              (UserMessageStyle.bubble, '靠右气泡', '像聊天一样靠右显示为气泡，随内容滚走'),
-            ])
-              ListTile(
-                title: Text(entry.$2),
-                subtitle: Text(entry.$3),
-                onTap: () => Navigator.of(sheetContext).pop(entry.$1),
-              ),
-          ],
-        ),
-      ),
-    );
-    if (picked != null) {
-      await AppScope.of(context).setUserMessageStyle(picked);
+    if (saved == true) {
+      _load();
+      if (mounted) showBToast(context, '已保存');
     }
   }
 
-  @override
-  void dispose() {
-    _name.dispose();
-    _signature.dispose();
-    super.dispose();
+  Future<void> _pickMessageStyle() async {
+    final picked = await showBActions<UserMessageStyle>(
+      context,
+      actions: const [
+        (null, '整宽滚动吸顶', '整宽显示，滚动时当前这轮的消息停在顶部', UserMessageStyle.sticky),
+        (null, '靠右气泡', '像聊天一样靠右显示为气泡，随内容滚走', UserMessageStyle.bubble),
+      ],
+    );
+    if (picked == null || !mounted) return;
+    await AppScope.of(context).setUserMessageStyle(picked);
+  }
+
+  Future<void> _pickEditDetail() async {
+    final picked = await showBActions<EditDetail>(
+      context,
+      actions: const [
+        (null, '紧凑一行', '每个文件编辑收成一行，点开看差异', EditDetail.compact),
+        (null, '完整卡片', '文件编辑直接展开为差异卡片', EditDetail.card),
+      ],
+    );
+    if (picked == null || !mounted) return;
+    await AppScope.of(context).setEditDetail(picked);
+  }
+
+  Future<void> _unpair(BuildContext context, PairedComputer computer) async {
+    final state = AppScope.of(context);
+    final name = computer.name.isEmpty ? '这台电脑' : computer.name;
+    if (await showBConfirm(
+      context,
+      title: '取消配对？',
+      body: '此手机将忘记$name，电脑上的配对记录也会一并清除。再次配对需要重新扫码。',
+      confirm: '取消配对',
+      danger: true,
+    )) {
+      await state.unpair(computer.id);
+    }
   }
 
   @override
@@ -105,51 +111,53 @@ class _SettingsPageState extends State<SettingsPage> {
           BSection(
             title: '个人资料',
             children: [
-              Padding(
-                padding: const EdgeInsets.all(14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '电脑和上面的 Bot 会这样称呼你、认识你。',
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        color: AppColors.textMuted,
+              InkWell(
+                onTap: _editProfile,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 14,
+                  ),
+                  child: Row(
+                    children: [
+                      SettingsAvatar(name: _meName),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _meName.isEmpty ? '未设置名字' : _meName,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: _meName.isEmpty
+                                    ? AppColors.textFaint
+                                    : AppColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              _meSignature.isEmpty
+                                  ? '设置名字、签名，让 Bot 认识你'
+                                  : _meSignature,
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                color: AppColors.textMuted,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    BTextField(
-                      controller: _name,
-                      hint: '名字，例如：小浪',
-                      onSubmitted: (_) => _saveProfile(),
-                    ),
-                    const SizedBox(height: 10),
-                    BDropdown<String>(
-                      value: _gender,
-                      hint: '性别',
-                      items: const [
-                        ('', '不透露'),
-                        ('male', '男'),
-                        ('female', '女'),
-                      ],
-                      onChanged: (v) => setState(() => _gender = v),
-                    ),
-                    const SizedBox(height: 10),
-                    BTextField(
-                      controller: _signature,
-                      hint: '签名，一句话介绍自己',
-                      onSubmitted: (_) => _saveProfile(),
-                    ),
-                    const SizedBox(height: 12),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: BButton(
-                        label: '保存',
-                        primary: true,
-                        onPressed: _saveProfile,
+                      Icon(
+                        Icons.chevron_right,
+                        size: 20,
+                        color: AppColors.textFaint,
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -164,22 +172,10 @@ class _SettingsPageState extends State<SettingsPage> {
                   showChevron: false,
                 ),
               for (final computer in state.computers) ...[
-                BCell(
-                  icon: switch (computer.system) {
-                    final s when s.contains('Windows') =>
-                      Icons.laptop_windows_outlined,
-                    final s when s.contains('Linux') =>
-                      Icons.developer_board_outlined,
-                    _ => Icons.laptop_mac_outlined,
-                  },
-                  iconColor: AppColors.textMuted,
-                  title: computer.name.isEmpty ? '电脑' : computer.name,
-                  subtitle: computer.system,
-                  trailing: BButton(
-                    label: '取消配对',
-                    onPressed: () => state.unpair(computer.id),
-                  ),
-                  showChevron: false,
+                _ComputerCell(
+                  computer: computer,
+                  link: state.linkOf(computer.id),
+                  onUnpair: () => _unpair(context, computer),
                 ),
                 if (computer != state.computers.last) const BDivider(),
               ],
@@ -205,6 +201,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       children: [
                         for (var i = 0; i < bots.length; i++) ...[
                           BCell(
+                            icon: Icons.smart_toy_outlined,
                             title: bots[i].name,
                             subtitle: bots[i].model ?? '默认模型',
                             onTap: () => Navigator.of(context).push(
@@ -251,7 +248,19 @@ class _SettingsPageState extends State<SettingsPage> {
                   subtitle: style == UserMessageStyle.sticky
                       ? '整宽显示，滚动时吸顶'
                       : '靠右气泡，随内容滚走',
-                  onTap: () => _pickMessageStyle(context),
+                  onTap: _pickMessageStyle,
+                ),
+              ),
+              const BDivider(),
+              ValueListenableBuilder(
+                valueListenable: EditDetail.current,
+                builder: (context, detail, _) => BCell(
+                  icon: Icons.difference_outlined,
+                  title: '文件编辑样式',
+                  subtitle: detail == EditDetail.compact
+                      ? '紧凑一行，点开看差异'
+                      : '完整卡片，直接展开差异',
+                  onTap: _pickEditDetail,
                 ),
               ),
               const BDivider(),
@@ -261,18 +270,89 @@ class _SettingsPageState extends State<SettingsPage> {
                 subtitle: '当前版本 $_version',
                 onTap: () => checkForUpdate(context, loud: true),
               ),
-              const BDivider(),
-              BCell(
-                icon: Icons.info_outline,
-                iconColor: AppColors.textMuted,
-                title: '关于 LangshenAgent',
-                subtitle: '与电脑上的编程智能体对话，全程端到端加密。',
-                showChevron: false,
-              ),
             ],
           ),
+          const SizedBox(height: 6),
+          _Footer(version: _version),
         ],
       ),
     );
   }
+}
+
+/// A paired computer's row: its platform icon, a live online dot, and the
+/// unpair button.
+class _ComputerCell extends StatelessWidget {
+  const _ComputerCell({
+    required this.computer,
+    required this.link,
+    required this.onUnpair,
+  });
+
+  final PairedComputer computer;
+  final PhoneLink? link;
+  final VoidCallback onUnpair;
+
+  @override
+  Widget build(BuildContext context) {
+    final icon = switch (computer.system) {
+      final s when s.contains('Windows') => Icons.laptop_windows_outlined,
+      final s when s.contains('Linux') => Icons.developer_board_outlined,
+      _ => Icons.laptop_mac_outlined,
+    };
+    BCell cell(bool online) => BCell(
+      icon: icon,
+      iconColor: online ? AppColors.accent : AppColors.textMuted,
+      title: computer.name.isEmpty ? '电脑' : computer.name,
+      subtitle: '${computer.system} · ${online ? '在线' : '离线'}',
+      trailing: BButton(label: '取消配对', onPressed: onUnpair),
+      showChevron: false,
+    );
+    final link = this.link;
+    if (link == null) return cell(false);
+    return ListenableBuilder(
+      listenable: link,
+      builder: (context, _) => cell(link.phase == PhonePhase.online),
+    );
+  }
+}
+
+/// The centred sign-off at the bottom of the page.
+class _Footer extends StatelessWidget {
+  const _Footer({required this.version});
+
+  final String version;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.terminal, size: 16, color: AppColors.accent),
+          const SizedBox(width: 6),
+          Text(
+            'LangshenAgent',
+            style: TextStyle(
+              fontSize: 13.5,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 4),
+      Text(
+        '与电脑上的编程智能体对话，全程端到端加密。',
+        style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+      ),
+      if (version.isNotEmpty) ...[
+        const SizedBox(height: 2),
+        Text(
+          'v$version',
+          style: TextStyle(fontSize: 11.5, color: AppColors.textFaint),
+        ),
+      ],
+    ],
+  );
 }

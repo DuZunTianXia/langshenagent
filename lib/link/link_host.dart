@@ -293,6 +293,17 @@ class LinkHost extends ChangeNotifier {
   /// A port a phone may be told: not one of the well-known ones.
   static bool validLinkPort(int port) => port >= 1024 && port <= 65535;
 
+  String? _linkDomain;
+
+  /// A domain name resolving to this computer (DDNS, say): told to phones
+  /// alongside the IP addresses, so an IPv6 that moves breaks nothing —
+  /// the phone looks the name up fresh on every dial.
+  String? get linkDomain => _linkDomain;
+
+  /// Loose host check: letters/digits/hyphens/dots only.
+  static bool validLinkDomain(String d) => d.length <= 253 &&
+      RegExp(r'^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?$').hasMatch(d);
+
   /// The relays kept to.
   List<String> get relays => switch (_relayMode) {
     LinkRelayMode.auto => linkRelays(),
@@ -377,6 +388,9 @@ class LinkHost extends ChangeNotifier {
     if (json['linkPort'] case final int port when validLinkPort(port)) {
       _linkPort = port;
     }
+    if (json['linkDomain'] case final String d when validLinkDomain(d)) {
+      _linkDomain = d;
+    }
     _relayMode =
         LinkRelayMode.values.asNameMap()[json['relayMode']] ??
         LinkRelayMode.auto;
@@ -433,6 +447,7 @@ class LinkHost extends ChangeNotifier {
     'relayMode': _relayMode.name,
     'pinnedRelay': ?_pinnedRelay,
     'linkPort': _linkPort,
+    'linkDomain': ?_linkDomain,
     'phones': [for (final phone in _phones.values) phone.toJson()],
     if (_legacy.isNotEmpty)
       'legacyPhones': [for (final phone in _legacy) phone.toJson()],
@@ -593,6 +608,17 @@ class LinkHost extends ChangeNotifier {
     return true;
   }
 
+  /// The domain told to phones in direct mode; null/invalid clears it.
+  /// Touches nothing bound — only what phones are told, so just kept.
+  Future<void> setLinkDomain(String? domain) async {
+    if (!_loaded) return;
+    final value = (domain != null && validLinkDomain(domain)) ? domain : null;
+    if (value == _linkDomain) return;
+    _linkDomain = value;
+    unawaited(_save());
+    notifyListeners();
+  }
+
   /// Makes [change] to the link's settings, kept; on the network again
   /// when the relays kept to changed, or with [always].
   Future<void> _relaysChanging(
@@ -688,12 +714,19 @@ class LinkHost extends ChangeNotifier {
       : {...?_info?.relays, ...relays}.toList();
 
   /// The addresses to tell a phone: on the LAN first, a few at most (the
-  /// QR code stays easy to scan).
+  /// QR code stays easy to scan). In direct mode the configured domain
+  /// leads — it still resolves after an IPv6 moves; the port is the real
+  /// bound one because direct binds with strictPort.
   List<String> get _tellAddrs {
     final addrs = [...?_info?.addrs];
     final lan = addrs.where(isLanAddress);
     final other = addrs.where((addr) => !isLanAddress(addr));
-    return [...lan, ...other].take(8).toList();
+    return [
+      if (_relayMode == LinkRelayMode.direct && _linkDomain != null)
+        '$_linkDomain:$_linkPort',
+      ...lan,
+      ...other,
+    ].take(5).toList();
   }
 
   DeviceInfo _deviceInfo() =>
@@ -709,14 +742,27 @@ class LinkHost extends ChangeNotifier {
   /// were not.
   Future<PairingOffer?> beginPairing() async {
     if (!_loaded) return null;
-    if (!_enabled) await setEnabled(true);
-    await refresh();
+    try {
+      if (!_enabled) {
+        await setEnabled(true);
+      } else if (_node == null && _status != LinkHostStatus.starting) {
+        // An earlier start failed: enabled still, node never made.
+        // Pairing retries it instead of doing nothing.
+        await _start();
+      }
+      await refresh().timeout(const Duration(seconds: 5));
+    } on Object catch (error) {
+      _status = LinkHostStatus.failed;
+      _error = '$error';
+      notifyListeners();
+      return null;
+    }
     if (_status != LinkHostStatus.listening) return null;
     _justPaired = null;
     _offer = PairingOffer(
       name: _device?.name ?? '',
       key: _identity.publicKey,
-      token: randomBytes(16),
+      token: randomBytes(8),
       expires: DateTime.now().add(offerLifetime),
       relays: _tellRelays,
       addrs: _tellAddrs,

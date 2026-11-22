@@ -70,3 +70,7 @@ tool/exthost_codegen/node_modules/
 .dev.vars*
 .env
 .env.*
+
+# Machine-local cargo overrides (e.g. which rustc cargo picks when another
+# Rust install shadows the rustup proxies on PATH).
+/packages/bao_iroh/.cargo/

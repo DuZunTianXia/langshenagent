@@ -8807,6 +8807,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mobileDirectPortInvalid => '端口要在 1024–65535 之间。';
 
   @override
+  String get mobileDirectDomain => '直连域名';
+
+  @override
+  String get mobileDirectDomainDescription =>
+      '解析到这台电脑的域名（比如自己的 DDNS）。手机每次连接都重新解析，IPv6 变了也不用手动改地址。留空则只报 IP。';
+
+  @override
+  String get mobileDirectDomainInvalid => '不是有效域名：只能用字母、数字、点、横线。';
+
+  @override
   String get mobileDirectAddress => '直连地址';
 
   @override

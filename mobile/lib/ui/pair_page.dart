@@ -6,6 +6,7 @@ import '../link/phone_link.dart';
 import '../main.dart';
 import '../phone_platform.dart';
 import 'home_page.dart';
+import 'widgets.dart';
 
 /// Pairing a computer: scan its QR code, paste its pairing link, or pick
 /// one found nearby; then compare the safety codes both screens show.
@@ -180,9 +181,12 @@ class _PairPageState extends State<PairPage> {
   }
 
   Future<void> _paste() async {
-    final text = await showDialog<String>(
-      context: context,
-      builder: (context) => const _PasteDialog(),
+    final text = await showBPrompt(
+      context,
+      title: '配对链接',
+      hint: '粘贴 langshenagent://pair?d=… 链接',
+      confirm: '配对',
+      lines: 3,
     );
     if (text == null || text.trim().isEmpty) return;
     await _scanned(text);
@@ -295,52 +299,6 @@ String describeLinkError(Object failure) => switch (failure) {
   LinkClosedException() => '无法连接到电脑。',
   _ => '配对失败：$failure',
 };
-
-class _PasteDialog extends StatefulWidget {
-  const _PasteDialog();
-
-  @override
-  State<_PasteDialog> createState() => _PasteDialogState();
-}
-
-class _PasteDialogState extends State<_PasteDialog> {
-  final _text = TextEditingController();
-
-  @override
-  void dispose() {
-    _text.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('配对链接'),
-      content: TextField(
-        controller: _text,
-        autofocus: true,
-        maxLines: 3,
-        decoration: const InputDecoration(
-          hintText: '粘贴 langshenagent://pair?d=… 链接',
-          border: OutlineInputBorder(),
-        ),
-        onChanged: (_) => setState(() {}),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('取消'),
-        ),
-        FilledButton(
-          onPressed: _text.text.trim().isEmpty
-              ? null
-              : () => Navigator.of(context).pop(_text.text.trim()),
-          child: const Text('配对'),
-        ),
-      ],
-    );
-  }
-}
 
 /// The four groups of three digits both screens show, to be compared.
 class _SafetyCodes extends StatelessWidget {

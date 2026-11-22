@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
@@ -318,12 +319,19 @@ class IrohEndpoint {
   }
 
   /// Connects to [addr], trying all its relays and addresses at once.
+  /// An `ip:port` address is dialled as it is; a `host:port` (a name the
+  /// other end keeps resolving to itself) is looked up first.
   Future<IrohConnection> connect(
     IrohAddr addr, {
     Duration timeout = const Duration(seconds: 15),
   }) async {
+    final addrs = await _resolving(addr.addrs);
     final args = utf8.encode(
-      jsonEncode({...addr.toJson(), 'timeoutMs': timeout.inMilliseconds}),
+      jsonEncode({
+        ...addr.toJson(),
+        'addrs': addrs,
+        'timeoutMs': timeout.inMilliseconds,
+      }),
     );
     final (handle, data) = await Iroh._done(
       (req) => Iroh._withBytes(
@@ -597,4 +605,46 @@ class IrohStream {
     Iroh._handles.detach(this);
     biRelease(_handle);
   }
+}
+
+/// `a.b.c.d:port`/`[v6]:port`/`host:port` → (host, port)；不认识的形式 null。
+(String, int)? _splitHostPort(String addr) {
+  final cut = addr.lastIndexOf(':');
+  if (cut <= 0) return null;
+  var host = addr.substring(0, cut);
+  final port = int.tryParse(addr.substring(cut + 1));
+  if (port == null) return null;
+  if (host.startsWith('[') && host.endsWith(']')) {
+    host = host.substring(1, host.length - 1);
+  } else if (host.contains(':')) {
+    return null; // 没带方括号的 IPv6：不算数
+  }
+  if (host.isEmpty) return null;
+  return (host, port);
+}
+
+/// `ip:port` 原样通过；`host:port` 现场解析成 `ip:port`（解析不出的丢弃）。
+/// 直连模式下桌面可以报一个域名进来，IPv6 怎么变手机都能找到它。
+Future<List<String>> _resolving(List<String> addrs) async {
+  final out = <String>[];
+  for (final addr in addrs) {
+    final hp = _splitHostPort(addr);
+    if (hp == null) continue;
+    final (host, port) = hp;
+    if (InternetAddress.tryParse(host) != null) {
+      out.add(addr);
+      continue;
+    }
+    try {
+      for (final ip in await InternetAddress.lookup(host)
+          .timeout(const Duration(seconds: 4))) {
+        out.add(ip.address.contains(':')
+            ? '[${ip.address}]:$port'
+            : '${ip.address}:$port');
+      }
+    } on Object {
+      // 解析不出：这条地址这次跳过
+    }
+  }
+  return out;
 }

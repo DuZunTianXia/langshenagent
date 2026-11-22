@@ -275,6 +275,24 @@ class L10n {
   String get stepThinking => '正在思考';
   String get stepThought => '已思考';
 
+  // The folds the steps of a turn fold into ("运行 2 条命令 · 思考 1
+  // 秒"), and the line a finished turn's work folds to ("已处理 11 秒").
+
+  String stepsRead(int count) => '读取 $count 个文件';
+  String stepsSearched(int count) => '搜索 $count 次';
+  String stepsListed(int count) => '列出 $count 个目录';
+  String stepsFetched(int count) => '获取 $count 个网页';
+  String stepsRan(int count) => '运行 $count 条命令';
+  String stepsBrowsed(int count) => '操作浏览器 $count 次';
+  String stepsUsed(int count) => '调用 $count 个工具';
+  String stepsThought(String duration) => '思考 $duration';
+  String get stepsSeparator => ' · ';
+  String turnWorked(String duration) => '已处理 $duration';
+  String turnStopped(String duration) => '已在 $duration 时停止';
+  String turnFiles(int count) => '$count 个文件';
+  String turnSpeed(String speed) => '$speed tok/s';
+  String turnTokens(String tokens) => '$tokens tokens';
+
   // Common.
 
   String get commonCopy => '复制';

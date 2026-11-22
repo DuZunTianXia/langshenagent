@@ -7,6 +7,7 @@ import '../link/phone_link.dart';
 import '../main.dart';
 import 'home_page.dart';
 import 'pair_page.dart';
+import 'widgets.dart';
 import 'sessions_page.dart';
 import 'settings_page.dart';
 
@@ -207,27 +208,17 @@ class _ComputerTile extends StatelessWidget {
   }
 
   Future<void> _unpair(BuildContext context, AppState state) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('取消配对？'),
-        content: Text(
+    if (await showBConfirm(
+      context,
+      title: '取消配对？',
+      body:
           '此手机将忘记${computer.name.isEmpty ? '这台电脑' : computer.name}。'
           '再次配对需要在电脑上重新显示配对码。',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('取消配对'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed == true) await state.unpair(computer.id);
+      confirm: '取消配对',
+      danger: true,
+    )) {
+      await state.unpair(computer.id);
+    }
   }
 }
 

@@ -148,104 +148,192 @@ class _BotEditPageState extends State<BotEditPage> {
               ?.label ??
           modelChoice.selected ??
           '默认';
+    final danger = Theme.of(context).colorScheme.error;
     return Scaffold(
-      appBar: AppBar(
-        title: Text('编辑 ${widget.bot.name}'),
-        actions: [
-          TextButton(
-            onPressed: _saving ? null : _save,
-            child: Text(_saving ? '保存中…' : '保存'),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: Text('编辑 ${widget.bot.name}')),
       body: ListView(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.fromLTRB(14, 14, 14, 24),
         children: [
-          _field('名字', _name, 'Bot 显示的名字'),
-          _field('签名', _signature, '列表里名字下的一行'),
-          _field('身份', _identity, '它是谁、要做什么', lines: 3),
-          _field('风格', _style, '它怎么说话', lines: 2),
-          const Divider(),
-          ListTile(
-            title: const Text('模型'),
-            subtitle: Text(model),
-            trailing: modelChoice == null
-                ? null
-                : Icon(Icons.chevron_right, color: AppColors.textFaint),
-            onTap: modelChoice == null
-                ? null
-                : () => _pickModel(modelChoice),
+          BCard(
+            child: Column(
+              children: [
+                ValueListenableBuilder(
+                  valueListenable: _name,
+                  builder: (context, _, _) => Container(
+                    width: 64,
+                    height: 64,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF9270CA),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Text(
+                      _name.text.isEmpty ? 'B' : _name.text.characters.first,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 26,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '它在聊天和列表里的样子。',
+                  style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                ),
+              ],
+            ),
           ),
-          SwitchListTile(
-            title: const Text('只聊天'),
-            subtitle: const Text('不使用文件、命令等智能体工具'),
-            value: _chatOnly,
-            onChanged: (v) => setState(() => _chatOnly = v),
+          const SizedBox(height: 14),
+          BSection(
+            title: '基本',
+            children: [
+              _pad(BTextField(controller: _name, label: '名字', hint: 'Bot 显示的名字')),
+              _pad(BTextField(controller: _signature, label: '签名', hint: '列表里名字下的一行')),
+            ],
           ),
-          SwitchListTile(
-            title: const Text('主动发消息'),
-            subtitle: const Text('有情况时它先开口'),
-            value: _writesFirst,
-            onChanged: (v) => setState(() => _writesFirst = v),
+          BSection(
+            title: '人设',
+            children: [
+              _pad(BTextField(controller: _identity, label: '身份', hint: '它是谁、要做什么', lines: 3)),
+              _pad(BTextField(controller: _style, label: '风格', hint: '它怎么说话', lines: 2)),
+            ],
           ),
-          const Divider(),
+          BSection(
+            title: '对话',
+            children: [
+              BCell(
+                icon: Icons.auto_awesome,
+                title: '模型',
+                subtitle: model,
+                showChevron: modelChoice != null,
+                onTap: modelChoice == null
+                    ? null
+                    : () => _pickModel(modelChoice),
+              ),
+              const BDivider(),
+              BCell(
+                icon: Icons.chat_bubble_outline_rounded,
+                title: '只聊天',
+                subtitle: '不使用文件、命令等智能体工具',
+                showChevron: false,
+                trailing: Switch.adaptive(
+                  value: _chatOnly,
+                  onChanged: (v) => setState(() => _chatOnly = v),
+                ),
+                onTap: () => setState(() => _chatOnly = !_chatOnly),
+              ),
+              const BDivider(),
+              BCell(
+                icon: Icons.notifications_none_rounded,
+                title: '主动发消息',
+                subtitle: '有情况时它先开口',
+                showChevron: false,
+                trailing: Switch.adaptive(
+                  value: _writesFirst,
+                  onChanged: (v) => setState(() => _writesFirst = v),
+                ),
+                onTap: () => setState(() => _writesFirst = !_writesFirst),
+              ),
+            ],
+          ),
+          BSection(
+            title: '能力',
+            children: [
+              for (final (i, (ability, icon, label, hint)) in [
+                (
+                  BotAbility.agents,
+                  Icons.smart_toy_outlined,
+                  '照看智能体',
+                  '查看、停止、重试、发消息',
+                ),
+                (
+                  BotAbility.browser,
+                  Icons.language_rounded,
+                  '使用浏览器',
+                  '替你打开网页、操作页面',
+                ),
+                (
+                  BotAbility.proactive,
+                  Icons.campaign_outlined,
+                  '主动汇报',
+                  '智能体等待或失败时告知你',
+                ),
+              ].indexed) ...[
+                if (i > 0) const BDivider(),
+                BCell(
+                  icon: icon,
+                  title: label,
+                  subtitle: hint,
+                  showChevron: false,
+                  trailing: Checkbox(
+                    value: _abilities.contains(ability),
+                    onChanged: (v) => setState(
+                      () => v == true
+                          ? _abilities.add(ability)
+                          : _abilities.remove(ability),
+                    ),
+                  ),
+                  onTap: () => setState(
+                    () => _abilities.contains(ability)
+                        ? _abilities.remove(ability)
+                        : _abilities.add(ability),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          BSection(
+            title: '记忆',
+            children: [
+              _pad(BTextField(controller: _memory, label: '关于你的事', hint: '它记住的你的情况', lines: 3)),
+              _pad(BTextField(controller: _self, label: '自我笔记', hint: '它记下的自己', lines: 3)),
+            ],
+          ),
+          BSection(
+            title: '操作',
+            children: [
+              BCell(
+                icon: Icons.cleaning_services_outlined,
+                iconColor: danger,
+                title: '清空对话',
+                titleColor: danger,
+                subtitle: '重开它的对话，记忆和设定保留',
+                onTap: _saving ? null : _clearChat,
+              ),
+              if (!widget.bot.assistant) ...[
+                const BDivider(),
+                BCell(
+                  icon: Icons.delete_outline,
+                  iconColor: danger,
+                  title: '删除 Bot',
+                  titleColor: danger,
+                  onTap: _saving ? null : _delete,
+                ),
+              ],
+            ],
+          ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-            child: Text(
-              '能力',
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+            padding: const EdgeInsets.only(top: 4),
+            child: BButton(
+              label: '保存',
+              primary: true,
+              expand: true,
+              busy: _saving,
+              onPressed: _save,
             ),
           ),
-          for (final (ability, label) in [
-            (BotAbility.agents, '照看智能体：查看、停止、重试、发消息'),
-            (BotAbility.browser, '使用浏览器'),
-            (BotAbility.proactive, '主动汇报：智能体等待或失败时告知你'),
-          ])
-            CheckboxListTile(
-              dense: true,
-              title: Text(label),
-              value: _abilities.contains(ability),
-              onChanged: (v) => setState(
-                () => v == true
-                    ? _abilities.add(ability)
-                    : _abilities.remove(ability),
-              ),
-            ),
-          const Divider(),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-            child: Text(
-              '记忆',
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-          _field('关于你的事', _memory, '它记住的你的情况', lines: 3),
-          _field('自我笔记', _self, '它记下的自己', lines: 3),
-          const Divider(),
-          BCell(
-            icon: Icons.cleaning_services_outlined,
-            iconColor: Theme.of(context).colorScheme.error,
-            title: '清空对话',
-            titleColor: Theme.of(context).colorScheme.error,
-            subtitle: '重开它的对话，记忆和设定保留',
-            onTap: _saving ? null : _clearChat,
-          ),
-          if (!widget.bot.assistant)
-            BCell(
-              icon: Icons.delete_outline,
-              iconColor: Theme.of(context).colorScheme.error,
-              title: '删除 Bot',
-              titleColor: Theme.of(context).colorScheme.error,
-              onTap: _saving ? null : _delete,
-            ),
         ],
       ),
     );
   }
+
+  /// A field inside a [BSection]'s card: the card's own edges padded off.
+  Widget _pad(Widget field) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+    child: field,
+  );
 
   Future<void> _clearChat() async {
     final ok = await showBConfirm(
@@ -280,20 +368,4 @@ class _BotEditPageState extends State<BotEditPage> {
     }
   }
 
-  Widget _field(
-    String label,
-    TextEditingController controller,
-    String hint, {
-    int lines = 1,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      child: BTextField(
-        controller: controller,
-        label: label,
-        hint: hint,
-        lines: lines,
-      ),
-    );
-  }
 }

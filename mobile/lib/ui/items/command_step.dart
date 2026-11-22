@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../chat/chat_models.dart';
 import '../md/md_theme.dart';
+import '../widgets.dart';
 import 'hover_builder.dart';
 import 'l10n.dart';
 import 'shell_highlight.dart';
@@ -141,31 +142,36 @@ class _CommandMenu extends StatelessWidget {
     return Semantics(
       button: true,
       label: l10n.commandMore,
-      child: PopupMenuButton<void Function()>(
-        tooltip: l10n.commandMore,
-        padding: EdgeInsets.zero,
-        position: PopupMenuPosition.under,
-        onSelected: (action) => action(),
-        itemBuilder: (context) => [
-          PopupMenuItem(
-            value: () => _copy(command),
-            child: _MenuRow(Icons.content_copy_rounded, l10n.commandCopyCommand),
-          ),
-          if (terminalOutput(output).text case final printed
-              when printed.isNotEmpty)
-            PopupMenuItem(
-              value: () => _copy(printed),
-              child: _MenuRow(Icons.notes_rounded, l10n.commandCopyOutput),
-            ),
-          if (onMoveToBackground case final move?)
-            PopupMenuItem(
-              value: move,
-              child: _MenuRow(
-                Icons.move_down_rounded,
-                l10n.commandMoveToBackground,
+      child: GestureDetector(
+        onTap: () async {
+          final action = await showBActions<void Function()>(
+            context,
+            actions: [
+              (
+                Icons.content_copy_rounded,
+                l10n.commandCopyCommand,
+                null,
+                () => _copy(command),
               ),
-            ),
-        ],
+              if (terminalOutput(output).text case final printed
+                  when printed.isNotEmpty)
+                (
+                  Icons.notes_rounded,
+                  l10n.commandCopyOutput,
+                  null,
+                  () => _copy(printed),
+                ),
+              if (onMoveToBackground case final move?)
+                (
+                  Icons.move_down_rounded,
+                  l10n.commandMoveToBackground,
+                  null,
+                  move,
+                ),
+            ],
+          );
+          action?.call();
+        },
         child: HoverBuilder(
           cursor: SystemMouseCursors.click,
           builder: (context, hovered) => Container(
@@ -185,21 +191,4 @@ class _CommandMenu extends StatelessWidget {
       ),
     );
   }
-}
-
-/// A menu entry's icon beside its label, in the steps' colors.
-class _MenuRow extends StatelessWidget {
-  const _MenuRow(this.icon, this.label);
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      Icon(icon, size: 16, color: AppColors.textMuted),
-      const SizedBox(width: 8),
-      Text(label),
-    ],
-  );
 }

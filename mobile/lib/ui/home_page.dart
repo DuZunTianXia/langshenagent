@@ -134,30 +134,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         2 => _FilesTab(link: link),
         _ => SettingsPage(link: link),
       },
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _tab,
-        onDestinationSelected: (tab) => setState(() => _tab = tab),
-        destinations: [
-          NavigationDestination(
-            icon: _Badge(
-              count: link == null ? 0 : _unread(link),
-              child: const Icon(Codicons.commentDiscussion),
-            ),
-            label: '对话',
-          ),
-          const NavigationDestination(
-            icon: Icon(Codicons.hubot),
-            label: 'Bot',
-          ),
-          const NavigationDestination(
-            icon: Icon(Codicons.folder),
-            label: '文件',
-          ),
-          const NavigationDestination(
-            icon: Icon(Codicons.gear),
-            label: '设置',
-          ),
-        ],
+      bottomNavigationBar: _BottomBar(
+        tab: _tab,
+        unread: link == null ? 0 : _unread(link),
+        onSelect: (tab) => setState(() => _tab = tab),
       ),
     );
   }
@@ -178,33 +158,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       showBToast(context, '电脑上还没有项目。');
       return;
     }
-    final project = await showModalBottomSheet<ProjectInfo>(
-      context: context,
-      builder: (context) => SafeArea(
-        child: ListView(
-          shrinkWrap: true,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-              child: Text(
-                '选择项目',
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-            ),
-            for (final project in projects)
-              ListTile(
-                leading: _Tile(name: project.name),
-                title: Text(project.name),
-                subtitle: Text(
-                  project.path,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                onTap: () => Navigator.of(context).pop(project),
-              ),
-          ],
-        ),
-      ),
+    final project = await showBActions<ProjectInfo>(
+      context,
+      title: '选择项目',
+      leadingOf: (p) => _Tile(name: p.name),
+      actions: [
+        for (final p in projects) (null, p.name, p.path, p),
+      ],
     );
     if (project == null || !mounted) return;
     try {
@@ -300,49 +260,33 @@ class _ComputerTitle extends StatelessWidget {
     return InkWell(
       borderRadius: BorderRadius.circular(8),
       onTap: () async {
-        final id = await showModalBottomSheet<String>(
-          context: context,
-          builder: (context) => SafeArea(
-            child: ListView(
-              shrinkWrap: true,
-              children: [
-                for (final computer
-                    in state.store?.computers.values ??
-                        const <PairedComputer>[])
-                  ListTile(
-                    leading: const Icon(Icons.computer_outlined),
-                    title: Text(computer.name),
-                    subtitle: Text(
-                      switch (state.links[computer.id]?.phase) {
-                        PhonePhase.online => '在线',
-                        PhonePhase.connecting => '连接中…',
-                        _ => '离线',
-                      },
-                    ),
-                    trailing: computer.id == selected?.computer.id
-                        ? Icon(Icons.check, color: AppColors.accent)
-                        : null,
-                    onTap: () => Navigator.of(context).pop(computer.id),
-                  ),
-                const Divider(),
-                ListTile(
-                  leading: Icon(Icons.add, color: AppColors.accent),
-                  title: Text(
-                    '配对新电脑',
-                    style: TextStyle(color: AppColors.accent),
-                  ),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const PairPage()),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
+        final id = await showBActions<String>(
+          context,
+          selected: selected?.computer.id,
+          actions: [
+            for (final computer
+                in state.store?.computers.values ?? const <PairedComputer>[])
+              (
+                Icons.computer_outlined,
+                computer.name,
+                switch (state.links[computer.id]?.phase) {
+                  PhonePhase.online => '在线',
+                  PhonePhase.connecting => '连接中…',
+                  _ => '离线',
+                },
+                computer.id,
+              ),
+            (Icons.add_link, '配对新电脑', null, ''),
+          ],
         );
-        if (id != null) onPick(id);
+        if (id == null || !context.mounted) return;
+        if (id.isEmpty) {
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const PairPage()));
+          return;
+        }
+        onPick(id);
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -414,31 +358,169 @@ class _PlusMenu extends StatelessWidget {
   final VoidCallback? onNewChat;
 
   @override
-  Widget build(BuildContext context) => PopupMenuButton<String>(
+  Widget build(BuildContext context) => IconButton(
     icon: const Icon(Icons.add_circle_outline),
-    onSelected: (action) => switch (action) {
-      'chat' => onNewChat?.call(),
-      _ => onPair?.call(),
+    onPressed: () async {
+      final action = await showBActions<String>(
+        context,
+        actions: const [
+          (Icons.chat_bubble_outline, '新建对话', null, 'chat'),
+          (Icons.add_link, '配对新电脑', null, 'pair'),
+        ],
+      );
+      if (action == 'chat') {
+        onNewChat?.call();
+      } else if (action == 'pair') {
+        onPair?.call();
+      }
     },
-    itemBuilder: (_) => const [
-      PopupMenuItem(value: 'chat', child: Text('新建对话')),
-      PopupMenuItem(value: 'pair', child: Text('配对新电脑')),
-    ],
   );
 }
 
-/// The unread dot beside a tab's icon.
-class _Badge extends StatelessWidget {
-  const _Badge({required this.count, required this.child});
+/// The bottom bar: four tabs, the picked one's icon in a green pill,
+/// the chat tab's unread count in a red capsule.
+class _BottomBar extends StatelessWidget {
+  const _BottomBar({
+    required this.tab,
+    required this.unread,
+    required this.onSelect,
+  });
 
-  final int count;
-  final Widget child;
+  final int tab;
+  final int unread;
+  final ValueChanged<int> onSelect;
 
   @override
   Widget build(BuildContext context) {
-    if (count <= 0) return child;
-    return Badge(label: Text("$count"), child: child);
+    final items = [
+      (Codicons.commentDiscussion, '对话', unread),
+      (Codicons.hubot, 'Bot', 0),
+      (Codicons.folder, '文件', 0),
+      (Codicons.gear, '设置', 0),
+    ];
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceRaised,
+        border: Border(
+          top: BorderSide(color: AppColors.partBorder, width: 0.5),
+        ),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Row(
+            children: [
+              for (var i = 0; i < items.length; i++)
+                Expanded(
+                  child: _TabItem(
+                    icon: items[i].$1,
+                    label: items[i].$2,
+                    badge: items[i].$3,
+                    selected: tab == i,
+                    onTap: () => onSelect(i),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
+}
+
+/// One tab in [_BottomBar]: icon (with its badge) over its label, the
+/// icon in a soft green pill while selected.
+class _TabItem extends StatelessWidget {
+  const _TabItem({
+    required this.icon,
+    required this.label,
+    required this.badge,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final int badge;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = selected ? AppColors.accent : AppColors.textMuted;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOut,
+                width: selected ? 52 : 40,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: selected
+                      ? AppColors.accent.withValues(alpha: 0.14)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Icon(icon, size: 20, color: color),
+              ),
+              if (badge > 0)
+                Positioned(
+                  top: -2,
+                  right: -2,
+                  child: _CountBadge(count: badge),
+                ),
+            ],
+          ),
+          const SizedBox(height: 3),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10.5,
+              color: color,
+              fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The red unread capsule at a tab icon's corner.
+class _CountBadge extends StatelessWidget {
+  const _CountBadge({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    constraints: const BoxConstraints(minWidth: 16),
+    height: 16,
+    padding: const EdgeInsets.symmetric(horizontal: 4),
+    decoration: BoxDecoration(
+      color: const Color(0xFFFA5151),
+      borderRadius: BorderRadius.circular(8),
+      border: Border.all(color: AppColors.surfaceRaised, width: 1.5),
+    ),
+    alignment: Alignment.center,
+    child: Text(
+      count > 99 ? '99+' : '$count',
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 9.5,
+        fontWeight: FontWeight.w600,
+        height: 1,
+      ),
+    ),
+  );
 }
 
 /// A name's avatar tile: its first letter on a color its hash picks, as
@@ -717,81 +799,43 @@ void _pickWorkspace(
     }
     return a.name.compareTo(b.name);
   });
-  showModalBottomSheet<void>(
-    context: context,
-    showDragHandle: true,
-    builder: (context) => SafeArea(
-      child: ListView(
-        shrinkWrap: true,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-            child: Text(
-              '添加工作区',
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-          ),
-          ListTile(
-            leading: Container(
-              width: 36,
-              height: 36,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                border: Border.all(color: AppColors.partBorder),
-                borderRadius: BorderRadius.circular(9),
-              ),
-              child: Icon(Icons.folder_open, color: AppColors.accent),
-            ),
-            title: Text(
-              '在电脑上选择文件夹…',
-              style: TextStyle(color: AppColors.accent),
-            ),
-            onTap: () async {
-              Navigator.of(context).pop();
-              final project = await Navigator.of(context).push<ProjectInfo>(
-                MaterialPageRoute(
-                  builder: (_) => BrowsePage(link: link),
-                ),
-              );
-              if (project == null || !context.mounted) return;
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => _WorkspacePage(
-                    link: link,
-                    project: project,
-                    fallback: project.name,
-                  ),
-                ),
-              );
-            },
-          ),
-          for (final project in projects)
-            ListTile(
-              leading: _Tile(name: project.name),
-              title: Text(project.name),
-              subtitle: Text(
-                project.path,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 12, color: AppColors.textFaint),
-              ),
-              onTap: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => _WorkspacePage(
-                      link: link,
-                      project: project,
-                      fallback: project.name,
-                    ),
-                  ),
-                );
-              },
-            ),
-        ],
+  showBActions<String>(
+    context,
+    title: '添加工作区',
+    leadingOf: (value) {
+      for (final p in projects) {
+        if (p.id == value) return _Tile(name: p.name);
+      }
+      return null;
+    },
+    actions: [
+        (Icons.folder_open, '在电脑上选择文件夹…', null, 'browse'),
+        for (final project in projects)
+          (null, project.name, project.path, project.id),
+    ],
+  ).then((picked) async {
+    if (picked == null || !context.mounted) return;
+    ProjectInfo? project;
+    if (picked == 'browse') {
+      project = await Navigator.of(context).push<ProjectInfo>(
+        MaterialPageRoute(builder: (_) => BrowsePage(link: link)),
+      );
+    } else {
+      for (final p in projects) {
+        if (p.id == picked) project = p;
+      }
+    }
+    if (project == null || !context.mounted) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => _WorkspacePage(
+          link: link,
+          project: project,
+          fallback: project!.name,
+        ),
       ),
-    ),
-  );
+    );
+  });
 }
 
 /// A workspace's icon: up to four of its name's characters in a square
@@ -1038,65 +1082,30 @@ class _SessionRow extends StatelessWidget {
   }
 
   Future<void> _manage(BuildContext context) async {
-    final action = await showModalBottomSheet<String>(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.push_pin_outlined),
-              title: Text(session.pinned ? '取消置顶' : '置顶'),
-              onTap: () => Navigator.of(context).pop('pin'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.drive_file_rename_outline),
-              title: const Text('重命名'),
-              onTap: () => Navigator.of(context).pop('rename'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.archive_outlined),
-              title: const Text('归档'),
-              onTap: () => Navigator.of(context).pop('archive'),
-            ),
-            ListTile(
-              leading: Icon(
-                Icons.delete_outline,
-                color: Theme.of(context).colorScheme.error,
-              ),
-              title: Text(
-                '删除',
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-              onTap: () => Navigator.of(context).pop('delete'),
-            ),
-          ],
+    final action = await showBActions<String>(
+      context,
+      danger: const {'delete'},
+      actions: [
+        (
+          Icons.push_pin_outlined,
+          session.pinned ? '取消置顶' : '置顶',
+          null,
+          'pin',
         ),
-      ),
+        (Icons.drive_file_rename_outline, '重命名', null, 'rename'),
+        (Icons.archive_outlined, '归档', null, 'archive'),
+        (Icons.delete_outline, '删除', null, 'delete'),
+      ],
     );
     if (action == null || !context.mounted) return;
     switch (action) {
       case 'pin':
         await link.pin(session.id, !session.pinned);
       case 'rename':
-        final controller = TextEditingController(text: session.title);
-        final title = await showDialog<String>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('重命名'),
-            content: TextField(controller: controller, autofocus: true),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('取消'),
-              ),
-              FilledButton(
-                onPressed: () =>
-                    Navigator.of(context).pop(controller.text.trim()),
-                child: const Text('保存'),
-              ),
-            ],
-          ),
+        final title = await showBPrompt(
+          context,
+          title: '重命名',
+          initial: session.title,
         );
         if (title != null && title.isNotEmpty) {
           await link.rename(session.id, title);
@@ -1104,25 +1113,14 @@ class _SessionRow extends StatelessWidget {
       case 'archive':
         await link.archive(session.id);
       case 'delete':
-        final yes =
-            await showDialog<bool>(
-              context: context,
-              builder: (context) => AlertDialog(
-                content: const Text('删除这个会话？'),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(false),
-                    child: const Text('取消'),
-                  ),
-                  FilledButton(
-                    onPressed: () => Navigator.of(context).pop(true),
-                    child: const Text('删除'),
-                  ),
-                ],
-              ),
-            ) ??
-            false;
-        if (yes) await link.delete(session.id);
+        if (await showBConfirm(
+          context,
+          title: '删除这个会话？',
+          confirm: '删除',
+          danger: true,
+        )) {
+          await link.delete(session.id);
+        }
     }
   }
 }

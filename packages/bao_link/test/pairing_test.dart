@@ -12,24 +12,88 @@ void main() {
     final offer = PairingOffer(
       name: 'Leo 的 MacBook Pro',
       key: desktop.publicKey,
-      token: Uint8List.fromList(List.generate(16, (i) => i)),
+      token: Uint8List.fromList(List.generate(8, (i) => i)),
       expires: DateTime.fromMillisecondsSinceEpoch(1800000000 * 1000),
-      relays: const ['https://relay-hk1.langshenagent.dev/'],
-      addrs: const ['192.168.1.5:47100', '[2408:8207::1]:47100'],
-      direct: true,
+      relays: linkRelays(const ['my.relay']),
     );
     final parsed = PairingOffer.parse(offer.uri);
     expect(parsed.name, offer.name);
     expect(parsed.key, offer.key);
     expect(parsed.token, offer.token);
     expect(parsed.expires, offer.expires);
-    expect(parsed.direct, isTrue);
+    expect(parsed.relays, offer.relays);
     expect(parsed.address, offer.address);
     expect(parsed.address.id, desktop.id);
     expect(
       () => PairingOffer.parse('https://example.com'),
       throwsFormatException,
     );
+  });
+
+  test('a direct offer carries its addresses', () {
+    final offer = PairingOffer(
+      name: 'Mac mini',
+      key: desktop.publicKey,
+      token: Uint8List.fromList(List.generate(8, (i) => i + 3)),
+      expires: DateTime.fromMillisecondsSinceEpoch(1800000000 * 1000),
+      addrs: const ['192.168.1.5:47100', '[2408:8207::1]:47100'],
+      direct: true,
+    );
+    final parsed = PairingOffer.parse(offer.uri);
+    expect(parsed.direct, isTrue);
+    expect(parsed.relays, isEmpty);
+    expect(parsed.addrs, offer.addrs);
+    expect(parsed.address, offer.address);
+  });
+
+  test('a version-3 code still parses', () {
+    final out = BytesBuilder()
+      ..addByte(3)
+      ..addByte(1)
+      ..add([0x20, 0xBC, 0xBE, 0x6B])
+      ..add(desktop.publicKey)
+      ..add(Uint8List.fromList(List.generate(16, (i) => i)))
+      ..add([3, ...utf8.encode('Mac')])
+      ..add([1, 0xFF, 0])
+      ..add([1, 15, ...utf8.encode('192.168.1.5:100')]);
+    final d = base64Url.encode(out.toBytes()).replaceAll('=', '');
+    final parsed = PairingOffer.parse('langshenagent://pair?d=$d');
+    expect(parsed.name, 'Mac');
+    expect(parsed.key, desktop.publicKey);
+    expect(parsed.direct, isTrue);
+    expect(parsed.relays, [defaultLinkRelays.first]);
+    expect(parsed.addrs, ['192.168.1.5:100']);
+  });
+
+  test('a version-2 JSON code still parses', () {
+    final offer = PairingOffer(
+      name: 'Mac mini',
+      key: desktop.publicKey,
+      token: Uint8List.fromList(List.generate(16, (i) => i + 7)),
+      expires: DateTime.fromMillisecondsSinceEpoch(1800000000 * 1000),
+      relays: const ['https://relay-hk1.langshenagent.dev/'],
+      addrs: const ['192.168.1.5:47100'],
+    );
+    final old = base64Url
+        .encode(
+          utf8.encode(
+            jsonEncode({
+              'v': 2,
+              'n': offer.name,
+              'k': encodeKey(offer.key),
+              't': encodeKey(offer.token),
+              'x': 1800000000,
+              'r': offer.relays,
+              'a': offer.addrs,
+            }),
+          ),
+        )
+        .replaceAll('=', '');
+    final parsed = PairingOffer.parse('langshenagent://pair?d=$old');
+    expect(parsed.name, offer.name);
+    expect(parsed.key, offer.key);
+    expect(parsed.token, offer.token);
+    expect(parsed.address, offer.address);
   });
 
   test('a code of before says the desktop needs updating', () {

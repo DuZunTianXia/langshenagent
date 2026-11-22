@@ -25,7 +25,7 @@ class _QrPainter extends CustomPainter {
     : image = QrImage(
         QrCode(
           payload: QrPayload.fromString(data),
-          errorCorrectLevel: QrErrorCorrectLevel.medium,
+          errorCorrectLevel: QrErrorCorrectLevel.low,
         ),
       );
 

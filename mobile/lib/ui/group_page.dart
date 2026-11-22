@@ -92,34 +92,12 @@ class _GroupPageState extends State<GroupPage> {
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _text,
-                      minLines: 1,
-                      maxLines: 4,
-                      textInputAction: TextInputAction.send,
-                      onSubmitted: (_) => _send(),
-                      decoration: const InputDecoration(
-                        hintText: '向群里发消息…',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(20)),
-                        ),
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
-                        ),
-                        isDense: true,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  IconButton.filled(
-                    icon: const Icon(Icons.send),
-                    onPressed: _busy ? null : _send,
-                  ),
-                ],
+              child: BComposer(
+                controller: _text,
+                hint: '向群里发消息…',
+                canSend: _text.text.trim().isNotEmpty,
+                onChanged: () => setState(() {}),
+                onSend: _send,
               ),
             ),
           ),

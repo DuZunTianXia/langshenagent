@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:bao_link/bao_link.dart';
 import 'package:flutter/material.dart';
 
 import '../link/link_providers.dart';
@@ -71,14 +72,39 @@ class _ProvidersPageState extends State<ProvidersPage> {
     return ref;
   }
 
+  /// The model refs of every enabled upstream, as picker options grouped
+  /// by the provider's name.
+  List<LinkOption> get _modelChoices => [
+    for (final provider in _providers)
+      if (provider.enabled)
+        for (final model in provider.chatModels)
+          LinkOption(
+            id: provider.refOf(model),
+            label: model.displayName,
+            group: provider.name,
+            groupLabel: provider.name,
+          ),
+  ];
+
   Future<void> _pickDefault(String key, String title) async {
-    final options = <(String?, String)>[
-      (null, '自动'),
+    final options = <LinkOption>[
+      const LinkOption(id: '', label: '自动', group: '', groupLabel: '内置'),
       if (_defaults.builtinAvailable &&
           (key == 'auxiliary' || key == 'actions'))
-        ('claude-code', 'Claude Code（本机）'),
-      if (key == 'actions') ('auxiliary', '跟随辅助模型'),
-      ..._modelOptions,
+        const LinkOption(
+          id: 'claude-code',
+          label: 'Claude Code（本机）',
+          group: '',
+          groupLabel: '内置',
+        ),
+      if (key == 'actions')
+        const LinkOption(
+          id: 'auxiliary',
+          label: '跟随辅助模型',
+          group: '',
+          groupLabel: '内置',
+        ),
+      ..._modelChoices,
     ];
     final current = switch (key) {
       'model' => _defaults.model,
@@ -87,32 +113,17 @@ class _ProvidersPageState extends State<ProvidersPage> {
       'image' => _defaults.image,
       _ => null,
     };
-    final picked = await showModalBottomSheet<String?>(
-      context: context,
-      showDragHandle: true,
-      builder: (sheet) => SafeArea(
-        child: ListView(
-          shrinkWrap: true,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-              child: Text(title, style: Theme.of(context).textTheme.titleSmall),
-            ),
-            for (final (value, label) in options)
-              ListTile(
-                title: Text(label),
-                trailing: value == current
-                    ? Icon(Icons.check, color: AppColors.accent, size: 18)
-                    : null,
-                onTap: () => Navigator.of(sheet).pop(value),
-              ),
-          ],
-        ),
-      ),
+    final picked = await showBChoicePicker(
+      context,
+      title: title,
+      options: options,
+      selected: current ?? '',
     );
-    if (picked == null && current == null) return; // dismissed
+    if (picked == null) return; // dismissed
     try {
-      final defaults = await widget.link.modelDefaults({key: picked});
+      final defaults = await widget.link.modelDefaults({
+        key: picked.id.isEmpty ? null : picked.id,
+      });
       if (!mounted) return;
       setState(() => _defaults = defaults);
     } catch (error) {
@@ -164,26 +175,30 @@ class _ProvidersPageState extends State<ProvidersPage> {
                   title: '默认模型',
                   children: [
                     BCell(
+                      icon: Icons.forum_outlined,
                       title: '新会话模型',
-                      subtitle: _refLabel(_defaults.model),
+                      trailing: _DefaultValue(_refLabel(_defaults.model)),
                       onTap: () => _pickDefault('model', '新会话默认使用的模型'),
                     ),
                     const BDivider(),
                     BCell(
+                      icon: Icons.auto_awesome_outlined,
                       title: '辅助模型',
-                      subtitle: _refLabel(_defaults.auxiliary),
+                      trailing: _DefaultValue(_refLabel(_defaults.auxiliary)),
                       onTap: () => _pickDefault('auxiliary', '小任务使用的辅助模型'),
                     ),
                     const BDivider(),
                     BCell(
+                      icon: Icons.bolt_outlined,
                       title: 'AI 操作模型',
-                      subtitle: _refLabel(_defaults.actions),
+                      trailing: _DefaultValue(_refLabel(_defaults.actions)),
                       onTap: () => _pickDefault('actions', 'AI 操作使用的模型'),
                     ),
                     const BDivider(),
                     BCell(
+                      icon: Icons.image_outlined,
                       title: '生图模型',
-                      subtitle: _refLabel(_defaults.image),
+                      trailing: _DefaultValue(_refLabel(_defaults.image)),
                       onTap: () => _pickDefault('image', '生图任务使用的模型'),
                     ),
                   ],
@@ -220,9 +235,21 @@ class _ProvidersPageState extends State<ProvidersPage> {
         : provider.baseUrl);
     final count = provider.chatModels.length;
     if (count > 0) subtitle.write(' · $count 个模型');
-    if (provider.error case final error?) subtitle.write(' · $error');
+    if (provider.error case final error?) subtitle.write(' · ⚠ $error');
+    final icon = switch (provider.protocol) {
+      'codex' => Icons.account_circle_outlined,
+      'anthropic' => Icons.hub_outlined,
+      _ => Icons.cloud_outlined,
+    };
     return BCell(
+      icon: icon,
+      iconColor: provider.error != null
+          ? Colors.orange
+          : provider.enabled
+          ? AppColors.accent
+          : AppColors.textMuted,
       title: provider.name,
+      titleColor: provider.enabled ? null : AppColors.textMuted,
       subtitle: subtitle.toString(),
       trailing: Switch.adaptive(
         value: provider.enabled,
@@ -231,6 +258,25 @@ class _ProvidersPageState extends State<ProvidersPage> {
       onTap: () => _edit(provider),
     );
   }
+}
+
+/// The current default on a cell's right, iOS-style: muted, ellipsised
+/// before the chevron.
+class _DefaultValue extends StatelessWidget {
+  const _DefaultValue(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => ConstrainedBox(
+    constraints: const BoxConstraints(maxWidth: 170),
+    child: Text(
+      text,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+    ),
+  );
 }
 
 /// An upstream's editor: its name, protocol, address, key, and which of
@@ -260,6 +306,7 @@ class _ProviderEditPageState extends State<ProviderEditPage> {
   bool _enabled = true;
   bool _saving = false;
   bool _fetching = false;
+  bool _advanced = false;
   List<LinkProviderModel> _models = [];
 
   bool get _isNew => widget.provider == null;
@@ -448,122 +495,169 @@ class _ProviderEditPageState extends State<ProviderEditPage> {
       text: number(model.price?.cacheWrite),
     );
     final output = TextEditingController(text: number(model.price?.output));
-    final currency = TextEditingController(
-      text: model.price?.currency ?? 'USD',
-    );
+    var currency = switch (model.price?.currency) {
+      'CNY' || 'RMB' => 'CNY',
+      _ => 'USD',
+    };
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (sheet) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(sheet).viewInsets.bottom,
-        ),
-        child: SafeArea(
-          child: ListView(
-            shrinkWrap: true,
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
-            children: [
-              Text(
-                '「${model.displayName}」价格',
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-              Padding(
-                padding: const EdgeInsets.only(top: 4, bottom: 10),
-                child: Text(
-                  '每百万 token 的价格，留空不计价',
-                  style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+      builder: (sheet) => StatefulBuilder(
+        builder: (sheet, setSheetState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(sheet).viewInsets.bottom,
+          ),
+          child: SafeArea(
+            child: ListView(
+              shrinkWrap: true,
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
+              children: [
+                Text(
+                  '「${model.displayName}」价格',
+                  style: Theme.of(context).textTheme.titleSmall,
                 ),
-              ),
-              Row(
-                children: [
-                  Expanded(
-                    child: BTextField(controller: input, hint: '输入'),
+                Padding(
+                  padding: const EdgeInsets.only(top: 4, bottom: 10),
+                  child: Text(
+                    '每百万 token 的价格，留空不计价',
+                    style: TextStyle(fontSize: 12, color: AppColors.textMuted),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: BTextField(controller: cacheRead, hint: '缓存读'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: BTextField(controller: cacheWrite, hint: '缓存写'),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: BTextField(controller: output, hint: '输出'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              BTextField(controller: currency, hint: '币种，例如 USD / CNY'),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  if (model.price != null)
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: BTextField(controller: input, hint: '输入'),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: BTextField(controller: cacheRead, hint: '缓存读'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: BTextField(controller: cacheWrite, hint: '缓存写'),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: BTextField(controller: output, hint: '输出'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    for (final (code, label) in const [
+                      ('USD', '美元'),
+                      ('CNY', '人民币'),
+                    ])
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: GestureDetector(
+                          onTap: () =>
+                              setSheetState(() => currency = code),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: currency == code
+                                  ? AppColors.accent.withValues(alpha: 0.14)
+                                  : AppColors.bubbleFill,
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(
+                                color: currency == code
+                                    ? AppColors.accent
+                                    : Colors.transparent,
+                              ),
+                            ),
+                            child: Text(
+                              '$label $code',
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                color: currency == code
+                                    ? AppColors.accent
+                                    : AppColors.textMuted,
+                                fontWeight: currency == code
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    if (model.price != null)
+                      Expanded(
+                        child: BButton(
+                          label: '清除价格',
+                          onPressed: () {
+                            setState(() => model.price = null);
+                            Navigator.of(sheet).pop();
+                          },
+                        ),
+                      ),
+                    if (model.price != null) const SizedBox(width: 10),
                     Expanded(
                       child: BButton(
-                        label: '清除价格',
+                        primary: true,
+                        label: '确定',
                         onPressed: () {
-                          setState(() => model.price = null);
+                          double? number(TextEditingController field) =>
+                              double.tryParse(
+                                field.text.trim().replaceAll(',', ''),
+                              );
+                          final inPrice = number(input);
+                          final outPrice = number(output);
+                          final allEmpty = [
+                            input,
+                            cacheRead,
+                            cacheWrite,
+                            output,
+                          ].every((field) => field.text.trim().isEmpty);
+                          if (allEmpty) {
+                            setState(() => model.price = null);
+                            Navigator.of(sheet).pop();
+                            return;
+                          }
+                          if (inPrice == null || outPrice == null) {
+                            showBToast(
+                              context,
+                              '输入和输出价格都要填',
+                              isError: true,
+                            );
+                            return;
+                          }
+                          setState(
+                            () => model.price = LinkModelPrice(
+                              input: inPrice,
+                              output: outPrice,
+                              cacheRead: number(cacheRead),
+                              cacheWrite: number(cacheWrite),
+                              currency: currency,
+                            ),
+                          );
                           Navigator.of(sheet).pop();
                         },
                       ),
                     ),
-                  if (model.price != null) const SizedBox(width: 10),
-                  Expanded(
-                    child: BButton(
-                      primary: true,
-                      label: '确定',
-                      onPressed: () {
-                        double? number(TextEditingController field) =>
-                            double.tryParse(
-                              field.text.trim().replaceAll(',', ''),
-                            );
-                        final inPrice = number(input);
-                        final outPrice = number(output);
-                        final allEmpty = [
-                          input,
-                          cacheRead,
-                          cacheWrite,
-                          output,
-                        ].every((field) => field.text.trim().isEmpty);
-                        if (allEmpty) {
-                          setState(() => model.price = null);
-                          Navigator.of(sheet).pop();
-                          return;
-                        }
-                        if (inPrice == null || outPrice == null) {
-                          showBToast(context, '输入和输出价格都要填', isError: true);
-                          return;
-                        }
-                        setState(
-                          () => model.price = LinkModelPrice(
-                            input: inPrice,
-                            output: outPrice,
-                            cacheRead: number(cacheRead),
-                            cacheWrite: number(cacheWrite),
-                            currency:
-                                currency.text.trim().isEmpty
-                                    ? 'USD'
-                                    : currency.text.trim().toUpperCase(),
-                          ),
-                        );
-                        Navigator.of(sheet).pop();
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
-    for (final c in [input, cacheRead, cacheWrite, output, currency]) {
+    for (final c in [input, cacheRead, cacheWrite, output]) {
       c.dispose();
     }
   }
@@ -604,13 +698,17 @@ class _ProviderEditPageState extends State<ProviderEditPage> {
         padding: const EdgeInsets.fromLTRB(14, 14, 14, 24),
         children: [
           BSection(
-            title: '基本信息',
+            title: '渠道',
             children: [
               Padding(
                 padding: const EdgeInsets.all(14),
                 child: Column(
                   children: [
-                    BTextField(controller: _name, hint: '名称，例如：DeepSeek'),
+                    BTextField(
+                      controller: _name,
+                      label: '名称',
+                      hint: '例如：DeepSeek',
+                    ),
                     const SizedBox(height: 10),
                     BDropdown<String>(
                       value: _protocol,
@@ -624,226 +722,249 @@ class _ProviderEditPageState extends State<ProviderEditPage> {
                       onChanged: (value) =>
                           setState(() => _protocol = value),
                     ),
-                    if (!_usesAccounts) ...[
-                      const SizedBox(height: 10),
+                    if (_usesAccounts)
+                      Container(
+                        margin: const EdgeInsets.only(top: 10),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.accent.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.info_outline,
+                              size: 16,
+                              color: AppColors.accent,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Codex 渠道用 ChatGPT 账号登录，请在电脑上完成账号登录。',
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  color: AppColors.textMuted,
+                                  height: 1.35,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const BDivider(),
+              BCell(
+                icon: Icons.visibility_outlined,
+                title: '在模型选择器中提供',
+                trailing: Switch.adaptive(
+                  value: _enabled,
+                  onChanged: (value) => setState(() => _enabled = value),
+                ),
+                showChevron: false,
+                onTap: () => setState(() => _enabled = !_enabled),
+              ),
+            ],
+          ),
+          if (!_usesAccounts) ...[
+            BSection(
+              title: '连接',
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       BTextField(
                         controller: _baseUrl,
-                        hint: 'Base URL，例如 https://api.deepseek.com',
-                      ),
-                      const SizedBox(height: 10),
-                      BDropdown<String>(
-                        value: _auth,
-                        hint: '认证方式',
-                        items: const [
-                          ('auto', '自动（按上游要求）'),
-                          ('bearer', 'Bearer Token'),
-                          ('x-api-key', 'x-api-key 头'),
-                        ],
-                        onChanged: (value) => setState(() => _auth = value),
+                        label: 'Base URL',
+                        hint: '例如 https://api.deepseek.com',
                       ),
                       const SizedBox(height: 10),
                       BTextField(
                         controller: _key,
+                        label: 'API Key',
                         hint: widget.provider?.hasKey == true
-                            ? 'API Key（已保存，留空不修改）'
-                            : 'API Key',
+                            ? '已保存，留空不修改'
+                            : '输入密钥',
                       ),
-                      const SizedBox(height: 10),
-                      BTextField(
-                        controller: _modelsUrl,
-                        hint: '模型列表地址（可选，默认按 Base URL 推导）',
+                      const SizedBox(height: 4),
+                      InkWell(
+                        onTap: () =>
+                            setState(() => _advanced = !_advanced),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 8,
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                _advanced
+                                    ? Icons.expand_less
+                                    : Icons.expand_more,
+                                size: 18,
+                                color: AppColors.textMuted,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '高级选项',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.textMuted,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                      const SizedBox(height: 10),
-                      BTextField(
-                        controller: _endpointUrl,
-                        hint: '对话地址（可选，默认按 Base URL 推导）',
-                      ),
-                      const SizedBox(height: 10),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          '渠道倍率（未单独定价的模型按此折算费用）',
+                      if (_advanced) ...[
+                        BDropdown<String>(
+                          value: _auth,
+                          hint: '认证方式',
+                          items: const [
+                            ('auto', '自动（按上游要求）'),
+                            ('bearer', 'Bearer Token'),
+                            ('x-api-key', 'x-api-key 头'),
+                          ],
+                          onChanged: (value) => setState(() => _auth = value),
+                        ),
+                        const SizedBox(height: 10),
+                        BTextField(
+                          controller: _modelsUrl,
+                          label: '模型列表地址',
+                          hint: '可选，默认按 Base URL 推导',
+                        ),
+                        const SizedBox(height: 10),
+                        BTextField(
+                          controller: _endpointUrl,
+                          label: '对话地址',
+                          hint: '可选，默认按 Base URL 推导',
+                        ),
+                        const SizedBox(height: 14),
+                        Text(
+                          '计价：未单独定价的模型按渠道倍率折算费用',
                           style: TextStyle(
                             fontSize: 12,
                             color: AppColors.textMuted,
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: BTextField(
-                              controller: _rateMultiplier,
-                              hint: '倍率 ×1',
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: BTextField(
-                              controller: _ratePerCall,
-                              hint: '每次调用费',
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          SizedBox(
-                            width: 84,
-                            child: BTextField(
-                              controller: _rateCurrency,
-                              hint: '币种',
-                            ),
-                          ),
-                        ],
-                      ),
-                    ] else
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Text(
-                          'Codex 渠道用 ChatGPT 账号登录，请在电脑上完成账号登录。',
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            color: AppColors.textMuted,
-                          ),
-                        ),
-                      ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            '在模型选择器中提供',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                        ),
-                        Switch.adaptive(
-                          value: _enabled,
-                          onChanged: (value) =>
-                              setState(() => _enabled = value),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          if (!_usesAccounts)
-            BSection(
-              title: '模型',
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: BButton(
-                              label: '拉取模型列表',
-                              icon: Icons.download_outlined,
-                              busy: _fetching,
-                              expand: true,
-                              onPressed: _fetch,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: BTextField(
-                                    controller: _custom,
-                                    hint: '手动添加模型 ID',
-                                    onSubmitted: (_) => _addCustom(),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                BButton(label: '加', onPressed: _addCustom),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (_models.isNotEmpty) const SizedBox(height: 6),
-                      for (final model in _models)
+                        const SizedBox(height: 8),
                         Row(
                           children: [
                             Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    model.displayName,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: 13.5,
-                                      color: model.missing
-                                          ? AppColors.textFaint
-                                          : AppColors.textPrimary,
-                                    ),
-                                  ),
-                                  if (model.id != model.displayName)
-                                    Text(
-                                      model.id,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontSize: 11.5,
-                                        color: AppColors.textFaint,
-                                      ),
-                                    ),
+                              child: BTextField(
+                                controller: _rateMultiplier,
+                                label: '倍率',
+                                hint: '×1',
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: BTextField(
+                                controller: _ratePerCall,
+                                label: '每次调用费',
+                                hint: '0',
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            SizedBox(
+                              width: 92,
+                              child: BDropdown<String>(
+                                value: _rateCurrency.text,
+                                hint: '币种',
+                                items: const [
+                                  ('USD', 'USD'),
+                                  ('CNY', 'CNY'),
                                 ],
+                                onChanged: (value) =>
+                                    _rateCurrency.text = value,
                               ),
-                            ),
-                            if (model.missing)
-                              Padding(
-                                padding: const EdgeInsets.only(right: 6),
-                                child: Text(
-                                  '已下架',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: AppColors.textFaint,
-                                  ),
-                                ),
-                              ),
-                            IconButton(
-                              tooltip: model.price == null ? '设置价格' : '修改价格',
-                              visualDensity: VisualDensity.compact,
-                              icon: Icon(
-                                model.price == null
-                                    ? Icons.sell_outlined
-                                    : Icons.sell,
-                                size: 17,
-                                color: model.price == null
-                                    ? AppColors.textFaint
-                                    : AppColors.accent,
-                              ),
-                              onPressed: () => _editPrice(model),
-                            ),
-                            Switch.adaptive(
-                              value: model.enabled,
-                              onChanged: (value) =>
-                                  setState(() => model.enabled = value),
                             ),
                           ],
                         ),
-                      if (_models.isEmpty)
-                        Text(
-                          '还没有模型，先拉取或手动添加',
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            color: AppColors.textMuted,
-                          ),
-                        ),
+                      ],
                     ],
                   ),
                 ),
               ],
             ),
+            BSection(
+              title: '模型',
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 14, 14, 6),
+                  child: Column(
+                    children: [
+                      BButton(
+                        label: '拉取模型列表',
+                        icon: Icons.download_outlined,
+                        busy: _fetching,
+                        expand: true,
+                        onPressed: _fetch,
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: BTextField(
+                              controller: _custom,
+                              hint: '手动添加模型 ID',
+                              onSubmitted: (_) => _addCustom(),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          BButton(label: '添加', onPressed: _addCustom),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                if (_models.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    child: Center(
+                      child: Text(
+                        '还没有模型，先拉取或手动添加',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ),
+                  )
+                else ...[
+                  Divider(height: 0.5, color: AppColors.partBorder),
+                  for (var i = 0; i < _models.length; i++) ...[
+                    if (i > 0)
+                      Divider(height: 0.5, color: AppColors.partBorder),
+                    _ModelRow(
+                      model: _models[i],
+                      onPrice: () => _editPrice(_models[i]),
+                      onToggle: (value) =>
+                          setState(() => _models[i].enabled = value),
+                      onDelete: () =>
+                          setState(() => _models.remove(_models[i])),
+                    ),
+                  ],
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 4, 14, 10),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        '左滑删除，点价格图标计价',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textFaint,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: BButton(
@@ -855,6 +976,121 @@ class _ProviderEditPageState extends State<ProviderEditPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// A model in the provider's list: name and id on the left, price and the
+/// offering switch on the right, swiped left to remove.
+class _ModelRow extends StatelessWidget {
+  const _ModelRow({
+    required this.model,
+    required this.onPrice,
+    required this.onToggle,
+    required this.onDelete,
+  });
+
+  final LinkProviderModel model;
+  final VoidCallback onPrice;
+  final ValueChanged<bool> onToggle;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return BSlidable(
+      onDelete: onDelete,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          model.displayName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            color: model.missing
+                                ? AppColors.textFaint
+                                : AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
+                      if (model.missing)
+                        Container(
+                          margin: const EdgeInsets.only(left: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.textFaint.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '已下架',
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              color: AppColors.textMuted,
+                            ),
+                          ),
+                        ),
+                      if (model.custom)
+                        Container(
+                          margin: const EdgeInsets.only(left: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.accent.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '手动',
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              color: AppColors.accent,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  if (model.id != model.displayName)
+                    Text(
+                      model.id,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        color: AppColors.textFaint,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            IconButton(
+              tooltip: model.price == null ? '设置价格' : '修改价格',
+              visualDensity: VisualDensity.compact,
+              icon: Icon(
+                model.price == null ? Icons.sell_outlined : Icons.sell,
+                size: 17,
+                color: model.price == null
+                    ? AppColors.textFaint
+                    : AppColors.accent,
+              ),
+              onPressed: onPrice,
+            ),
+            Switch.adaptive(value: model.enabled, onChanged: onToggle),
+          ],
+        ),
       ),
     );
   }

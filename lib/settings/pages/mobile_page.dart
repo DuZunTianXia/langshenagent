@@ -43,6 +43,9 @@ class _MobileSettingsPageState extends State<MobileSettingsPage> {
   /// What is wrong with the direct port typed.
   String? _portError;
 
+  /// What is wrong with the direct domain typed.
+  String? _domainError;
+
   /// Ticks while a code shows, for it to say when it expired, and while
   /// phones are connected, for their round trips.
   Timer? _ticker;
@@ -165,6 +168,7 @@ class _MobileSettingsPageState extends State<MobileSettingsPage> {
             ],
             if (host.relayMode == LinkRelayMode.direct) ...[
               _directPort(l10n),
+              _directDomain(l10n),
               _directAddress(l10n),
             ],
           ],
@@ -363,6 +367,28 @@ class _MobileSettingsPageState extends State<MobileSettingsPage> {
         }
         setState(() => _portError = null);
         unawaited(_host.setLinkPort(port));
+      },
+    ),
+  );
+
+  /// Direct-only: the domain resolving to this computer. IPv6 can move,
+  /// the phone looks the name up fresh on every dial.
+  Widget _directDomain(AppLocalizations l10n) => SettingsRow(
+    label: l10n.mobileDirectDomain,
+    description: _domainError ?? l10n.mobileDirectDomainDescription,
+    trailing: SettingsTextField(
+      value: _host.linkDomain ?? '',
+      hint: 'mac.example.com',
+      semanticLabel: l10n.mobileDirectDomain,
+      width: 160,
+      onSubmitted: (text) {
+        final domain = text.trim();
+        if (domain.isNotEmpty && !LinkHost.validLinkDomain(domain)) {
+          setState(() => _domainError = l10n.mobileDirectDomainInvalid);
+          return;
+        }
+        setState(() => _domainError = null);
+        unawaited(_host.setLinkDomain(domain.isEmpty ? null : domain));
       },
     ),
   );

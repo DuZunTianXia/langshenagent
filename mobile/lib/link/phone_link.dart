@@ -1188,10 +1188,18 @@ class PhoneLink extends ChangeNotifier {
     outputs.clear();
   }
 
-  /// Forgets the computer: unpaired here.
+  /// Forgets the computer: unpaired here, and unpaired on it when it can
+  /// still be reached.
   Future<void> forget() async {
     _wantOnline = false;
     _retry?.cancel();
+    if (_peer != null && !_peer!.isClosed) {
+      try {
+        await _call(LinkMethods.unpair);
+      } on Object {
+        // Offline or gone: forgotten here all the same.
+      }
+    }
     await _teardown();
     phase = PhonePhase.offline;
     pairing = null;

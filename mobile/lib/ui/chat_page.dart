@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:bao_link/bao_link.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/gestures.dart' show kDoubleTapTimeout;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -14,20 +16,25 @@ import '../chat/chat_models.dart'
         ChatItem,
         DiffLineType,
         ImageAttachment,
+        LiveStatusItem,
         PlanItem,
         PlanStatus,
+        TurnUsage,
         UserMessageItem;
 import 'agent_page.dart';
+import 'bot_edit_page.dart';
 import 'file_viewer.dart';
 import 'items/image_preview.dart';
 import 'md/md_theme.dart';
 import 'widgets.dart';
 import '../chat/interaction.dart';
+import '../chat/step_folds.dart';
 import '../chat/user_message_style.dart';
 import '../link/chat_codec.dart';
 import '../link/interaction_codec.dart';
 import '../link/phone_link.dart';
 import 'chat_items.dart';
+import 'items/fold_line.dart';
 import 'markdown.dart';
 
 /// One conversation: a session's items as they come, the composer, and
@@ -141,25 +148,12 @@ class _ChatPageState extends State<ChatPage> {
   /// The + menu: a picture joins the message's images; another file goes
   /// to the desktop with `upload` and its path is mentioned in the text.
   Future<void> _attach() async {
-    final kind = await showModalBottomSheet<String>(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Wrap(
-          children: [
-            ListTile(
-              leading: const Icon(Codicons.deviceCamera),
-              title: const Text('图片'),
-              onTap: () => Navigator.of(context).pop('image'),
-            ),
-            ListTile(
-              leading: const Icon(Codicons.file),
-              title: const Text('文件'),
-              subtitle: const Text('上传到电脑，路径以 @ 引用发给会话'),
-              onTap: () => Navigator.of(context).pop('file'),
-            ),
-          ],
-        ),
-      ),
+    final kind = await showBActions<String>(
+      context,
+      actions: const [
+        (Codicons.deviceCamera, '图片', null, 'image'),
+        (Codicons.file, '文件', '上传到电脑，路径以 @ 引用发给会话', 'file'),
+      ],
     );
     if (kind == 'image') return _attachImage();
     if (kind == 'file') return _attachFile();
@@ -299,9 +293,34 @@ class _ChatPageState extends State<ChatPage> {
           ],
         ),
         actions: [
-          if (_sessionId != null)
-            PopupMenuButton<String>(
-              onSelected: (action) async {
+          if (widget.bot != null)
+            IconButton(
+              tooltip: '机器人设置',
+              icon: const Icon(Icons.tune_outlined),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => BotEditPage(
+                    link: widget.link,
+                    bot: widget.bot!,
+                  ),
+                ),
+              ),
+            )
+          else if (_sessionId != null)
+            IconButton(
+              icon: const Icon(Icons.more_vert),
+              onPressed: () async {
+                final action = await showBActions<String>(
+                  context,
+                  danger: const {'delete'},
+                  actions: const [
+                    (Icons.edit_outlined, '重命名', null, 'rename'),
+                    (Icons.push_pin_outlined, '置顶', null, 'pin'),
+                    (Icons.archive_outlined, '归档', null, 'archive'),
+                    (Icons.delete_outline, '删除', null, 'delete'),
+                  ],
+                );
+                if (action == null || !context.mounted) return;
                 final id = _sessionId!;
                 switch (action) {
                   case 'rename':
@@ -322,12 +341,6 @@ class _ChatPageState extends State<ChatPage> {
                     }
                 }
               },
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: 'rename', child: Text('重命名')),
-                PopupMenuItem(value: 'pin', child: Text('置顶')),
-                PopupMenuItem(value: 'archive', child: Text('归档')),
-                PopupMenuItem(value: 'delete', child: Text('删除')),
-              ],
             ),
         ],
       ),
@@ -351,7 +364,7 @@ class _ChatPageState extends State<ChatPage> {
                 InteractionCodec.encodeAnswer(answer),
               ),
             ),
-          if (feed != null)
+          if (feed != null && _text.text.isEmpty)
             _Suggestions(
               feed: feed,
               bot: widget.bot != null,
@@ -359,6 +372,10 @@ class _ChatPageState extends State<ChatPage> {
                 _text.text = text;
                 _text.selection = TextSelection.collapsed(offset: text.length);
                 setState(() {});
+              },
+              onSend: (text) {
+                _text.text = text;
+                _send();
               },
             ),
           _Composer(
@@ -415,6 +432,14 @@ class _ChatPageState extends State<ChatPage> {
         final items = [
           for (final json in feed.items) ChatCodec.decode(json),
         ];
+        // As the desktop's history folds: each run of quick steps into a
+        // tally line, each finished turn's work into "已处理 …" before its
+        // answer, the turn's figures under its last row.
+        final folds = StepFolds.of(
+          items.length,
+          (i) => items[i] ?? const AssistantTextItem(''),
+          live: feed.live,
+        );
         // Opens on the newest message, and stays pinned to the bottom
         // while it is the bottom the user is at.
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -449,17 +474,35 @@ class _ChatPageState extends State<ChatPage> {
             itemBuilder: (context, index) {
               final item = items[index];
               if (item == null) return const SizedBox.shrink();
-              if (widget.bot != null && item is AssistantTextItem) {
-                return KeyedSubtree(
-                  key: _keys.putIfAbsent(index, GlobalKey.new),
-                  child: _BotReply(item: item, bot: widget.bot!),
-                );
-              }
+              final row = folds.rowAt(index, item, _isFoldOpen);
               return KeyedSubtree(
                 key: _keys.putIfAbsent(index, GlobalKey.new),
-                child: ChatItemView(
-                item: item,
-                onAgent: item is AgentItem
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (row.work case final fold?)
+                      WorkFoldLine(
+                        worked: fold.worked ?? Duration.zero,
+                        stopped: fold.stopped,
+                        edits: turnEdits(_itemsIn(fold, items)),
+                        expanded: _isFoldOpen(fold),
+                        onToggle: () => _toggleFold(fold),
+                        images: foldImages(_itemsIn(fold, items)),
+                      ),
+                    if (row.steps case final fold?)
+                      StepsFoldLine(
+                        tally: StepTally(_itemsIn(fold, items)),
+                        expanded: _isFoldOpen(fold),
+                        onToggle: () => _toggleFold(fold),
+                        images: foldImages(_itemsIn(fold, items)),
+                      ),
+                    if (row.item)
+                      if (widget.bot != null && item is AssistantTextItem)
+                        _BotReply(item: item, bot: widget.bot!)
+                      else
+                        ChatItemView(
+                          item: folds.shownAt(index, item),
+                          onAgent: item is AgentItem
                     ? (agent) => Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (_) => AgentPage(agent: agent),
@@ -502,6 +545,15 @@ class _ChatPageState extends State<ChatPage> {
                         }
                       }
                     : null,
+                        ),
+                    if (folds.turnEndingAt(index) case final prompt?)
+                      if (items[prompt]
+                          case UserMessageItem(
+                            :final worked?,
+                            :final usage
+                          ))
+                        _TurnStats(worked: worked, usage: usage),
+                  ],
                 ),
               );
             },
@@ -554,6 +606,10 @@ class _ChatPageState extends State<ChatPage> {
 
   final Map<int, GlobalKey> _keys = {};
   final Map<int, double> _offsets = {};
+  // The folds the history makes ([StepFolds]): which ones a click opened,
+  // and which turns stay open once they were (see [_toggleFold]).
+  final Map<(StepFoldKind, int), bool> _foldOpen = {};
+  final Set<int> _unfoldedTurns = {};
   String? _stickyText;
   int _stickyIndex = -1;
   bool _showJump = false;
@@ -633,6 +689,29 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
+  /// Whether [fold] is open: as clicked, or a work fold of a turn the
+  /// user opened once (it stays open until clicked shut).
+  bool _isFoldOpen(StepFold fold) =>
+      _foldOpen[fold.key] ??
+      (fold.kind == StepFoldKind.work && _unfoldedTurns.contains(fold.start));
+
+  void _toggleFold(StepFold fold) => setState(() {
+    final open = !_isFoldOpen(fold);
+    _foldOpen[fold.key] = open;
+    if (fold.kind == StepFoldKind.work) {
+      if (open) {
+        _unfoldedTurns.add(fold.start);
+      } else {
+        _unfoldedTurns.remove(fold.start);
+      }
+    }
+  });
+
+  /// The items [fold] holds (decode misses left out).
+  static List<ChatItem> _itemsIn(StepFold fold, List<ChatItem?> items) => [
+    for (var i = fold.start; i < fold.end; i++) ?items[i],
+  ];
+
   void _jumpToSticky() {
     if (_stickyIndex < 0) return;
     final ctx = _keys[_stickyIndex]?.currentContext;
@@ -670,28 +749,8 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-  Future<String?> _rename() async {
-    final controller = TextEditingController(text: _title() ?? '');
-    final title = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('重命名'),
-        content: TextField(controller: controller, autofocus: true),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
-            child: const Text('保存'),
-          ),
-        ],
-      ),
-    );
-    controller.dispose();
-    return title == null || title.isEmpty ? null : title;
-  }
+  Future<String?> _rename() =>
+      showBPrompt(context, title: '重命名', initial: _title() ?? '');
 
   Future<bool> _confirm(String text) =>
       showBConfirm(context, title: text, confirm: '删除', danger: true);
@@ -699,42 +758,6 @@ class _ChatPageState extends State<ChatPage> {
 
 /// The composer's circular buttons: plus, stop, send — a tinted circle,
 /// not the framework's filled IconButton.
-class _RoundButton extends StatelessWidget {
-  const _RoundButton({required this.icon, this.onPressed, this.color});
-
-  final IconData icon;
-  final VoidCallback? onPressed;
-  final Color? color;
-
-  @override
-  Widget build(BuildContext context) {
-    final tint = color ?? AppColors.textMuted;
-    return Material(
-      color: onPressed == null
-          ? AppColors.bubbleFill.withValues(alpha: 0.5)
-          : tint.withValues(alpha: color == null ? 0.12 : 0.9),
-      shape: const CircleBorder(),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onPressed,
-        child: SizedBox(
-          width: 40,
-          height: 40,
-          child: Icon(
-            icon,
-            size: 20,
-            color: onPressed == null
-                ? AppColors.textFaint
-                : color == null
-                ? tint
-                : Colors.white,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _Composer extends StatelessWidget {
   const _Composer({
     required this.controller,
@@ -760,13 +783,8 @@ class _Composer extends StatelessWidget {
   Widget build(BuildContext context) {
     final canSend = controller.text.trim().isNotEmpty || images.isNotEmpty;
     return SafeArea(
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
-        decoration: BoxDecoration(
-          border: Border(
-            top: BorderSide(color: Theme.of(context).dividerColor),
-          ),
-        ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -828,43 +846,14 @@ class _Composer extends StatelessWidget {
                   ],
                 ),
               ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                _RoundButton(icon: Codicons.plus, onPressed: onAttach),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: TextField(
-                    controller: controller,
-                    minLines: 1,
-                    maxLines: 5,
-                    textInputAction: TextInputAction.send,
-                    onChanged: (_) => onChanged(),
-                    onSubmitted: (_) => onSend(),
-                    decoration: BTextField.decoration(
-                      hint: '发消息…',
-                      radius: 22,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                if (live)
-                  _RoundButton(
-                    icon: Codicons.debugStop,
-                    onPressed: onStop,
-                    color: Theme.of(context).colorScheme.error,
-                  )
-                else
-                  _RoundButton(
-                    icon: Codicons.send,
-                    onPressed: canSend ? onSend : null,
-                    color: AppColors.accent,
-                  ),
-              ],
+            BComposer(
+              controller: controller,
+              live: live,
+              canSend: canSend,
+              onAttach: onAttach,
+              onChanged: onChanged,
+              onSend: onSend,
+              onStop: onStop,
             ),
           ],
         ),
@@ -1545,11 +1534,18 @@ class _OutputPageState extends State<OutputPage> {
 
 /// What the latest reply suggests sending next, as tappable chips: a tap
 /// fills the composer with it.
-class _Suggestions extends StatelessWidget {
+/// What the agent suggests the user send next, as the desktop's
+/// `ReplySuggestionBar` has them: pills piled on the composer (onto the
+/// line above when a row fills), a click putting one in the composer to
+/// be edited and sent, sent as it is at a second click soon after. Shown
+/// for the first time, they rise in one after another, as a bot's
+/// message does on the phone.
+class _Suggestions extends StatefulWidget {
   const _Suggestions({
     required this.feed,
     required this.bot,
     required this.onPick,
+    required this.onSend,
   });
 
   final SessionFeed feed;
@@ -1557,42 +1553,109 @@ class _Suggestions extends StatelessWidget {
   /// A bot's chat: its reply's `<bot_suggest>`s, not a reply's markup's.
   final bool bot;
   final ValueChanged<String> onPick;
+  final ValueChanged<String> onSend;
+
+  /// Before the first comes: the reply's last words read, the room open.
+  static const delay = Duration(milliseconds: 100);
+
+  /// Between one and the next: each comes on its own.
+  static const stagger = Duration(milliseconds: 110);
+
+  /// How long each takes to come.
+  static const each = Duration(milliseconds: 480);
+
+  @override
+  State<_Suggestions> createState() => _SuggestionsState();
+}
+
+class _SuggestionsState extends State<_Suggestions>
+    with SingleTickerProviderStateMixin {
+  /// Those played in, the latest last (a conversation's suggestions play
+  /// once each).
+  static final _played = <String>{};
+
+  late final AnimationController _entry;
+
+  @override
+  void initState() {
+    super.initState();
+    final count = _suggestions().length;
+    _entry = AnimationController(
+      vsync: this,
+      duration:
+          _Suggestions.delay +
+          _Suggestions.stagger * (count > 0 ? count - 1 : 0) +
+          _Suggestions.each,
+    );
+    final play = _played.add('${widget.feed.session}\n${_suggestions().join('\n')}');
+    if (_played.length > 200) _played.remove(_played.first);
+    if (play) {
+      _entry.forward();
+    } else {
+      _entry.value = 1;
+    }
+  }
+
+  @override
+  void dispose() {
+    _entry.dispose();
+    super.dispose();
+  }
+
+  /// The newest reply's suggestions: none while a turn is under way, and
+  /// none once anything came after it (a message sent again, or more of
+  /// the agent's work) — they are what to send after *this* answer.
+  List<String> _suggestions() {
+    if (widget.feed.live) return const [];
+    for (final json in widget.feed.items.reversed) {
+      final item = ChatCodec.decode(json);
+      // The status row under a live turn stands after it for a moment.
+      if (item == null || item is LiveStatusItem) continue;
+      if (item is! AssistantTextItem) return const [];
+      return widget.bot
+          ? ChatCodec.botSuggestions(item.raw)
+          : item.suggestions;
+    }
+    return const [];
+  }
+
+  /// The [i]th's part of the whole.
+  Animation<double> _of(int i) {
+    final total = _entry.duration!.inMicroseconds;
+    final start = (_Suggestions.delay + _Suggestions.stagger * i)
+        .inMicroseconds;
+    final end = start + _Suggestions.each.inMicroseconds;
+    return CurvedAnimation(
+      parent: _entry,
+      curve: Interval(start / total, end / total),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    List<String>? suggestions;
-    for (final json in feed.items.reversed) {
-      final item = ChatCodec.decode(json);
-      if (item is AssistantTextItem) {
-        suggestions = bot
-            ? ChatCodec.botSuggestions(item.raw)
-            : item.suggestions;
-        break;
-      }
-      if (item != null) suggestions ??= const [];
-    }
-    if (suggestions == null || suggestions.isEmpty) {
-      return const SizedBox.shrink();
-    }
+    final suggestions = _suggestions();
+    if (suggestions.isEmpty) return const SizedBox.shrink();
+    // Less motion asked for: they only fade in.
+    final still = MediaQuery.disableAnimationsOf(context);
     return SizedBox(
-      height: 40,
+      height: 32,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
         children: [
-          for (final suggestion in suggestions)
+          for (final (i, said) in suggestions.indexed)
             Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: ActionChip(
-                label: Text(
-                  suggestion,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 12.5, color: AppColors.text),
+              padding: const EdgeInsets.only(right: 6),
+              child: Center(
+                child: _Entering(
+                  animation: _of(i),
+                  still: still,
+                  child: _Pill(
+                    text: said,
+                    onTap: () => widget.onPick(said),
+                    onDoubleTap: () => widget.onSend(said),
+                  ),
                 ),
-                backgroundColor: AppColors.bubbleFill,
-                side: BorderSide(color: AppColors.partBorder),
-                onPressed: () => onPick(suggestion),
               ),
             ),
         ],
@@ -1600,6 +1663,100 @@ class _Suggestions extends StatelessWidget {
     );
   }
 }
+
+/// One coming in by [animation]: rising and growing from its lower
+/// corner first, fading in just after; with [still], only fading.
+class _Entering extends AnimatedWidget {
+  const _Entering({
+    required Animation<double> animation,
+    required this.still,
+    required this.child,
+  }) : super(listenable: animation);
+
+  final bool still;
+  final Widget child;
+
+  static const _fade = Interval(0.2, 1, curve: Curves.easeOut);
+  static const _rise = Interval(0.1, 1, curve: Curves.easeOutCubic);
+
+  @override
+  Widget build(BuildContext context) {
+    final t = (listenable as Animation<double>).value;
+    if (t >= 1) return child;
+    final faded = Opacity(opacity: _fade.transform(t), child: child);
+    if (still) return faded;
+    final rise = _rise.transform(t);
+    return Transform.translate(
+      offset: Offset(0, (1 - rise) * 10),
+      child: Transform.scale(
+        scale: 0.94 + 0.06 * rise,
+        alignment: Alignment.bottomLeft,
+        child: faded,
+      ),
+    );
+  }
+}
+
+/// One suggestion pill: clicked it goes in the composer, clicked again
+/// within a double click's time it is sent.
+class _Pill extends StatefulWidget {
+  const _Pill({
+    required this.text,
+    required this.onTap,
+    required this.onDoubleTap,
+  });
+
+  final String text;
+  final VoidCallback onTap;
+  final VoidCallback onDoubleTap;
+
+  @override
+  State<_Pill> createState() => _PillState();
+}
+
+class _PillState extends State<_Pill> {
+  /// When it was last clicked: clicked again within a double click's
+  /// time, it is sent. A click is taken at once, not once no second one
+  /// came.
+  Duration? _clickedAt;
+
+  void _click() {
+    final at = _clock.elapsed;
+    final before = _clickedAt;
+    if (before != null && at - before <= kDoubleTapTimeout) {
+      _clickedAt = null;
+      widget.onDoubleTap();
+    } else {
+      _clickedAt = at;
+      widget.onTap();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final line = widget.text.replaceAll(RegExp(r'\s+'), ' ').trim();
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _click,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: AppColors.bubbleFill,
+          // A pill on one line; on more, its corners as round.
+          borderRadius: BorderRadius.circular(13),
+          border: Border.all(color: AppColors.bubbleBorder()),
+        ),
+        child: Text(
+          line,
+          style: TextStyle(color: AppColors.text, fontSize: 12.5),
+        ),
+      ),
+    );
+  }
+}
+
+/// The time, for clicks.
+final _clock = Stopwatch()..start();
 
 /// A choice's kind as a word, for its label and its sheet's title.
 String _kindLabel(String kind) => switch (kind) {
@@ -1629,87 +1786,90 @@ class _StatusLine extends StatelessWidget {
     return choice.selected;
   }
 
-  /// The server labels choices in English; the phone shows Chinese (as
-  /// the desktop's `composerApproval*` strings read).
+  /// The server labels choices in English; the phone shows Chinese.
   static String _localize(LinkChoice choice, String label) {
-    if (choice.kind != 'permission') return label;
-    return switch (label) {
-          'Full access' => '完全访问',
-          'Accept edits' => '自动接受编辑',
-          'Default' => '逐项批准',
-          'Auto' => '替我批准',
-          "Don't ask" => '仅限已允许',
-          'Plan' => '仅规划',
-          'Read only' => '只读',
-          _ => label,
-        };
+    return switch ((choice.kind, label)) {
+      ('mode', 'Agent' || 'Task') => '智能体',
+      ('mode', 'Ask' || 'Chat') => '问答',
+      ('mode', 'Plan') => '规划',
+      ('permission', 'Ask for approval' || 'Default') => '逐项批准',
+      ('permission', 'Accept edits') => '接受编辑',
+      ('permission', 'Approve for me' || 'Auto') => '替我批准',
+      ('permission', "Don't ask") => '仅限已允许',
+      ('permission', 'Full access') => '完全访问',
+      ('permission', 'Plan') => '仅规划',
+      ('permission', 'Read only') => '只读',
+      ('effort', 'Disable') => '关闭',
+      ('effort', 'Low') => '低',
+      ('effort', 'Medium') => '中',
+      ('effort', 'High') => '高',
+      ('effort', 'X-High') => '极高',
+      ('effort', 'Max') => '最高',
+      _ => label,
+    };
   }
+
+  /// The option's description as the sheet shows it, Chinese too.
+  static String _localizeDescription(String description) {
+    return switch (description) {
+      'Plan, edit and run code' => '规划、改代码、跑命令',
+      'Talk it through, suggest changes' => '讨论并给出建议，不动文件',
+      'Research and plan, then build' => '先调研和规划，再动手',
+      'Ask before edits and commands' => '改文件、跑命令前先问你',
+      'Edit files freely, ask before commands' => '自由改文件，跑命令前问',
+      'Run what is safe, block what looks risky' => '安全的直接执行，危险的拦下',
+      'Deny whatever is not pre-approved' => '未预先允许的一律拒绝',
+      'No checks: edits and commands run without asking' =>
+        '不做检查：编辑和命令直接执行',
+      _ => description,
+    };
+  }
+
+  /// The effort/context choices folded into the model chip's dropdown.
+  List<LinkChoice> get _modelSubChoices => [
+    for (final choice in feed.choices)
+      if (choice.kind == 'effort' || choice.kind == 'context') choice,
+  ];
 
   @override
   Widget build(BuildContext context) {
-    final style = TextStyle(fontSize: 12, color: AppColors.textMuted);
     final children = <Widget>[];
     for (final choice in feed.choices) {
       final label = _selectedLabel(choice);
       if (label == null || label.isEmpty) continue;
-      if (children.isNotEmpty) children.add(const SizedBox(width: 14));
+      if (choice.kind == 'effort' || choice.kind == 'context') continue;
+      if (children.isNotEmpty) children.add(const SizedBox(width: 8));
       children.add(
-        GestureDetector(
-          behavior: HitTestBehavior.opaque,
+        _StatusChip(
+          icon: switch (choice.kind) {
+            'mode' => Codicons.symbolConstant,
+            'permission' => Codicons.shield,
+            'model' => Codicons.hubot,
+            _ => Codicons.settings,
+          },
+          label: choice.kind == 'mode' ? '∞ $label' : label,
+          accent: choice.kind == 'permission',
           onTap: () => _pick(context, choice),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                switch (choice.kind) {
-                  'mode' => Codicons.symbolConstant,
-                  'permission' => Codicons.shield,
-                  'model' => Codicons.hubot,
-                  'effort' => Codicons.zap,
-                  'context' => Codicons.pieChart,
-                  _ => Codicons.settings,
-                },
-                size: 13,
-                color: choice.kind == 'permission'
-                    ? AppColors.caution
-                    : AppColors.textMuted,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                choice.kind == 'mode' ? '∞ $label' : label,
-                style: style.copyWith(
-                  color: choice.kind == 'permission'
-                      ? AppColors.caution
-                      : AppColors.textMuted,
-                ),
-              ),
-            ],
-          ),
+          onMenuTap: choice.kind == 'model' && _modelSubChoices.isNotEmpty
+              ? () => _modelSettings(context)
+              : null,
         ),
       );
     }
     final used = feed.context?['used'];
     final window = feed.context?['window'];
     if (used is num && window is num && window > 0) {
-      if (children.isNotEmpty) children.add(const SizedBox(width: 14));
+      if (children.isNotEmpty) children.add(const SizedBox(width: 8));
       children.add(
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Codicons.pieChart, size: 13, color: AppColors.textMuted),
-            const SizedBox(width: 4),
-            Text('${_tokens(used)} / ${_tokens(window)}', style: style),
-          ],
+        _StatusChip(
+          icon: Codicons.pieChart,
+          label: '${_tokens(used)} / ${_tokens(window)}',
         ),
       );
     }
     if (children.isEmpty) return const SizedBox.shrink();
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 3, 16, 6),
-      decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: AppColors.partBorder)),
-      ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 4, 14, 8),
       child: SafeArea(
         top: false,
         child: SingleChildScrollView(
@@ -1753,11 +1913,51 @@ class _StatusLine extends StatelessWidget {
     return null;
   }
 
+  /// The model chip's dropdown: the effort/context choices that used to
+  /// sit beside it, each leading into its own picker.
+  Future<void> _modelSettings(BuildContext context) async {
+    final picked = await showBActions<LinkChoice>(
+      context,
+      actions: [
+        for (final choice in _modelSubChoices)
+          (
+            choice.kind == 'effort' ? Codicons.zap : Codicons.pieChart,
+            _kindLabel(choice.kind),
+            _selectedLabel(choice),
+            choice,
+          ),
+      ],
+    );
+    if (picked != null && context.mounted) {
+      _pick(context, picked);
+    }
+  }
+
   Future<void> _pick(BuildContext context, LinkChoice choice) async {
+    String? initialGroup;
+    if (choice.kind == 'model') {
+      for (final option in choice.options) {
+        if (option.id == choice.selected) {
+          initialGroup = option.group;
+          break;
+        }
+      }
+    }
     final picked = await showBChoicePicker(
       context,
       title: _kindLabel(choice.kind),
-      options: choice.options,
+      initialGroup: initialGroup,
+      options: [
+        for (final option in choice.options)
+          LinkOption(
+            id: option.id,
+            label: option.label,
+            description: _localizeDescription(option.description),
+            group: option.group,
+            groupLabel: option.groupLabel,
+            caution: option.caution,
+          ),
+      ],
       selected: choice.selected,
       iconOf: choice.kind == 'model' ? (id) => _modelIcon(id) : null,
       labelOf: (label) => _localize(choice, label),
@@ -1774,9 +1974,156 @@ class _StatusLine extends StatelessWidget {
   }
 }
 
-/// A bot's reply as its messages: each `<bot_say>` a bubble by its avatar,
-/// its narration a line between them (its `<bot_suggest>`s are the chips
-/// over the composer, [ChatCodec.botSuggestions]).
+/// A status pill under the composer: icon + label on a soft fill; the
+/// permission kind in the caution tone. [onTap] null means display only.
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({
+    required this.icon,
+    required this.label,
+    this.accent = false,
+    this.onTap,
+    this.onMenuTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool accent;
+  final VoidCallback? onTap;
+
+  /// A second tap zone at the pill's right edge: a divider plus a
+  /// dropdown arrow — the model chip's effort/context settings.
+  final VoidCallback? onMenuTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = accent ? AppColors.caution : AppColors.textMuted;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        decoration: BoxDecoration(
+          color: accent
+              ? AppColors.caution.withValues(alpha: 0.10)
+              : AppColors.bubbleFill,
+          borderRadius: BorderRadius.circular(9),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: color),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12.5,
+                color: accent ? AppColors.caution : AppColors.text,
+              ),
+            ),
+            if (onTap != null) ...[
+              const SizedBox(width: 2),
+              Icon(Icons.unfold_more, size: 13, color: color),
+            ],
+            if (onMenuTap != null) ...[
+              Container(
+                width: 0.5,
+                height: 14,
+                margin: const EdgeInsets.symmetric(horizontal: 6),
+                color: AppColors.partBorder,
+              ),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: onMenuTap,
+                child: Icon(
+                  Icons.arrow_drop_down,
+                  size: 18,
+                  color: color,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// How a finished turn went, under its last item: how long it worked,
+/// how fast and how much it wrote, what it cost — as the official app
+/// shows them.
+class _TurnStats extends StatelessWidget {
+  const _TurnStats({required this.worked, required this.usage});
+
+  final Duration? worked;
+  final TurnUsage? usage;
+
+  static String _duration(Duration d) {
+    final s = d.inSeconds;
+    if (s < 60) return '$s秒';
+    final h = d.inHours, m = d.inMinutes % 60;
+    return h > 0 ? '$h小时$m分' : '${d.inMinutes}分${s % 60}秒';
+  }
+
+  /// "$0.42", "$0.0031": two figures past the first that is not 0, at
+  /// least two decimals (the desktop's `TurnFooter.formatCost`).
+  static String _cost(double usd) {
+    if (usd >= 1 || usd == 0) return '\$${usd.toStringAsFixed(2)}';
+    var digits = 2;
+    while (digits < 6 && usd < math.pow(10, 1 - digits)) {
+      digits++;
+    }
+    return '\$${usd.toStringAsFixed(digits)}';
+  }
+
+  /// `8.69M`, `222.03k`: the official's two-decimal thousands/millions.
+  static String _human(int tokens) {
+    if (tokens >= 1000000) return '${(tokens / 1000000).toStringAsFixed(2)}M';
+    if (tokens >= 1000) return '${(tokens / 1000).toStringAsFixed(2)}k';
+    return '$tokens';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final usage = this.usage;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(2, 5, 0, 10),
+      child: Wrap(
+        spacing: 12,
+        runSpacing: 2,
+        children: [
+          if (worked case final worked?)
+            _stat(Icons.schedule_rounded, _duration(worked)),
+          if (usage?.tokensPerSecond case final speed?)
+            _stat(
+              Icons.bolt_rounded,
+              '${speed.toStringAsFixed(2)} tok/s',
+            ),
+          if (usage?.costUsd case final cost?)
+            _stat(Icons.attach_money_rounded, _cost(cost)),
+          if (usage?.totalTokens case final tokens?)
+            _stat(Icons.data_usage_rounded, '${_human(tokens)} tokens'),
+        ],
+      ),
+    );
+  }
+
+  Widget _stat(IconData icon, String text) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Icon(icon, size: 12, color: AppColors.textFaint),
+      const SizedBox(width: 3),
+      Text(
+        text,
+        style: TextStyle(color: AppColors.textMuted, fontSize: 11.5),
+      ),
+    ],
+  );
+}
+
+/// A bot's reply as one bubble by its avatar: its `<bot_say>`s the
+/// bubble's paragraphs, its narrations faint lines among them (its
+/// `<bot_suggest>`s are the chips over the composer,
+/// [ChatCodec.botSuggestions]).
 class _BotReply extends StatelessWidget {
   const _BotReply({required this.item, required this.bot});
 
@@ -1793,36 +2140,41 @@ class _BotReply extends StatelessWidget {
         item.raw.replaceAll(RegExp(r'</?bot_\w+[^>]*>'), ''),
       );
       if (said.isEmpty) return const SizedBox.shrink();
-      return _bubble(context, said);
+      return _bubble(context, ChatMarkdown(text: said));
     }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (final (tag, text) in parts)
-          switch (tag) {
-            ChatCodec.botSayTag => _bubble(
-              context,
+    final children = <Widget>[
+      for (final (tag, text) in parts)
+        switch (tag) {
+          ChatCodec.botSayTag => ChatMarkdown(
+            text: ChatCodec.withoutVoiceCues(text),
+          ),
+          ChatCodec.botNarrateTag => Padding(
+            padding: const EdgeInsets.only(top: 2, bottom: 2),
+            child: Text(
               ChatCodec.withoutVoiceCues(text),
-            ),
-            ChatCodec.botNarrateTag => Padding(
-              padding: const EdgeInsets.fromLTRB(48, 2, 12, 2),
-              child: Text(
-                ChatCodec.withoutVoiceCues(text),
-                style: TextStyle(
-                  fontSize: 11.5,
-                  fontStyle: FontStyle.italic,
-                  color: AppColors.textFaint,
-                ),
+              style: TextStyle(
+                fontSize: 11.5,
+                fontStyle: FontStyle.italic,
+                color: AppColors.textFaint,
               ),
             ),
-            _ => const SizedBox.shrink(),
-          },
-      ],
+          ),
+          _ => const SizedBox.shrink(),
+        },
+    ];
+    if (children.isEmpty) return const SizedBox.shrink();
+    return _bubble(
+      context,
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        spacing: 6,
+        children: children,
+      ),
     );
   }
 
-  Widget _bubble(BuildContext context, String text) {
+  Widget _bubble(BuildContext context, Widget child) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 4, 48, 4),
       child: Row(
@@ -1853,7 +2205,7 @@ class _BotReply extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppColors.partBorder),
               ),
-              child: ChatMarkdown(text: text),
+              child: child,
             ),
           ),
         ],
