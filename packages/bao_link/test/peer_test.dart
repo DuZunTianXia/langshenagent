@@ -148,6 +148,7 @@ void main() {
       List<Map<String, Object?>> changes = const [],
       bool? earlier,
       Map<String, Object?>? context,
+      List<Map<String, Object?>> queued = const [],
     }) => LinkSessionUpdate(
       session: 's',
       start: start,
@@ -157,6 +158,7 @@ void main() {
       changes: changes,
       earlier: earlier,
       context: context,
+      queued: queued,
     );
 
     test('a message streaming in goes as what is added', () async {
@@ -238,6 +240,56 @@ void main() {
       expect(after.live, isFalse);
       expect(after.changes, changes);
       expect(after.items, isEmpty);
+    });
+
+    test('the queue goes when it changes, and stays otherwise', () {
+      final slimmer = LinkSessionSlimmer();
+      const waiting = [
+        {
+          'id': 'q1',
+          'item': {'t': 'user', 'text': 'and one more', 'queued': true},
+        },
+      ];
+      final mirror = LinkSessionMirror()
+        ..opened(
+          slimmer.encode(
+            update(0, [message('a')], 1, queued: waiting),
+            full: true,
+          ),
+        );
+
+      // A message streaming in: the queue as it was, not sent again.
+      var wire = slimmer.encode(
+        update(0, [message('ab')], 1, queued: waiting),
+        before: message('a'),
+      );
+      expect(wire.containsKey('queued'), isFalse);
+
+      // A second message queued: the queue as it now is.
+      wire = slimmer.encode(
+        update(
+          1,
+          [message('b', id: 'n')],
+          2,
+          queued: [
+            ...waiting,
+            {
+              'id': 'q2',
+              'item': {'t': 'user', 'text': 'then this', 'queued': true},
+            },
+          ],
+        ),
+      );
+      expect((wire['queued']! as List).length, 2);
+      var whole = LinkSessionUpdate.fromJson(mirror.apply(wire)!);
+      expect(whole.queued.map((q) => q['id']), ['q1', 'q2']);
+
+      // Taken up: the queue is gone, told as null.
+      wire = slimmer.encode(update(2, const [], 2));
+      expect(wire.containsKey('queued'), isTrue);
+      expect(wire['queued'], isNull);
+      whole = LinkSessionUpdate.fromJson(mirror.apply(wire)!);
+      expect(whole.queued, isEmpty);
     });
 
     test('something gone is told as null', () {

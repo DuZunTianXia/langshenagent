@@ -80,6 +80,15 @@ abstract final class LinkMethods {
   /// `{"session"}`: stops the turn under way.
   static const stop = 'stop';
 
+  /// `{"session", "id", "action", "index"?}`: a message sent while the
+  /// agent worked, still waiting its turn (see
+  /// [LinkSessionUpdate.queued]): `action` `remove` takes it back,
+  /// `sendNow` takes it up at once (the turn running stopped for it),
+  /// `edit` takes it back to the composer's draft, `move` puts it at
+  /// `index` among those queued, the next first. `notFound` where no such
+  /// message waits; `unsupported` where the agent does not queue.
+  static const queue = 'queue';
+
   /// `{"session", "request", "answer"}`: answers what the agent asked (see
   /// [LinkSessionUpdate.interaction]).
   static const answer = 'answer';
@@ -890,6 +899,7 @@ class LinkSessionUpdate {
     this.goal,
     this.context,
     this.quota,
+    this.queued = const [],
   });
 
   factory LinkSessionUpdate.fromJson(Map<String, Object?> json) =>
@@ -928,6 +938,10 @@ class LinkSessionUpdate {
           final Map<String, Object?> map => map,
           _ => null,
         },
+        queued: [
+          for (final queued in (json['queued'] as List?) ?? const [])
+            if (queued is Map<String, Object?>) queued,
+        ],
       );
 
   final String session;
@@ -978,6 +992,10 @@ class LinkSessionUpdate {
   /// learned; `left`, a percentage. Times in milliseconds since the epoch.
   final Map<String, Object?>? quota;
 
+  /// The messages sent while the agent works, waiting their turn, the
+  /// next first: `{"id", "item"}` each, the item a chat item as JSON.
+  final List<Map<String, Object?>> queued;
+
   Map<String, Object?> toJson() => {
     'session': session,
     'start': start,
@@ -992,6 +1010,7 @@ class LinkSessionUpdate {
     'goal': ?goal,
     'context': ?context,
     'quota': ?quota,
+    if (queued.isNotEmpty) 'queued': queued,
   };
 }
 

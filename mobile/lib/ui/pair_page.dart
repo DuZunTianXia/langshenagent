@@ -6,6 +6,7 @@ import '../link/phone_link.dart';
 import '../main.dart';
 import '../phone_platform.dart';
 import 'home_page.dart';
+import 'md/md_theme.dart';
 import 'widgets.dart';
 
 /// Pairing a computer: scan its QR code, paste its pairing link, or pick
@@ -49,85 +50,137 @@ class _PairPageState extends State<PairPage> {
     return Column(
       children: [
         Expanded(
-          flex: 3,
-          child: ClipRect(
-            child: MobileScanner(
-              controller: _controller,
-              errorBuilder: (context, error) => Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.no_photography_outlined, size: 40),
-                      const SizedBox(height: 12),
-                      Text(
-                        '无法使用相机：请在系统设置中允许本应用访问相机',
-                        textAlign: TextAlign.center,
+          flex: 5,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(18),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  MobileScanner(
+                    controller: _controller,
+                    errorBuilder: (context, error) => ColoredBox(
+                      color: AppColors.surface,
+                      child: BEmptyState(
+                        icon: Icons.no_photography_outlined,
+                        title: '无法使用相机',
+                        subtitle: '请在系统设置中允许本应用访问相机。',
+                        actionLabel: '重试',
+                        onAction: _controller.start,
                       ),
-                      const SizedBox(height: 12),
-                      FilledButton.tonal(
-                        onPressed: _controller.start,
-                        child: const Text('重试'),
-                      ),
-                    ],
+                    ),
+                    onDetect: (capture) {
+                      if (_handled) return;
+                      final value = capture.barcodes.firstOrNull?.rawValue;
+                      if (value != null) _scanned(value);
+                    },
                   ),
-                ),
+                  IgnorePointer(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: AppColors.accent.withValues(alpha: 0.85),
+                          width: 2,
+                        ),
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                    ),
+                  ),
+                  const Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(16, 32, 16, 16),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Colors.transparent, Color(0x99000000)],
+                          ),
+                        ),
+                        child: SizedBox(height: 56),
+                      ),
+                    ),
+                  ),
+                  const Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 20,
+                    child: Text(
+                      '对准电脑上的二维码',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w500,
+                        shadows: [
+                          Shadow(blurRadius: 6, color: Color(0xAA000000)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              onDetect: (capture) {
-                if (_handled) return;
-                final value = capture.barcodes.firstOrNull?.rawValue;
-                if (value != null) _scanned(value);
-              },
             ),
           ),
         ),
         Expanded(
-          flex: 2,
+          flex: 4,
           child: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
             children: [
               Text(
                 '将摄像头对准电脑上显示的二维码，或粘贴配对链接。',
-                style: Theme.of(context).textTheme.bodyMedium,
+                style: TextStyle(fontSize: 14, color: AppColors.textMuted),
               ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  FilledButton.tonalIcon(
-                    onPressed: _paste,
-                    icon: const Icon(Icons.link),
-                    label: const Text('粘贴配对链接'),
-                  ),
-                ],
+              const SizedBox(height: 14),
+              BButton(
+                label: '粘贴配对链接',
+                icon: Icons.link,
+                expand: true,
+                onPressed: _paste,
               ),
               if (state.nearby.isNotEmpty) ...[
-                const SizedBox(height: 20),
-                Text(
-                  '附近的电脑',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                const SizedBox(height: 18),
+                BSection(
+                  title: '附近的电脑',
+                  children: [
+                    for (final advert in state.nearby.values)
+                      BCell(
+                        icon: Icons.wifi_find,
+                        title: advert.name,
+                        subtitle: advert.pairing ? '正在配对' : '同一网络',
+                        onTap: () => _nearby(advert),
+                      ),
+                  ],
                 ),
-                for (final advert in state.nearby.values)
-                  ListTile(
-                    dense: true,
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.wifi_find, size: 20),
-                    title: Text(advert.name),
-                    subtitle: Text(
-                      advert.pairing ? '正在配对' : '同一网络',
-                    ),
-                    onTap: () => _nearby(advert),
-                  ),
               ],
               if (_error != null) ...[
-                const SizedBox(height: 12),
-                Text(
-                  _error!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                const SizedBox(height: 14),
+                BCard(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: 18,
+                        color: AppColors.removed,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          _error!,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppColors.removed,
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ],
@@ -318,54 +371,81 @@ class _SafetyCodes extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return SafeArea(
       child: ListView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
         children: [
-          Text('核对安全码', style: theme.textTheme.titleLarge),
-          const SizedBox(height: 8),
+          Text(
+            '核对安全码',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 10),
           Text(
             approval
-                ? '电脑上应显示相同的四组数字。若一致，请在此确认——'
-                      '并在电脑上也允许配对。'
+                ? '电脑上应显示相同的四组数字。若一致，请在此确认，并在电脑上也允许配对。'
                 : '电脑上应显示相同的四组数字。若一致，请两端都确认。',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+            style: TextStyle(fontSize: 14, height: 1.45, color: AppColors.textMuted),
           ),
-          const SizedBox(height: 32),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              for (final code in codes)
-                Text(
-                  code,
-                  style: theme.textTheme.displaySmall?.copyWith(
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                    letterSpacing: 2,
-                  ),
+          const SizedBox(height: 28),
+          BCard(
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    for (final code in codes)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.bubbleFill,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          code,
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w600,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                            letterSpacing: 1.5,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            name,
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+                const SizedBox(height: 12),
+                Text(
+                  name,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 32),
-          FilledButton(
+          const SizedBox(height: 28),
+          BButton(
+            label: '安全码一致',
+            primary: true,
+            expand: true,
             onPressed: () {
               PhonePlatform.haptic('confirm');
               onConfirm();
             },
-            child: const Text('安全码一致'),
           ),
-          const SizedBox(height: 8),
-          TextButton(onPressed: onCancel, child: const Text('取消')),
+          const SizedBox(height: 10),
+          Center(
+            child: TextButton(
+              onPressed: onCancel,
+              child: Text('取消', style: TextStyle(color: AppColors.textMuted)),
+            ),
+          ),
         ],
       ),
     );

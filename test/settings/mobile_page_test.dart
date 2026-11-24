@@ -10,9 +10,10 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../link/fake_link_platform.dart';
 
-/// The code to pair with: not the phone app's downloads beside it.
+/// The code to pair with: not the phone app's downloads beside it (theirs
+/// are https links; its own a langshenagent:// one).
 final _pairCode = find.byWidgetPredicate(
-  (widget) => widget is QrView && !widget.data.startsWith(phoneDownloadSite),
+  (widget) => widget is QrView && !widget.data.startsWith('http'),
 );
 
 void main() {
@@ -37,12 +38,10 @@ void main() {
     final codes = tester
         .widgetList<QrView>(find.byType(QrView))
         .map((code) => code.data);
-    // The download page's links (site/download.html), which lead to the
-    // release current when scanned.
-    expect(codes, [
-      'https://langshenagent.dev/dl/android',
-      'https://langshenagent.dev/dl/ios',
-    ]);
+    // The downloads page's phone cards: the manifest's own links where it
+    // has them — flutter_test's HttpClient answers 400, so it has none
+    // here — and its own copy resolves them either way.
+    expect(codes, [phoneDownloadsPage, phoneDownloadsPage]);
     expect(find.text('Android'), findsOneWidget);
     expect(find.text('iPhone and iPad'), findsOneWidget);
     // Shown before the switch to let phones in: the app comes first.

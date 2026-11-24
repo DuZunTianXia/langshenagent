@@ -7,6 +7,7 @@ import 'chat_page.dart';
 import 'files_page.dart';
 import 'group_page.dart';
 import 'md/md_theme.dart';
+import 'link_status.dart';
 import 'widgets.dart';
 
 /// One computer's agents, bots and group chats.
@@ -54,31 +55,33 @@ class _SessionsPageState extends State<SessionsPage> {
             ),
           ],
         ),
-        body: ListenableBuilder(
-          listenable: link,
-          builder: (context, _) {
-            final linkState = link.state;
-            if (linkState == null) {
-              return Center(
-                child: link.phase == PhonePhase.online
-                    ? CircularProgressIndicator(color: AppColors.accent)
-                    : Text(
-                        link.phase == PhonePhase.pairing
-                            ? '正在配对…'
-                            : '离线 — ${link.error ?? '未连接'}',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: AppColors.textMuted),
-                      ),
-              );
-            }
-            return TabBarView(
-              children: [
-                _AgentsTab(link: link, state: linkState),
-                _BotsTab(link: link, state: linkState),
-                _GroupsTab(link: link, state: linkState),
-              ],
-            );
-          },
+        body: Column(
+          children: [
+            BConnectionBanner(link: link, onRetry: link.retryNow),
+            Expanded(
+              child: ListenableBuilder(
+                listenable: link,
+                builder: (context, _) {
+                  final linkState = link.state;
+                  if (linkState == null) {
+                    return LinkUnavailableBody(
+                      link: link,
+                      offlineTitle: '无法加载列表',
+                      offlineSubtitle: '连接电脑后即可查看智能体、Bot 与群聊。',
+                      onRetry: link.retryNow,
+                    );
+                  }
+                  return TabBarView(
+                    children: [
+                      _AgentsTab(link: link, state: linkState),
+                      _BotsTab(link: link, state: linkState),
+                      _GroupsTab(link: link, state: linkState),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );

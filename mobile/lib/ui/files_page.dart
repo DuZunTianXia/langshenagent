@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import '../link/phone_link.dart';
 import 'chat_page.dart';
 import 'file_viewer.dart';
+import 'link_status.dart';
 import 'widgets.dart';
 
 /// A computer's projects and their files, as the desktop's Explorer has
@@ -23,7 +24,12 @@ class FilesPage extends StatelessWidget {
       builder: (context, _) {
         final state = link.state;
         if (state == null) {
-          return const Center(child: CircularProgressIndicator());
+          return LinkUnavailableBody(
+            link: link,
+            offlineTitle: '无法加载项目',
+            offlineSubtitle: '连接电脑后即可浏览文件。',
+            onRetry: link.retryNow,
+          );
         }
         final projects = [...state.projects]
           ..sort((a, b) {
@@ -32,7 +38,11 @@ class FilesPage extends StatelessWidget {
             return a.name.compareTo(b.name);
           });
         if (projects.isEmpty) {
-          return const Center(child: Text('没有项目'));
+          return const BEmptyState(
+            icon: Icons.folder_off_outlined,
+            title: '没有项目',
+            subtitle: '在电脑上打开文件夹作为工作区后会出现在这里。',
+          );
         }
         return ListView(
           key: const PageStorageKey('files.root'),
@@ -301,7 +311,11 @@ class FolderPageState extends State<FolderPage> {
               ),
             )
           : folders.isEmpty && files.isEmpty
-          ? const Center(child: Text('空文件夹'))
+          ? const BEmptyState(
+              icon: Icons.folder_open_outlined,
+              title: '空文件夹',
+              subtitle: '这个目录里还没有文件或子文件夹。',
+            )
           : RefreshIndicator(
               onRefresh: _load,
               child: ListView(

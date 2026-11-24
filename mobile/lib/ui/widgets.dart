@@ -183,9 +183,200 @@ class BCard extends StatelessWidget {
     decoration: BoxDecoration(
       color: AppColors.surfaceRaised,
       borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: AppColors.partBorder.withValues(alpha: 0.55)),
     ),
     padding: padding ?? const EdgeInsets.all(14),
     child: child,
+  );
+}
+
+/// Centered placeholder when a list or tab has nothing to show.
+class BEmptyState extends StatelessWidget {
+  const BEmptyState({
+    super.key,
+    required this.title,
+    this.subtitle,
+    this.icon = Icons.inbox_outlined,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  final String title;
+  final String? subtitle;
+  final IconData icon;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              color: AppColors.accent.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Icon(icon, size: 34, color: AppColors.accent),
+          ),
+          const SizedBox(height: 18),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              subtitle!,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13.5,
+                height: 1.45,
+                color: AppColors.textMuted,
+              ),
+            ),
+          ],
+          if (actionLabel != null && onAction != null) ...[
+            const SizedBox(height: 22),
+            BButton(label: actionLabel!, primary: true, onPressed: onAction),
+          ],
+        ],
+      ),
+    ),
+  );
+}
+
+/// Red unread capsule for inbox rows and tab badges.
+class BUnreadBadge extends StatelessWidget {
+  const BUnreadBadge({super.key, required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    constraints: const BoxConstraints(minWidth: 18),
+    height: 18,
+    padding: const EdgeInsets.symmetric(horizontal: 5),
+    decoration: BoxDecoration(
+      color: const Color(0xFFFA5151),
+      borderRadius: BorderRadius.circular(9),
+      border: Border.all(color: AppColors.surfaceRaised, width: 1.5),
+    ),
+    alignment: Alignment.center,
+    child: Text(
+      count > 99 ? '99+' : '$count',
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 10,
+        fontWeight: FontWeight.w600,
+        height: 1,
+      ),
+    ),
+  );
+}
+
+/// WeChat-style conversation list row: avatar, title, subtitle, time, badge.
+class BInboxRow extends StatelessWidget {
+  const BInboxRow({
+    super.key,
+    required this.leading,
+    required this.title,
+    this.subtitle,
+    this.time,
+    this.badge = 0,
+    this.pinned = false,
+    this.titleWeight = FontWeight.w600,
+    this.onTap,
+    this.onLongPress,
+  });
+
+  final Widget leading;
+  final String title;
+  final Widget? subtitle;
+  final String? time;
+  final int badge;
+  final bool pinned;
+  final FontWeight titleWeight;
+  final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: Colors.transparent,
+    child: InkWell(
+      onTap: onTap,
+      onLongPress: onLongPress,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            leading,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 15.5,
+                      fontWeight: titleWeight,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 3),
+                    DefaultTextStyle(
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textMuted,
+                        height: 1.25,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      child: subtitle!,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            if (time != null || badge > 0 || pinned) ...[
+              const SizedBox(width: 8),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  if (time != null)
+                    Text(
+                      time!,
+                      style: TextStyle(fontSize: 11.5, color: AppColors.textFaint),
+                    ),
+                  if (badge > 0 || pinned) ...[
+                    const SizedBox(height: 5),
+                    if (badge > 0)
+                      BUnreadBadge(count: badge)
+                    else if (pinned)
+                      Icon(Icons.push_pin, size: 14, color: AppColors.textFaint),
+                  ],
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    ),
   );
 }
 
@@ -387,6 +578,10 @@ Future<LinkOption?> showBChoicePicker(
   context: context,
   showDragHandle: true,
   isScrollControlled: true,
+  backgroundColor: AppColors.surfaceRaised,
+  shape: const RoundedRectangleBorder(
+    borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+  ),
   builder: (context) => _ChoiceSheet(
     title: title,
     options: options,
@@ -631,6 +826,10 @@ Future<T?> showBActions<T>(
 }) => showModalBottomSheet<T>(
   context: context,
   showDragHandle: true,
+  backgroundColor: AppColors.surfaceRaised,
+  shape: const RoundedRectangleBorder(
+    borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+  ),
   builder: (sheet) => SafeArea(
     child: Column(
       mainAxisSize: MainAxisSize.min,
@@ -970,9 +1169,10 @@ class BDropdown<T> extends StatelessWidget {
   }
 }
 
-/// The chat's input pill: a quiet +, the growing field, and a bare
-/// send or stop glyph that springs in when there is something to act
-/// on — send while [canSend], stop while [live].
+/// The chat's input pill: a quiet +, the growing field, and bare
+/// send or stop glyphs that spring in when there is something to act
+/// on — send while [canSend], stop while [live] (both while it works:
+/// a message sent then waits its turn).
 class BComposer extends StatelessWidget {
   const BComposer({
     super.key,
@@ -997,23 +1197,28 @@ class BComposer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final action = live
-        ? _ComposerGlyph(
+    final action = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (live && onStop != null)
+          _ComposerGlyph(
             icon: Codicons.debugStop,
             color: Theme.of(context).colorScheme.error,
             onPressed: onStop,
-          )
-        : canSend
-        ? _ComposerGlyph(
+          ),
+        if (canSend)
+          _ComposerGlyph(
             icon: Codicons.send,
             color: AppColors.accent,
             onPressed: onSend,
-          )
-        : const SizedBox.shrink();
+          ),
+      ],
+    );
     return Container(
       decoration: BoxDecoration(
         color: AppColors.bubbleFill,
         borderRadius: BorderRadius.circular(25),
+        border: Border.all(color: AppColors.bubbleBorder()),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       child: Row(

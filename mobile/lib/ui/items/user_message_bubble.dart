@@ -30,11 +30,15 @@ class UserMessageBubble extends StatefulWidget {
     super.key,
     required this.text,
     this.images = const [],
+    this.queued = false,
     this.onEdit,
   });
 
   final String text;
   final List<ImageAttachment> images;
+
+  /// Sent while the agent works, waiting its turn: marked as queued.
+  final bool queued;
   final VoidCallback? onEdit;
 
   /// Its corners; what answers it is inset this much at either side.
@@ -153,6 +157,32 @@ class _UserMessageBubbleState extends State<UserMessageBubble> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
+                if (widget.queued)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.schedule_rounded,
+                          size: 11,
+                          color: AppColors.onUserBubble.withValues(
+                            alpha: 0.55,
+                          ),
+                        ),
+                        const SizedBox(width: 3),
+                        Text(
+                          '排队中',
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            color: AppColors.onUserBubble.withValues(
+                              alpha: 0.55,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 if (widget.images.isNotEmpty) _Thumbnails(widget.images),
                 InlineCodeText(
                   inlineCodeSpan(

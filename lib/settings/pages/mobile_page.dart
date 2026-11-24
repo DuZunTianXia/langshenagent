@@ -549,11 +549,28 @@ class _MobileSettingsPageState extends State<MobileSettingsPage> {
   }
 }
 
-/// The phone app's downloads, as codes to scan: the site's own links
-/// ([phoneDownloadTargets]), the same as its download page's, which lead to
-/// the release current when scanned. Clicked, opened in the browser.
-class _PhoneDownloads extends StatelessWidget {
+/// The phone app's downloads, as codes to scan: the manifest's own links
+/// where it names them — a scan downloads the APK, opens the beta — the
+/// downloads page's where it does not yet. Clicked, opened in the browser.
+class _PhoneDownloads extends StatefulWidget {
   const _PhoneDownloads();
+
+  @override
+  State<_PhoneDownloads> createState() => _PhoneDownloadsState();
+}
+
+class _PhoneDownloadsState extends State<_PhoneDownloads> {
+  Map<String, String> _urls = const {};
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(
+      fetchPhoneDownloadUrls().then((urls) {
+        if (mounted) setState(() => _urls = urls);
+      }),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -565,12 +582,12 @@ class _PhoneDownloads extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _PhoneDownload(
-            os: 'android',
+            url: _urls['android'] ?? phoneDownloadsPage,
             name: 'Android',
             detail: l10n.mobileGetAndroidDetail,
           ),
           _PhoneDownload(
-            os: 'ios',
+            url: _urls['ios'] ?? phoneDownloadsPage,
             name: l10n.mobileGetIos,
             detail: l10n.mobileGetIosDetail,
           ),
@@ -582,18 +599,17 @@ class _PhoneDownloads extends StatelessWidget {
 
 class _PhoneDownload extends StatelessWidget {
   const _PhoneDownload({
-    required this.os,
+    required this.url,
     required this.name,
     required this.detail,
   });
 
-  final String os;
+  final String url;
   final String name;
   final String detail;
 
   @override
   Widget build(BuildContext context) {
-    final url = phoneDownloadUrl(os);
     return Column(
       children: [
         IdeHover(

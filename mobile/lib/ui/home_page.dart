@@ -17,6 +17,7 @@ import 'widgets.dart';
 import 'pair_page.dart';
 import 'settings_page.dart';
 import 'update_dialog.dart';
+import 'link_status.dart';
 
 /// The app's home: the official phone app's shell — a computer picked at
 /// the top, its conversations, bots, files and settings in the bottom
@@ -125,15 +126,26 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           ),
         ],
       ),
-      body: switch (_tab) {
-        0 => _ChatsTab(
-            link: link,
-            query: _searching ? _search.text.trim() : '',
+      body: Column(
+        children: [
+          if (link != null)
+            BConnectionBanner(
+              link: link,
+              onRetry: link.retryNow,
+            ),
+          Expanded(
+            child: switch (_tab) {
+              0 => _ChatsTab(
+                  link: link,
+                  query: _searching ? _search.text.trim() : '',
+                ),
+              1 => _BotsTab(link: link),
+              2 => _FilesTab(link: link),
+              _ => SettingsPage(link: link),
+            },
           ),
-        1 => _BotsTab(link: link),
-        2 => _FilesTab(link: link),
-        _ => SettingsPage(link: link),
-      },
+        ],
+      ),
       bottomNavigationBar: _BottomBar(
         tab: _tab,
         unread: link == null ? 0 : _unread(link),
@@ -192,50 +204,13 @@ class _NoComputers extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    body: Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(22),
-              child: ColorFiltered(
-                colorFilter: const ColorFilter.mode(
-                  Color(0xFFBBBBBB),
-                  BlendMode.modulate,
-                ),
-                child: Image.asset(
-                  'assets/branding/app_icon.png',
-                  width: 96,
-                  height: 96,
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              '还没有配对的电脑',
-              style: TextStyle(fontSize: 17, color: AppColors.textPrimary),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '与电脑上的 LangshenAgent 配对后，就能在这\n里查看和操作它的智能体。',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.textMuted, height: 1.5),
-            ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: () => Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const PairPage())),
-              icon: const Icon(Icons.qr_code_scanner),
-              label: const Text('配对新电脑'),
-              style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(46),
-              ),
-            ),
-          ],
-        ),
+    body: BEmptyState(
+      icon: Icons.devices_other_outlined,
+      title: '还没有配对的电脑',
+      subtitle: '与电脑上的 LangshenAgent 配对后，\n就能在这里查看和操作它的智能体。',
+      actionLabel: '配对新电脑',
+      onAction: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const PairPage()),
       ),
     ),
   );
@@ -256,7 +231,7 @@ class _ComputerTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final online = selected?.phase == PhonePhase.online;
+    final link = selected;
     return InkWell(
       borderRadius: BorderRadius.circular(8),
       onTap: () async {
@@ -269,11 +244,10 @@ class _ComputerTitle extends StatelessWidget {
               (
                 Icons.computer_outlined,
                 computer.name,
-                switch (state.links[computer.id]?.phase) {
-                  PhonePhase.online => '在线',
-                  PhonePhase.connecting => '连接中…',
-                  _ => '离线',
-                },
+                linkPhaseLabel(
+                  state.links[computer.id]?.phase ?? PhonePhase.offline,
+                  error: state.links[computer.id]?.error,
+                ),
                 computer.id,
               ),
             (Icons.add_link, '配对新电脑', null, ''),
@@ -290,59 +264,92 @@ class _ComputerTitle extends StatelessWidget {
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.circle,
-              size: 8,
-              color: online ? AppColors.accent : AppColors.textFaint,
-            ),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                selected?.computer.name ?? '未连接',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            const Icon(Icons.keyboard_arrow_down, size: 18),
-            if (selected != null)
-              ListenableBuilder(
-                listenable: selected!,
-                builder: (context, _) {
-                  final running = selected!.state?.sessions
-                          .where(
-                            (s) => s.status == LinkSessionStatus.running,
-                          )
-                          .length ??
-                      0;
-                  if (running == 0) return const SizedBox.shrink();
-                  return Padding(
-                    padding: const EdgeInsets.only(left: 6),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const BPulseDot(size: 8),
-                        const SizedBox(width: 4),
+        child: ListenableBuilder(
+          listenable: link ?? state,
+          builder: (context, _) {
+            final phase = link?.phase ?? PhonePhase.offline;
+            final online = phase == PhonePhase.online;
+            final connecting =
+                phase == PhonePhase.connecting || phase == PhonePhase.pairing;
+            final dotColor = online
+                ? AppColors.accent
+                : connecting
+                ? AppColors.accent.withValues(alpha: 0.7)
+                : link?.needsRePair == true
+                ? AppColors.removed
+                : AppColors.textFaint;
+            final status = link == null
+                ? null
+                : linkPhaseLabel(phase, error: link.error);
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.circle, size: 8, color: dotColor),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        link?.computer.name ?? '未连接',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (status != null && !online)
                         Text(
-                          '$running',
+                          status,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.accent,
+                            fontSize: 11,
+                            color: link?.needsRePair == true
+                                ? AppColors.removed
+                                : AppColors.textMuted,
                           ),
                         ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-          ],
+                    ],
+                  ),
+                ),
+                const Icon(Icons.keyboard_arrow_down, size: 18),
+                if (link != null && online)
+                  Builder(
+                    builder: (context) {
+                      final running = link.state?.sessions
+                              .where(
+                                (s) =>
+                                    s.status == LinkSessionStatus.running,
+                              )
+                              .length ??
+                          0;
+                      if (running == 0) return const SizedBox.shrink();
+                      return Padding(
+                        padding: const EdgeInsets.only(left: 6),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const BPulseDot(size: 8),
+                            const SizedBox(width: 4),
+                            Text(
+                              '$running',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.accent,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -404,6 +411,13 @@ class _BottomBar extends StatelessWidget {
         border: Border(
           top: BorderSide(color: AppColors.partBorder, width: 0.5),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: MdTheme.dark ? 0.35 : 0.06),
+            blurRadius: 12,
+            offset: const Offset(0, -4),
+          ),
+        ],
       ),
       child: SafeArea(
         top: false,
@@ -475,7 +489,7 @@ class _TabItem extends StatelessWidget {
                 Positioned(
                   top: -2,
                   right: -2,
-                  child: _CountBadge(count: badge),
+                  child: BUnreadBadge(count: badge),
                 ),
             ],
           ),
@@ -492,35 +506,6 @@ class _TabItem extends StatelessWidget {
       ),
     );
   }
-}
-
-/// The red unread capsule at a tab icon's corner.
-class _CountBadge extends StatelessWidget {
-  const _CountBadge({required this.count});
-
-  final int count;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    constraints: const BoxConstraints(minWidth: 16),
-    height: 16,
-    padding: const EdgeInsets.symmetric(horizontal: 4),
-    decoration: BoxDecoration(
-      color: const Color(0xFFFA5151),
-      borderRadius: BorderRadius.circular(8),
-      border: Border.all(color: AppColors.surfaceRaised, width: 1.5),
-    ),
-    alignment: Alignment.center,
-    child: Text(
-      count > 99 ? '99+' : '$count',
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 9.5,
-        fontWeight: FontWeight.w600,
-        height: 1,
-      ),
-    ),
-  );
 }
 
 /// A name's avatar tile: its first letter on a color its hash picks, as
@@ -598,7 +583,11 @@ class _ChatsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (link == null) {
-      return const Center(child: Text('电脑不在线'));
+      return const BEmptyState(
+        icon: Icons.cloud_off_outlined,
+        title: '电脑不在线',
+        subtitle: '请确认电脑上的 LangshenAgent 已打开并联网。',
+      );
     }
     return ListenableBuilder(
       listenable: link!,
@@ -606,7 +595,12 @@ class _ChatsTab extends StatelessWidget {
         final link = this.link!;
         final state = link.state;
         if (state == null) {
-          return const Center(child: CircularProgressIndicator());
+          return LinkUnavailableBody(
+            link: link,
+            offlineTitle: '无法加载对话',
+            offlineSubtitle: '连接电脑后即可查看工作区与会话。',
+            onRetry: link.retryNow,
+          );
         }
         // A workspace's row: its sessions, the newest first; workspaces
         // by their newest.
@@ -639,39 +633,33 @@ class _ChatsTab extends StatelessWidget {
           );
         }
         if (rows.isEmpty && state.projects.isEmpty) {
-          return Center(
-            child: Text('还没有对话', style: TextStyle(color: AppColors.textMuted)),
+          return const BEmptyState(
+            icon: Codicons.commentDiscussion,
+            title: '还没有对话',
+            subtitle: '在电脑上打开项目后，工作区会显示在这里。',
           );
         }
         // A last row adds a workspace the computer already has — one the
         // chats don't show yet, e.g. a fresh or an empty one.
         return ListView.separated(
           itemCount: rows.length + 1,
-          separatorBuilder: (_, _) => Divider(
-            height: 0.5,
-            indent: 72,
-            color: AppColors.partBorder,
-          ),
+          separatorBuilder: (_, _) =>
+              Divider(height: 0.5, color: AppColors.partBorder),
           itemBuilder: (context, index) {
             if (index == rows.length) {
-              return ListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 4,
-                ),
+              return BInboxRow(
+                titleWeight: FontWeight.w500,
+                title: '添加工作区',
+                subtitle: Text('从电脑上选择工作区', style: TextStyle(color: AppColors.textFaint)),
                 leading: Container(
                   width: 44,
                   height: 44,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     border: Border.all(color: AppColors.partBorder),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(Codicons.add, color: AppColors.textMuted),
-                ),
-                title: Text(
-                  '添加工作区',
-                  style: TextStyle(color: AppColors.textMuted),
                 ),
                 onTap: () => _pickWorkspace(context, link, state),
               );
@@ -693,90 +681,61 @@ class _ChatsTab extends StatelessWidget {
                       project.id,
                       !(project.pinned ?? false),
                     ),
-              child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 4,
-              ),
-              leading: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  _GroupTile(name: project?.name ?? newest.title),
-                  if (running > 0)
-                    const Positioned(
-                      right: -2,
-                      bottom: -2,
-                      child: BPulseDot(),
-                    )
-                  else if (waiting > 0)
-                    Positioned(
-                      right: -2,
-                      bottom: -2,
-                      child: BPulseDot(
-                        color: Theme.of(context).colorScheme.error,
-                      ),
-                    ),
-                ],
-              ),
-              title: Text(
-                '${project?.name ?? newest.title}'
-                '${sessions.length > 1 ? '（${sessions.length}）' : ''}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              subtitle: Text.rich(
-                TextSpan(
+              child: BInboxRow(
+                leading: Stack(
+                  clipBehavior: Clip.none,
                   children: [
+                    _GroupTile(name: project?.name ?? newest.title),
                     if (running > 0)
-                      TextSpan(
-                        text: '$running 个进行中 · ',
-                        style: TextStyle(color: AppColors.accent),
+                      const Positioned(
+                        right: -2,
+                        bottom: -2,
+                        child: BPulseDot(),
                       )
                     else if (waiting > 0)
-                      TextSpan(
-                        text: '$waiting 个待输入 · ',
-                        style: TextStyle(
+                      Positioned(
+                        right: -2,
+                        bottom: -2,
+                        child: BPulseDot(
                           color: Theme.of(context).colorScheme.error,
                         ),
                       ),
-                    TextSpan(text: newest.title),
                   ],
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              trailing: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    _when(newest.updatedAt),
-                    style: TextStyle(fontSize: 11.5, color: AppColors.textFaint),
-                  ),
-                  const SizedBox(height: 4),
-                  if (unread > 0)
-                    Badge(label: Text('$unread'))
-                  else if (project?.pinned ?? false)
-                    Icon(
-                      Icons.push_pin,
-                      size: 14,
-                      color: AppColors.textFaint,
-                    ),
-                ],
-              ),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => _WorkspacePage(
-                    link: link,
-                    project: project,
-                    fallback: newest.title,
+                title:
+                    '${project?.name ?? newest.title}'
+                    '${sessions.length > 1 ? '（${sessions.length}）' : ''}',
+                subtitle: Text.rich(
+                  TextSpan(
+                    children: [
+                      if (running > 0)
+                        TextSpan(
+                          text: '$running 个进行中 · ',
+                          style: TextStyle(color: AppColors.accent),
+                        )
+                      else if (waiting > 0)
+                        TextSpan(
+                          text: '$waiting 个待输入 · ',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                      TextSpan(text: newest.title),
+                    ],
                   ),
                 ),
-              ),
+                time: _when(newest.updatedAt),
+                badge: unread,
+                pinned: unread == 0 && (project?.pinned ?? false),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => _WorkspacePage(
+                      link: link,
+                      project: project,
+                      fallback: newest.title,
+                    ),
+                  ),
+                ),
               ),
             );
           },
@@ -971,20 +930,16 @@ class _WorkspacePage extends StatelessWidget {
               return b.updatedAt.compareTo(a.updatedAt);
             });
           if (sessions.isEmpty) {
-            return Center(
-              child: Text(
-                '还没有会话',
-                style: TextStyle(color: AppColors.textMuted),
-              ),
+            return const BEmptyState(
+              icon: Icons.chat_bubble_outline,
+              title: '还没有会话',
+              subtitle: '点右上角可以在此工作区新建对话。',
             );
           }
           return ListView.separated(
             itemCount: sessions.length,
-            separatorBuilder: (_, _) => Divider(
-              height: 0.5,
-              indent: 72,
-              color: AppColors.partBorder,
-            ),
+            separatorBuilder: (_, _) =>
+                Divider(height: 0.5, color: AppColors.partBorder),
             itemBuilder: (context, index) =>
                 _SessionRow(link: link, session: sessions[index]),
           );
@@ -1010,67 +965,45 @@ class _SessionRow extends StatelessWidget {
       pinned: session.pinned,
       onPin: () => link.pin(session.id, !session.pinned),
       onDelete: () => _delete(context),
-      child: ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      leading: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          _Tile(name: session.title.isEmpty ? '对' : session.title),
-          if (session.status == LinkSessionStatus.running)
-            const Positioned(right: -1, bottom: -1, child: BPulseDot())
-          else if (session.status == LinkSessionStatus.needsInput)
-            Positioned(
-              right: -1,
-              bottom: -1,
-              child: BPulseDot(
-                color: Theme.of(context).colorScheme.error,
+      child: BInboxRow(
+        leading: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            _Tile(name: session.title.isEmpty ? '对' : session.title),
+            if (session.status == LinkSessionStatus.running)
+              const Positioned(right: -1, bottom: -1, child: BPulseDot())
+            else if (session.status == LinkSessionStatus.needsInput)
+              Positioned(
+                right: -1,
+                bottom: -1,
+                child: BPulseDot(
+                  color: Theme.of(context).colorScheme.error,
+                ),
               ),
-            ),
-        ],
-      ),
-      title: Text(
-        session.title.isEmpty ? '未命名' : session.title,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          fontSize: 14.5,
-          fontWeight: session.unread ? FontWeight.w600 : FontWeight.w500,
+          ],
         ),
-      ),
-      subtitle: Text(
-        [
-          switch (session.status) {
-            LinkSessionStatus.running => '进行中',
-            LinkSessionStatus.needsInput => '待输入',
-            LinkSessionStatus.idle => '已完成',
-          },
-          if (project != null) project.name,
-          if (session.model != null) session.model!,
-        ].join(' · '),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-      trailing: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Text(
-            _when(session.updatedAt),
-            style: TextStyle(fontSize: 11.5, color: AppColors.textFaint),
+        title: session.title.isEmpty ? '未命名' : session.title,
+        titleWeight: session.unread ? FontWeight.w600 : FontWeight.w500,
+        subtitle: Text(
+          [
+            switch (session.status) {
+              LinkSessionStatus.running => '进行中',
+              LinkSessionStatus.needsInput => '待输入',
+              LinkSessionStatus.idle => '已完成',
+            },
+            if (project != null) project.name,
+            if (session.model != null) session.model!,
+          ].join(' · '),
+        ),
+        time: _when(session.updatedAt),
+        badge: session.unread ? 1 : 0,
+        pinned: !session.unread && session.pinned,
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => ChatPage(link: link, sessionId: session.id),
           ),
-          const SizedBox(height: 4),
-          if (session.unread)
-            const Badge(label: Text("1"))
-          else if (session.pinned)
-            Icon(Icons.push_pin, size: 14, color: AppColors.textFaint),
-        ],
-      ),
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => ChatPage(link: link, sessionId: session.id),
         ),
-      ),
-      onLongPress: () => _manage(context),
+        onLongPress: () => _manage(context),
       ),
     );
   }
@@ -1134,42 +1067,44 @@ class _BotsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (link == null) {
-      return const Center(child: Text('电脑不在线'));
+      return const BEmptyState(
+        icon: Icons.cloud_off_outlined,
+        title: '电脑不在线',
+        subtitle: '连接电脑后才能查看 Bot 与群聊。',
+      );
     }
     return ListenableBuilder(
       listenable: link!,
       builder: (context, _) {
         final linkState = link!.state;
-        final bots = linkState?.bots ?? const <LinkBot>[];
-        final groups = linkState?.groups ?? const <LinkGroup>[];
+        if (linkState == null) {
+          return LinkUnavailableBody(
+            link: link!,
+            offlineTitle: '无法加载 Bot',
+            offlineSubtitle: '连接电脑后即可查看 Bot 与群聊。',
+            onRetry: link!.retryNow,
+          );
+        }
+        final bots = linkState.bots;
+        final groups = linkState.groups;
+        if (bots.isEmpty && groups.isEmpty) {
+          return const BEmptyState(
+            icon: Codicons.hubot,
+            title: '还没有 Bot',
+            subtitle: '在电脑上创建 Bot 后会显示在这里。',
+          );
+        }
         return ListView(
           children: [
             for (final bot in bots) ...[
-              ListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 4,
-                ),
+              BInboxRow(
                 leading: _Tile(name: bot.name),
-                title: Text(bot.name),
-                subtitle: Text(
-                  bot.last ?? bot.signature,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                trailing: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      bot.updatedAt == null ? '' : _when(bot.updatedAt!),
-                      style:
-                          TextStyle(fontSize: 11.5, color: AppColors.textFaint),
-                    ),
-                    const SizedBox(height: 4),
-                    if (bot.unread > 0) Badge(label: Text("${bot.unread}")),
-                  ],
-                ),
+                title: bot.name,
+                titleWeight:
+                    bot.unread > 0 ? FontWeight.w600 : FontWeight.w500,
+                subtitle: Text(bot.last ?? bot.signature),
+                time: bot.updatedAt == null ? null : _when(bot.updatedAt!),
+                badge: bot.unread,
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => ChatPage(link: link!, bot: bot),
@@ -1181,7 +1116,7 @@ class _BotsTab extends StatelessWidget {
                   ),
                 ),
               ),
-              Divider(height: 0.5, indent: 72, color: AppColors.partBorder),
+              Divider(height: 0.5, color: AppColors.partBorder),
             ],
             if (groups.isNotEmpty)
               Padding(
@@ -1192,35 +1127,20 @@ class _BotsTab extends StatelessWidget {
                 ),
               ),
             for (final group in groups) ...[
-              ListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 4,
-                ),
+              BInboxRow(
                 leading: _Tile(name: group.name),
-                title: Text(group.name),
+                title: group.name,
+                titleWeight:
+                    group.unread > 0 ? FontWeight.w600 : FontWeight.w500,
                 subtitle: Text(
                   [
                     if (group.members.isNotEmpty)
                       '${group.members.length} 个成员',
                     if (group.typing.isNotEmpty) '正在输入…',
                   ].join(' · '),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
-                trailing: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      group.updatedAt == null ? '' : _when(group.updatedAt!),
-                      style:
-                          TextStyle(fontSize: 11.5, color: AppColors.textFaint),
-                    ),
-                    const SizedBox(height: 4),
-                    if (group.unread > 0) Badge(label: Text("${group.unread}")),
-                  ],
-                ),
+                time: group.updatedAt == null ? null : _when(group.updatedAt!),
+                badge: group.unread,
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => GroupPage(link: link!, group: group),
@@ -1228,18 +1148,25 @@ class _BotsTab extends StatelessWidget {
                 ),
                 onLongPress: () => Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (_) =>
-                        GroupEditPage(link: link!, group: group),
+                    builder: (_) => GroupEditPage(link: link!, group: group),
                   ),
                 ),
               ),
-              Divider(height: 0.5, indent: 72, color: AppColors.partBorder),
+              Divider(height: 0.5, color: AppColors.partBorder),
             ],
-            ListTile(
-              leading: Icon(Codicons.add, color: AppColors.textMuted),
-              title: Text(
-                '新建群聊',
-                style: TextStyle(color: AppColors.textMuted),
+            BInboxRow(
+              titleWeight: FontWeight.w500,
+              title: '新建群聊',
+              subtitle: Text('创建多 Bot 群聊', style: TextStyle(color: AppColors.textFaint)),
+              leading: Container(
+                width: 44,
+                height: 44,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  border: Border.all(color: AppColors.partBorder),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(Codicons.add, color: AppColors.textMuted),
               ),
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(
@@ -1263,42 +1190,52 @@ class _FilesTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (link == null) {
-      return const Center(child: Text('电脑不在线'));
+      return const BEmptyState(
+        icon: Icons.cloud_off_outlined,
+        title: '电脑不在线',
+        subtitle: '连接电脑后才能浏览项目文件。',
+      );
     }
     return ListenableBuilder(
       listenable: link!,
       builder: (context, _) {
-        final projects = [...?link!.state?.projects]
+        final linkState = link!.state;
+        if (linkState == null) {
+          return LinkUnavailableBody(
+            link: link!,
+            offlineTitle: '无法加载项目',
+            offlineSubtitle: '连接电脑后即可浏览项目文件。',
+            onRetry: link!.retryNow,
+          );
+        }
+        final projects = [...linkState.projects]
           ..sort((a, b) {
             if (a.pinned == true && b.pinned != true) return -1;
             if (b.pinned == true && a.pinned != true) return 1;
             return a.name.compareTo(b.name);
           });
         if (projects.isEmpty) {
-          return Center(
-            child: Text('还没有项目', style: TextStyle(color: AppColors.textMuted)),
+          return const BEmptyState(
+            icon: Codicons.folder,
+            title: '还没有项目',
+            subtitle: '在电脑上打开文件夹作为工作区后会出现在这里。',
           );
         }
         return ListView.separated(
           itemCount: projects.length,
           separatorBuilder: (_, _) =>
-              Divider(height: 0.5, indent: 72, color: AppColors.partBorder),
+              Divider(height: 0.5, color: AppColors.partBorder),
           itemBuilder: (context, index) {
             final project = projects[index];
-            return ListTile(
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 4,
-              ),
+            return BInboxRow(
               leading: _Tile(name: project.name),
-              title: Text(project.name),
+              title: project.name,
+              pinned: project.pinned == true,
               subtitle: Text(
                 [
                   project.path,
                   if (project.branch != null) '⎇ ${project.branch}',
                 ].join('  '),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(

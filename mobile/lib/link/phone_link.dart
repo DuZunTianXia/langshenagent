@@ -62,6 +62,10 @@ class SessionFeed extends ChangeNotifier {
   Map<String, Object?>? context;
   Map<String, Object?>? quota;
 
+  /// The messages sent while the agent works, waiting their turn, the
+  /// next first: `{"id", "item"}` — [item] the chat item as JSON.
+  List<Map<String, Object?>> queued = const [];
+
   /// Whether there are items before the first.
   bool get hasMore => earlier;
 
@@ -104,6 +108,10 @@ class SessionFeed extends ChangeNotifier {
       final Map<String, Object?> map => map,
       _ => null,
     };
+    queued = [
+      for (final queued in (update['queued'] as List?) ?? const [])
+        if (queued is Map<String, Object?>) queued,
+    ];
     notifyListeners();
   }
 
@@ -762,6 +770,22 @@ class PhoneLink extends ChangeNotifier {
 
   Future<void> stop(String sessionId) =>
       _call(LinkMethods.stop, {'session': sessionId});
+
+  /// A message waiting its turn ([SessionFeed.queued]): `action` `remove`
+  /// takes it back, `sendNow` takes it up at once (the turn running
+  /// stopped for it), `edit` takes it back to the composer, `move` puts it
+  /// at `index` among those queued, the next first.
+  Future<void> queue(
+    String sessionId, {
+    required String id,
+    required String action,
+    int? index,
+  }) => _call(LinkMethods.queue, {
+    'session': sessionId,
+    'id': id,
+    'action': action,
+    'index': ?index,
+  });
 
   /// Answers what the agent asked: [answer] as the app's interaction
   /// codec wrote it, to the request the feed's `interaction` names.

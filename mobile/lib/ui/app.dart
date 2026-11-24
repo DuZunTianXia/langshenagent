@@ -38,6 +38,12 @@ class BaoApp extends StatelessWidget {
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
         scrolledUnderElevation: 0,
+        surfaceTintColor: Colors.transparent,
+        titleTextStyle: TextStyle(
+          fontSize: 17,
+          fontWeight: FontWeight.w600,
+          color: AppColors.textPrimary,
+        ),
       ),
       cardTheme: CardThemeData(
         color: AppColors.bubbleFill,
@@ -113,9 +119,43 @@ class BaoApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: _theme(dark: false),
       darkTheme: _theme(dark: true),
-      home: state.ready
-          ? const HomePage()
-          : const Scaffold(body: Center(child: CircularProgressIndicator())),
+      home: state.ready ? const HomePage() : const _BootSplash(),
+    );
+  }
+}
+
+class _BootSplash extends StatelessWidget {
+  const _BootSplash();
+
+  @override
+  Widget build(BuildContext context) {
+    MdTheme.dark =
+        MediaQuery.platformBrightnessOf(context) == Brightness.dark;
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(22),
+              child: Image.asset(
+                'assets/branding/app_icon.png',
+                width: 80,
+                height: 80,
+              ),
+            ),
+            const SizedBox(height: 28),
+            SizedBox(
+              width: 28,
+              height: 28,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                color: AppColors.accent,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

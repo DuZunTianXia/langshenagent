@@ -20,6 +20,7 @@ class ChatItemView extends StatefulWidget {
     this.onEditResend,
     this.onRewind,
     this.onOpenPlan,
+    this.onStop,
   });
 
   final ChatItem item;
@@ -27,14 +28,17 @@ class ChatItemView extends StatefulWidget {
   /// A subagent's card tapped: open its conversation, when it has one.
   final void Function(AgentItem agent)? onAgent;
 
-  /// "编辑重发" for a user's own message: `(newText, revertFiles)`.
-  final void Function(String text, bool revertFiles)? onEditResend;
+  /// Opens the full edit-and-resend sheet for this message's plain text.
+  final void Function(String text)? onEditResend;
 
   /// "回退到这一步" for a plan card.
   final VoidCallback? onRewind;
 
   /// Opens a plan card's file.
   final VoidCallback? onOpenPlan;
+
+  /// Stops a running subagent (its card's stop button).
+  final VoidCallback? onStop;
 
   @override
   State<ChatItemView> createState() => _ChatItemViewState();
@@ -78,6 +82,7 @@ class _ChatItemViewState extends State<ChatItemView> {
           onOpen: item is AgentItem && widget.onAgent != null
               ? () => widget.onAgent!(item)
               : null,
+          onStop: item is AgentItem ? widget.onStop : null,
           onOpenPlan: widget.onOpenPlan,
           // The bubble's own click (the desktop's "edit this message")
           // shows the message's detail here instead.
@@ -102,7 +107,7 @@ void _showDetail(
   BuildContext context,
   ChatItem item, {
   bool expanded = false,
-  void Function(String text, bool revertFiles)? onEditResend,
+  void Function(String text)? onEditResend,
   VoidCallback? onRewind,
 }) {
   final images = switch (item) {
@@ -183,7 +188,7 @@ void _showDetail(
                   TextButton(
                     onPressed: () {
                       Navigator.of(context).pop();
-                      _editResend(context, text, onEditResend);
+                      onEditResend(text);
                     },
                     child: const Text('编辑重发'),
                   ),
@@ -217,111 +222,6 @@ void _showDetail(
       ),
     ),
   );
-}
-
-/// The "编辑重发" flow: the message's text editable, whether the files the
-/// agent touched after it should be put back first.
-Future<void> _editResend(
-  BuildContext context,
-  String text,
-  void Function(String text, bool revertFiles) onSend,
-) async {
-  final controller = TextEditingController(text: text);
-  var revert = false;
-  String? edited;
-  final send = await showDialog<bool>(
-    context: context,
-    builder: (context) => StatefulBuilder(
-      builder: (context, setState) => Dialog(
-        backgroundColor: AppColors.surfaceRaised,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.edit_note, size: 20, color: AppColors.accent),
-                  const SizedBox(width: 8),
-                  const Text('编辑并重发', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                ],
-              ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: controller,
-                autofocus: true,
-                minLines: 3,
-                maxLines: 8,
-                decoration: BTextField.decoration(hint: '修改消息后重新发送'),
-              ),
-              const SizedBox(height: 10),
-              InkWell(
-                borderRadius: BorderRadius.circular(8),
-                onTap: () => setState(() => revert = !revert),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: Row(
-                    children: [
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 150),
-                        width: 20,
-                        height: 20,
-                        decoration: BoxDecoration(
-                          color: revert ? AppColors.accent : Colors.transparent,
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                            color: revert ? AppColors.accent : AppColors.textFaint,
-                            width: 1.5,
-                          ),
-                        ),
-                        child: revert
-                            ? const Icon(Icons.check, size: 14, color: Colors.white)
-                            : null,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          '回滚之后的文件改动',
-                          style: TextStyle(fontSize: 13, color: AppColors.text),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  BButton(
-                    label: '取消',
-                    onPressed: () => Navigator.of(context).pop(false),
-                  ),
-                  const SizedBox(width: 10),
-                  BButton(
-                    label: '重发',
-                    icon: Icons.send,
-                    primary: true,
-                    onPressed: () {
-                      edited = controller.text.trim();
-                      Navigator.of(context).pop(true);
-                    },
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    ),
-  );
-  controller.dispose();
-  final editedText = edited;
-  if (send == true && editedText != null && editedText.isNotEmpty) {
-    onSend(editedText, revert);
-  }
 }
 
 /// The image bytes of an [ImageAttachment] JSON, for a `ToolCallItem`'s

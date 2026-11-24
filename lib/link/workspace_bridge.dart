@@ -613,6 +613,58 @@ class WorkspaceBridge {
       case LinkMethods.stop:
         _thread(params['session']).session.stop();
         return null;
+      case LinkMethods.queue:
+        final session = _thread(params['session']).session;
+        final id = params['id'];
+        final action = params['action'];
+        if (id is! String || action is! String) {
+          throw const LinkRemoteException('bad', 'Not a queue request');
+        }
+        if (!session.canQueue) {
+          throw const LinkRemoteException(
+            'unsupported',
+            'The agent does not queue',
+          );
+        }
+        bool waiting() => session.queued.any((queued) => queued.$1 == id);
+        switch (action) {
+          case 'remove':
+            if (!waiting()) {
+              throw const LinkRemoteException(
+                LinkErrors.notFound,
+                'No such queued message',
+              );
+            }
+            session.cancelQueued(id);
+          case 'sendNow':
+            if (!waiting()) {
+              throw const LinkRemoteException(
+                LinkErrors.notFound,
+                'No such queued message',
+              );
+            }
+            session.sendQueuedNow(id);
+          case 'edit':
+            if (!waiting()) {
+              throw const LinkRemoteException(
+                LinkErrors.notFound,
+                'No such queued message',
+              );
+            }
+            await session.editQueued(id);
+          case 'move':
+            final index = params['index'];
+            if (index is! int || !waiting()) {
+              throw const LinkRemoteException(
+                LinkErrors.notFound,
+                'No such queued message',
+              );
+            }
+            session.moveQueued(id, index);
+          default:
+            throw const LinkRemoteException('bad', 'Not a queue action');
+        }
+        return null;
       case LinkMethods.answer:
         final session = _thread(params['session']).session;
         final pending = session.pendingInteraction;
@@ -2046,6 +2098,8 @@ class _Follow {
       changes,
       [for (final task in tasks) task.toJson()],
       quota,
+      // The queue as sent: each waiting message's id and item.
+      [for (final (id, item) in session.queued) (id, _encode(item))],
     ]);
     if (!full &&
         start == count &&
@@ -2080,6 +2134,10 @@ class _Follow {
       goal: goal,
       context: context,
       quota: quota,
+      queued: [
+        for (final (id, item) in session.queued)
+          {'id': id, 'item': _encode(item)},
+      ],
     );
   }
 

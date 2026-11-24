@@ -74,11 +74,13 @@ class ChatItemView extends StatelessWidget {
         :final fromSession,
       ) =>
         AgentMessageCard(agent: agent, text: text, session: fromSession),
-      UserMessageItem(:final text, :final images) => UserMessageBubble(
-        text: text,
-        images: images,
-        onEdit: onEdit,
-      ),
+      UserMessageItem(:final text, :final images, :final queued) =>
+        UserMessageBubble(
+          text: text,
+          images: images,
+          queued: queued,
+          onEdit: onEdit,
+        ),
       AssistantTextItem(:final text) => AssistantText(text),
       final ToolCallItem tool
           when tool.kind == ToolKind.other && isSessionTool(tool.tool) =>

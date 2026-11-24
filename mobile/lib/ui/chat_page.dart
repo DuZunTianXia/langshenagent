@@ -1,3 +1,4 @@
+import 'dart:async' show unawaited;
 import 'dart:convert';
 import 'dart:math' as math;
 
@@ -33,7 +34,9 @@ import '../chat/user_message_style.dart';
 import '../link/chat_codec.dart';
 import '../link/interaction_codec.dart';
 import '../link/phone_link.dart';
+import 'link_status.dart';
 import 'chat_items.dart';
+import 'edit_resend_sheet.dart';
 import 'items/fold_line.dart';
 import 'markdown.dart';
 
@@ -67,15 +70,27 @@ class _ChatPageState extends State<ChatPage> {
   @override
   void initState() {
     super.initState();
+    widget.link.addListener(_onLinkChanged);
     _sessionId = widget.sessionId ?? widget.bot?.session;
     if (_sessionId != null) _open(_sessionId!);
   }
 
   @override
   void dispose() {
+    widget.link.removeListener(_onLinkChanged);
     _text.dispose();
     _scroll.dispose();
     super.dispose();
+  }
+
+  /// Re-opens the session once the computer is online again.
+  void _onLinkChanged() {
+    if (!mounted) return;
+    if (widget.link.phase == PhonePhase.online && _feed == null) {
+      final id = _sessionId ?? widget.sessionId ?? widget.bot?.session;
+      if (id != null && !_opening) unawaited(_open(id));
+    }
+    setState(() {});
   }
 
   Future<void> _open(String id) async {
@@ -144,6 +159,27 @@ class _ChatPageState extends State<ChatPage> {
       await widget.link.stop(id);
     } on Object {
       // Stopping is best-effort: the session may be gone already.
+    }
+  }
+
+  /// A message waiting its turn: `remove`/`sendNow`/`edit`/`move`, as the
+  /// desktop's queue panel does. Failures are toasted, not thrown.
+  Future<void> _queue(
+    String id,
+    String action, {
+    int? index,
+  }) async {
+    final session = _sessionId;
+    if (session == null) return;
+    try {
+      await widget.link.queue(
+        session,
+        id: id,
+        action: action,
+        index: index,
+      );
+    } on Object catch (failure) {
+      if (mounted) showBToast(context, '$failure');
     }
   }
 
@@ -279,7 +315,9 @@ class _ChatPageState extends State<ChatPage> {
   Widget build(BuildContext context) {
     final feed = _feed;
     return Scaffold(
+      backgroundColor: AppColors.conversationSurface,
       appBar: AppBar(
+        backgroundColor: AppColors.background,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -347,15 +385,45 @@ class _ChatPageState extends State<ChatPage> {
               },
             ),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(0.5),
+          child: Divider(height: 0.5, color: AppColors.partBorder),
+        ),
       ),
       body: Column(
         children: [
+          BConnectionBanner(
+            link: widget.link,
+            onRetry: widget.link.retryNow,
+          ),
           if (_error != null)
             Padding(
-              padding: const EdgeInsets.all(12),
-              child: Text(
-                _error!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+              child: BCard(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Row(
+                  children: [
+                    Icon(Icons.error_outline, size: 18, color: AppColors.removed),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _friendlyError(_error!),
+                        style: TextStyle(fontSize: 13, color: AppColors.removed),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        final id = _sessionId ?? widget.sessionId;
+                        if (id != null) {
+                          unawaited(_open(id));
+                        } else {
+                          widget.link.retryNow();
+                        }
+                      },
+                      child: const Text('重试'),
+                    ),
+                  ],
+                ),
               ),
             ),
           Expanded(child: _body(feed)),
@@ -380,6 +448,23 @@ class _ChatPageState extends State<ChatPage> {
               onSend: (text) {
                 _text.text = text;
                 _send();
+              },
+            ),
+          if (feed != null && feed.queued.isNotEmpty)
+            _QueuePanel(
+              queued: feed.queued,
+              onQueue: (id, action, {index}) => _queue(id, action, index: index),
+              onEditQueued: (entry) {
+                // 撤回这一条，文字填进输入框（手机没有 draft：撤回后由
+                // 用户确认再发）。
+                final item = ChatCodec.decode(entry['item']);
+                final text = item is UserMessageItem ? item.text : '';
+                if (text.isNotEmpty) {
+                  _text.text = text;
+                  _text.selection = TextSelection.collapsed(offset: text.length);
+                }
+                setState(() {});
+                _queue(entry['id']! as String, 'edit');
               },
             ),
           _Composer(
@@ -408,26 +493,65 @@ class _ChatPageState extends State<ChatPage> {
     return null;
   }
 
+  String _friendlyError(String raw) {
+    final lower = raw.toLowerCase();
+    if (lower.contains('offline') || lower.contains('closed')) {
+      return describeLinkErrorCode('unreachable');
+    }
+    return raw;
+  }
+
   Widget _body(SessionFeed? feed) {
     if (feed == null) {
-      return Center(
-        child: _opening
-            ? const CircularProgressIndicator()
-            : Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (_sessionId == null && widget.bot != null)
-                    const Text('说点什么开始聊天吧。'),
-                  if (_error != null)
-                    TextButton(
-                      onPressed: () {
-                        final id = _sessionId ?? widget.sessionId;
-                        if (id != null) _open(id);
-                      },
-                      child: const Text('重试'),
-                    ),
-                ],
-              ),
+      final wantsSession =
+          _sessionId ?? widget.sessionId ?? widget.bot?.session;
+      if (_opening || (wantsSession != null && linkWaitsForState(widget.link))) {
+        return Center(
+          child: CircularProgressIndicator(color: AppColors.accent),
+        );
+      }
+      if (wantsSession != null &&
+          widget.link.phase != PhonePhase.online) {
+        return LinkUnavailableBody(
+          link: widget.link,
+          offlineTitle: '会话未打开',
+          offlineSubtitle: '连接恢复后会自动加载；也可以点「立即重连」。',
+          onRetry: () {
+            widget.link.retryNow();
+            unawaited(_open(wantsSession));
+          },
+        );
+      }
+      if (wantsSession == null && widget.bot != null) {
+        if (widget.link.phase != PhonePhase.online) {
+          return LinkUnavailableBody(
+            link: widget.link,
+            offlineTitle: '电脑未连接',
+            offlineSubtitle: '连接后即可开始与 Bot 聊天。',
+            onRetry: widget.link.retryNow,
+          );
+        }
+        return const BEmptyState(
+          icon: Icons.forum_outlined,
+          title: '说点什么开始聊天吧',
+          subtitle: '发送第一条消息后，会话会在电脑上创建。',
+        );
+      }
+      return BEmptyState(
+        icon: Icons.forum_outlined,
+        title: '会话未打开',
+        subtitle: _error != null
+            ? _friendlyError(_error!)
+            : '与电脑连接后即可收发消息。',
+        actionLabel: _error != null ? '重试' : '立即重连',
+        onAction: () {
+          final id = wantsSession;
+          if (id != null) {
+            unawaited(_open(id));
+          } else {
+            widget.link.retryNow();
+          }
+        },
       );
     }
     return ListenableBuilder(
@@ -506,28 +630,42 @@ class _ChatPageState extends State<ChatPage> {
                       else
                         ChatItemView(
                           item: folds.shownAt(index, item),
-                          onAgent: item is AgentItem
-                    ? (agent) => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => AgentPage(agent: agent),
-                        ),
+                          // As the desktop's: it opens to its own
+                          // conversation, when it has one (its tool call's id).
+                          onAgent: item is AgentItem && item.id != null
+                              ? (agent) => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => AgentPage(
+                                      feed: feed,
+                                      agentId: agent.id!,
+                                    ),
+                                  ),
+                                )
+                              : null,
+                          onStop: item is AgentItem &&
+                                  _agentTask(item, feed) != null
+                              ? () async {
+                                  try {
+                                    await widget.link.stopTask(
+                                      feed.session,
+                                      agent: item.id,
+                                    );
+                                  } on Object catch (failure) {
+                                    if (context.mounted) {
+                                      showBToast(context, '$failure');
+                                    }
+                                  }
+                                }
+                              : null,
+                          onEditResend:
+                    item is UserMessageItem && item.fromAgent == null
+                    ? (text) => showEditResendSheet(
+                        context: context,
+                        link: widget.link,
+                        feed: feed,
+                        index: index,
+                        initialText: text,
                       )
-                    : null,
-                onEditResend: item is UserMessageItem
-                    ? (text, revert) async {
-                        try {
-                          await widget.link.edit(
-                            sessionId: feed.session,
-                            index: index,
-                            text: text,
-                            revertFiles: revert,
-                          );
-                        } catch (e) {
-                          if (context.mounted) {
-                            showBToast(context, '重发失败：$e');
-                          }
-                        }
-                      }
                     : null,
                 onOpenPlan: item is PlanItem
                     ? () => _openPlan(item.path)
@@ -716,6 +854,18 @@ class _ChatPageState extends State<ChatPage> {
     for (var i = fold.start; i < fold.end; i++) ?items[i],
   ];
 
+  /// The task [agent] runs as, if the session's tasks list one still
+  /// running for it — the desktop's `stopOf`: the tool call that started
+  /// it is its [AgentItem.id].
+  static LinkTask? _agentTask(AgentItem agent, SessionFeed feed) {
+    final id = agent.id;
+    if (id == null) return null;
+    for (final task in feed.tasks) {
+      if (task.toolUseId == id && task.status == 'running') return task;
+    }
+    return null;
+  }
+
   void _jumpToSticky() {
     if (_stickyIndex < 0) return;
     final ctx = _keys[_stickyIndex]?.currentContext;
@@ -786,10 +936,16 @@ class _Composer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final canSend = controller.text.trim().isNotEmpty || images.isNotEmpty;
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
-        child: Column(
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        border: Border(top: BorderSide(color: AppColors.partBorder)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             if (images.isNotEmpty)
@@ -860,6 +1016,7 @@ class _Composer extends StatelessWidget {
               onStop: onStop,
             ),
           ],
+        ),
         ),
       ),
     );
@@ -1281,7 +1438,6 @@ class _SessionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     // The plan awaiting, if the newest one is.
     PlanItem? plan;
     for (final json in feed.items.reversed) {
@@ -1297,67 +1453,74 @@ class _SessionBar extends StatelessWidget {
     if (!awaitingPlan && changes.isEmpty && tasks.isEmpty) {
       return const SizedBox.shrink();
     }
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: theme.dividerColor)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (awaitingPlan)
-            ListTile(
-              dense: true,
-              leading: const Icon(Icons.fact_check_outlined, size: 20),
-              title: Text(
-                '计划已就绪：${plan!.name}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              trailing: FilledButton.tonal(
-                onPressed: () => _run(
-                  context,
-                  () => link.startPlan(feed.session),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+      child: BCard(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (awaitingPlan)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                child: Row(
+                  children: [
+                    Icon(Icons.fact_check_outlined, size: 20, color: AppColors.accent),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        '计划已就绪：${plan!.name}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                    BButton(
+                      label: '开始',
+                      primary: true,
+                      onPressed: () => _run(
+                        context,
+                        () => link.startPlan(feed.session),
+                      ),
+                    ),
+                  ],
                 ),
-                child: const Text('开始'),
               ),
-            ),
-          if (changes.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.folder_outlined,
-                    size: 18,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _changesLabel(changes),
-                      style: theme.textTheme.bodySmall,
+            if (changes.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
+                child: Row(
+                  children: [
+                    Icon(Icons.folder_outlined, size: 18, color: AppColors.textMuted),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _changesLabel(changes),
+                        style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+                      ),
                     ),
-                  ),
-                  TextButton(
-                    onPressed: () =>
-                        _run(context, () => link.undo(feed.session)),
-                    child: const Text('撤回'),
-                  ),
-                  FilledButton(
-                    onPressed: () =>
-                        _run(context, () => link.keep(feed.session)),
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                    BButton(
+                      label: '撤回',
+                      onPressed: () => _run(context, () => link.undo(feed.session)),
                     ),
-                    child: const Text('保留'),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    BButton(
+                      label: '保留',
+                      primary: true,
+                      onPressed: () => _run(context, () => link.keep(feed.session)),
+                    ),
+                  ],
+                ),
               ),
-            ),
           for (final task in tasks)
             if (task.status == 'running' || task.output)
               _TaskTile(link: link, session: feed.session, task: task),
         ],
+        ),
       ),
     );
   }
@@ -1401,53 +1564,78 @@ class _TaskTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final running = task.status == 'running';
     final title = task.description.isNotEmpty
         ? task.description
         : task.command ?? task.kind;
-    return ListTile(
-      dense: true,
-      leading: Icon(
-        running ? Icons.sync : Icons.terminal,
-        size: 18,
-        color: running ? Colors.blue : theme.colorScheme.onSurfaceVariant,
-      ),
-      title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
-      subtitle: task.summary == null
-          ? null
-          : Text(task.summary!, maxLines: 1, overflow: TextOverflow.ellipsis),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+      child: Row(
         children: [
-          if (task.output)
-            IconButton(
-              tooltip: '输出',
-              icon: const Icon(Icons.output_outlined, size: 18),
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => OutputPage(
-                    link: link,
-                    session: session,
-                    task: task,
+          Icon(
+            running ? Icons.sync : Icons.terminal,
+            size: 18,
+            color: running ? AppColors.accent : AppColors.textMuted,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 13.5, color: AppColors.textPrimary),
+                ),
+                if (task.summary != null)
+                  Text(
+                    task.summary!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                  ),
+              ],
+            ),
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (task.output)
+                IconButton(
+                  tooltip: '输出',
+                  icon: const Icon(Icons.output_outlined, size: 18),
+                  color: AppColors.textMuted,
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => OutputPage(
+                        link: link,
+                        session: session,
+                        task: task,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-          if (running)
-            IconButton(
-              tooltip: '停止',
-              icon: const Icon(Icons.stop_circle_outlined, size: 18),
-              onPressed: () async {
-                try {
-                  await link.stopTask(session, task: task.id);
-                } on Object catch (failure) {
-                  if (context.mounted) {
-                    showBToast(context, '$failure');
-                  }
-                }
-              },
-            ),
+              if (running)
+                IconButton(
+                  tooltip: '停止',
+                  icon: Icon(
+                    Icons.stop_circle_outlined,
+                    size: 18,
+                    color: AppColors.removed,
+                  ),
+                  onPressed: () async {
+                    try {
+                      await link.stopTask(session, task: task.id);
+                    } on Object catch (failure) {
+                      if (context.mounted) {
+                        showBToast(context, '$failure');
+                      }
+                    }
+                  },
+                ),
+            ],
+          ),
         ],
       ),
     );
@@ -1511,16 +1699,25 @@ class _OutputPageState extends State<OutputPage> {
         : widget.task.command ?? widget.task.id;
     return Scaffold(
       appBar: AppBar(title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis)),
+      backgroundColor: AppColors.conversationSurface,
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator(color: AppColors.accent))
           : _error != null
-          ? Center(child: Text('$_error'))
+          ? BEmptyState(
+              icon: Icons.error_outline,
+              title: '无法加载输出',
+              subtitle: '$_error',
+            )
           : ListenableBuilder(
               listenable: widget.link,
               builder: (context, _) {
                 final output = widget.link.outputs[_key]?.text ?? '';
                 return output.isEmpty
-                    ? const Center(child: Text('暂无输出'))
+                    ? const BEmptyState(
+                        icon: Icons.terminal_outlined,
+                        title: '暂无输出',
+                        subtitle: '任务运行后会在这里显示终端输出。',
+                      )
                     : SingleChildScrollView(
                         padding: const EdgeInsets.all(12),
                         child: SelectableText(
@@ -1642,10 +1839,10 @@ class _SuggestionsState extends State<_Suggestions>
     // Less motion asked for: they only fade in.
     final still = MediaQuery.disableAnimationsOf(context);
     return SizedBox(
-      height: 32,
+      height: 38,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
+        padding: const EdgeInsets.fromLTRB(12, 4, 12, 6),
         children: [
           for (final (i, said) in suggestions.indexed)
             Padding(
@@ -2048,6 +2245,171 @@ class _StatusChip extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// The messages sent while the agent works, waiting their turn, docked
+/// above the composer: each can be taken back to edit, sent at once (the
+/// turn running stopped for it), or taken back — the desktop's
+/// QueuePanel, without its drag ordering.
+class _QueuePanel extends StatelessWidget {
+  const _QueuePanel({
+    required this.queued,
+    required this.onQueue,
+    required this.onEditQueued,
+  });
+
+  /// `{"id", "item"}` each, the next first.
+  final List<Map<String, Object?>> queued;
+
+  /// `(id, action)` — `remove`/`sendNow`/`edit`/`move`.
+  final void Function(String id, String action, {int? index}) onQueue;
+
+  /// The entry to take back into the composer.
+  final void Function(Map<String, Object?> entry) onEditQueued;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+      constraints: const BoxConstraints(maxHeight: 180),
+      decoration: BoxDecoration(
+        color: AppColors.bubbleFill,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.bubbleBorder()),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 2),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.schedule_rounded,
+                  size: 13,
+                  color: AppColors.textMuted,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '排队中 ${queued.length} 条',
+                  style: TextStyle(
+                    color: AppColors.textMuted,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Flexible(
+            child: ListView(
+              shrinkWrap: true,
+              padding: const EdgeInsets.fromLTRB(4, 0, 4, 6),
+              children: [
+                for (final entry in queued)
+                  _QueuedRow(
+                    entry: entry,
+                    onEdit: () => onEditQueued(entry),
+                    onSendNow: () =>
+                        onQueue(entry['id']! as String, 'sendNow'),
+                    onRemove: () =>
+                        onQueue(entry['id']! as String, 'remove'),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QueuedRow extends StatelessWidget {
+  const _QueuedRow({
+    required this.entry,
+    required this.onEdit,
+    required this.onSendNow,
+    required this.onRemove,
+  });
+
+  final Map<String, Object?> entry;
+  final VoidCallback onEdit;
+  final VoidCallback onSendNow;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final item = ChatCodec.decode(entry['item']);
+    final text = item is UserMessageItem
+        ? item.text.replaceAll(RegExp(r'\s+'), ' ').trim()
+        : '';
+    final images = item is UserMessageItem ? item.images.length : 0;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onEdit,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Text(
+                  [
+                    if (text.isNotEmpty) text,
+                    if (images > 0) '$images 张图片',
+                  ].join(' · '),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 13, color: AppColors.text),
+                ),
+              ),
+            ),
+          ),
+          _QueueAction(
+            icon: Icons.edit_outlined,
+            tooltip: '编辑',
+            onTap: onEdit,
+          ),
+          _QueueAction(
+            icon: Icons.arrow_upward,
+            tooltip: '立即发送',
+            onTap: onSendNow,
+          ),
+          _QueueAction(
+            icon: Icons.close,
+            tooltip: '移除',
+            onTap: onRemove,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QueueAction extends StatelessWidget {
+  const _QueueAction({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: Icon(icon, size: 17, color: AppColors.textMuted),
+      tooltip: tooltip,
+      visualDensity: VisualDensity.compact,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+      onPressed: onTap,
     );
   }
 }
