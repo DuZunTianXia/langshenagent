@@ -38,6 +38,7 @@ import 'link_status.dart';
 import 'chat_items.dart';
 import 'edit_resend_sheet.dart';
 import 'items/fold_line.dart';
+import 'items/pixel_loader.dart';
 import 'markdown.dart';
 
 /// One conversation: a session's items as they come, the composer, and
@@ -1516,8 +1517,10 @@ class _SessionBar extends StatelessWidget {
                   ],
                 ),
               ),
+          // 只有还在跑的任务挂在输入框上方：已完成的留在子代理卡片里
+          // （点卡片进它的页面看输出），否则越积越多，把聊天顶出屏幕。
           for (final task in tasks)
-            if (task.status == 'running' || task.output)
+            if (task.status == 'running')
               _TaskTile(link: link, session: feed.session, task: task),
         ],
         ),
@@ -1568,75 +1571,131 @@ class _TaskTile extends StatelessWidget {
     final title = task.description.isNotEmpty
         ? task.description
         : task.command ?? task.kind;
+    final isAgent = task.kind == 'agent';
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-      child: Row(
-        children: [
-          Icon(
-            running ? Icons.sync : Icons.terminal,
-            size: 18,
-            color: running ? AppColors.accent : AppColors.textMuted,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: running
+              ? AppColors.accent.withValues(alpha: 0.06)
+              : AppColors.bubbleFill,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: running
+                ? AppColors.accent.withValues(alpha: 0.25)
+                : AppColors.partBorder.withValues(alpha: 0.5),
+            width: 0.5,
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 13.5, color: AppColors.textPrimary),
-                ),
-                if (task.summary != null)
+        ),
+        child: Row(
+          children: [
+            // 类型图标：子代理用像素小人，命令用终端符。
+            Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                color: (running ? AppColors.accent : AppColors.textMuted)
+                    .withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Center(
+                child: running
+                    ? (isAgent
+                          ? const PixelLoader.subagent(size: 16)
+                          : const PixelLoader.agent(size: 16))
+                    : Icon(
+                        isAgent ? Codicons.hubot : Icons.terminal,
+                        size: 16,
+                        color: AppColors.textMuted,
+                      ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
                   Text(
-                    task.summary!,
+                    title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
-              ],
-            ),
-          ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (task.output)
-                IconButton(
-                  tooltip: '输出',
-                  icon: const Icon(Icons.output_outlined, size: 18),
-                  color: AppColors.textMuted,
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => OutputPage(
-                        link: link,
-                        session: session,
-                        task: task,
+                  if (task.summary != null) ...[
+                    const SizedBox(height: 1),
+                    Text(
+                      task.summary!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textMuted,
                       ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            if (task.output)
+              _tileAction(
+                context,
+                tooltip: '输出',
+                icon: Icons.output_outlined,
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => OutputPage(
+                      link: link,
+                      session: session,
+                      task: task,
                     ),
                   ),
                 ),
-              if (running)
-                IconButton(
-                  tooltip: '停止',
-                  icon: Icon(
-                    Icons.stop_circle_outlined,
-                    size: 18,
-                    color: AppColors.removed,
-                  ),
-                  onPressed: () async {
-                    try {
-                      await link.stopTask(session, task: task.id);
-                    } on Object catch (failure) {
-                      if (context.mounted) {
-                        showBToast(context, '$failure');
-                      }
+              ),
+            if (running)
+              _tileAction(
+                context,
+                tooltip: '停止',
+                icon: Icons.stop_circle_outlined,
+                color: AppColors.removed,
+                onTap: () async {
+                  try {
+                    await link.stopTask(session, task: task.id);
+                  } on Object catch (failure) {
+                    if (context.mounted) {
+                      showBToast(context, '$failure');
                     }
-                  },
-                ),
-            ],
-          ),
-        ],
+                  }
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// A small round action button at a task tile's right edge.
+  Widget _tileAction(
+    BuildContext context, {
+    required String tooltip,
+    required IconData icon,
+    required VoidCallback onTap,
+    Color? color,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(6),
+          child: Icon(icon, size: 18, color: color ?? AppColors.textMuted),
+        ),
       ),
     );
   }
