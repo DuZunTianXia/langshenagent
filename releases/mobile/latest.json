@@ -1,7 +1,7 @@
 {
-  "version": "1.0.35",
-  "build": 36,
-  "apk": "/mobile-v1.0.35/langshenagent-1.0.35.apk",
-  "size": 104700744,
-  "notes": "LangshenAgent 1.0.35"
+  "version": "1.0.37",
+  "build": 38,
+  "apk": "/mobile-v1.0.37/langshenagent-1.0.37.apk",
+  "size": 104815504,
+  "notes": "LangshenAgent 1.0.37"
 }
