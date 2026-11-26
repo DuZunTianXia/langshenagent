@@ -1,7 +1,7 @@
 {
-  "version": "1.0.37",
-  "build": 38,
-  "apk": "/mobile-v1.0.37/langshenagent-1.0.37.apk",
-  "size": 104815504,
-  "notes": "LangshenAgent 1.0.37"
+  "version": "1.0.38",
+  "build": 39,
+  "apk": "/mobile-v1.0.38/langshenagent-1.0.38.apk",
+  "size": 105062204,
+  "notes": "聊天跟随输出更稳,配对更好看了。  新功能 - 配对页的扫码框:四角标记和来回扫动的扫描线。  修复 - 对话在流式输出时稳定停在底部:之前条目不断更新、行高重排时容易丢失底部锚点。 - 只有 link-local IPv6 的网络(比如直连)现在也能拨通;无法解析的名字不再白白拨号超时。 "
 }
