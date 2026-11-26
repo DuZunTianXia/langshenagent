@@ -111,6 +111,13 @@ class _AgentMessageCardState extends State<AgentMessageCard> {
         ),
       );
     }
+    // Folding and unfolding glides rather than popping what is under it.
+    body = AnimatedSize(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOutCubic,
+      alignment: Alignment.topLeft,
+      child: body,
+    );
     return Semantics(
       container: true,
       label: l10n.chatAgentMessageSemantics(widget.agent),

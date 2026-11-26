@@ -154,16 +154,23 @@ class ToolCallRow extends StatelessWidget {
         header,
         if (_answered case final answered?)
           StepBody(child: _QuestionAnswers(answered: answered))
-        else if (_todos case final todos? when expanded)
-          StepBody(child: _TodoList(todos: todos))
-        else if (expanded && (results.isNotEmpty || _shown != null))
-          StepBody(
-            child: Text(
-              results.isNotEmpty ? results.join('\n') : _shown!,
-              style: stepMono,
+        else if (_todos case final todos?)
+          ExpandReveal(
+            show: expanded,
+            child: StepBody(child: _TodoList(todos: todos)),
+          )
+        else if (results.isNotEmpty || _shown != null)
+          ExpandReveal(
+            show: expanded,
+            child: StepBody(
+              child: Text(
+                results.isNotEmpty ? results.join('\n') : _shown!,
+                style: stepMono,
+              ),
             ),
           ),
-        if (expanded && images.isNotEmpty) ToolImages(images: _images),
+        if (images.isNotEmpty)
+          ExpandReveal(show: expanded, child: ToolImages(images: _images)),
       ],
     );
   }

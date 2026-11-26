@@ -184,6 +184,15 @@ class BCard extends StatelessWidget {
       color: AppColors.surfaceRaised,
       borderRadius: BorderRadius.circular(14),
       border: Border.all(color: AppColors.partBorder.withValues(alpha: 0.55)),
+      boxShadow: [
+        BoxShadow(
+          color: MdTheme.dark
+              ? Colors.black.withValues(alpha: 0.3)
+              : Colors.black.withValues(alpha: 0.08),
+          blurRadius: MdTheme.dark ? 8 : 6,
+          offset: MdTheme.dark ? const Offset(0, 2) : const Offset(0, 1),
+        ),
+      ],
     ),
     padding: padding ?? const EdgeInsets.all(14),
     child: child,
@@ -761,7 +770,21 @@ class _ChoiceSheetState extends State<_ChoiceSheet> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Row(
           children: [
-            if (icon != null) ...[icon, const SizedBox(width: 10)],
+            // With any iconOf at all, a row keeps the icon's room whether
+            // or not this option has one: the labels line up.
+            if (widget.iconOf != null) ...[
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: icon ??
+                    Icon(
+                      Icons.memory_rounded,
+                      size: 18,
+                      color: AppColors.textFaint,
+                    ),
+              ),
+              const SizedBox(width: 10),
+            ],
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -836,10 +859,14 @@ Future<T?> showBActions<T>(
       children: [
         if (title != null)
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            padding: const EdgeInsets.fromLTRB(16, 2, 16, 10),
             child: Text(
               title,
-              style: TextStyle(fontSize: 12.5, color: AppColors.textMuted),
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
             ),
           ),
         for (final (icon, label, subtitle, value) in actions)
@@ -854,6 +881,7 @@ Future<T?> showBActions<T>(
                       ? Theme.of(context).colorScheme.error
                       : AppColors.accent;
                   final leading = leadingOf?.call(value);
+                  final checked = selected == value;
                   return Row(
                     children: [
                       if (leading != null) ...[
@@ -879,6 +907,9 @@ Future<T?> showBActions<T>(
                               label,
                               style: TextStyle(
                                 fontSize: 15,
+                                fontWeight: checked
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
                                 color: isDanger
                                     ? tint
                                     : AppColors.textPrimary,
@@ -892,15 +923,17 @@ Future<T?> showBActions<T>(
                                   fontSize: 12,
                                   color: AppColors.textMuted,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                               ),
                             ],
                           ],
                         ),
                       ),
-                      if (selected == value)
-                        Icon(Icons.check, size: 18, color: AppColors.accent),
+                      if (checked)
+                        Icon(
+                          Icons.check_circle_rounded,
+                          size: 20,
+                          color: AppColors.accent,
+                        ),
                     ],
                   );
                 },
@@ -1173,7 +1206,7 @@ class BDropdown<T> extends StatelessWidget {
 /// send or stop glyphs that spring in when there is something to act
 /// on — send while [canSend], stop while [live] (both while it works:
 /// a message sent then waits its turn).
-class BComposer extends StatelessWidget {
+class BComposer extends StatefulWidget {
   const BComposer({
     super.key,
     required this.controller,
@@ -1196,21 +1229,51 @@ class BComposer extends StatelessWidget {
   final VoidCallback? onStop;
 
   @override
+  State<BComposer> createState() => _BComposerState();
+}
+
+class _BComposerState extends State<BComposer> {
+  final FocusNode _focusNode = FocusNode();
+  bool _focused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(() {
+      setState(() => _focused = _focusNode.hasFocus);
+    });
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final action = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (live && onStop != null)
-          _ComposerGlyph(
-            icon: Codicons.debugStop,
-            color: Theme.of(context).colorScheme.error,
-            onPressed: onStop,
+        if (widget.live && widget.onStop != null)
+          _ComposerRoundButton(
+            background: Theme.of(context).colorScheme.error,
+            onPressed: widget.onStop,
+            child: const Icon(
+              Icons.stop_rounded,
+              size: 18,
+              color: Colors.white,
+            ),
           ),
-        if (canSend)
-          _ComposerGlyph(
-            icon: Codicons.send,
-            color: AppColors.accent,
-            onPressed: onSend,
+        if (widget.canSend)
+          _ComposerRoundButton(
+            background: AppColors.accent,
+            onPressed: widget.onSend,
+            child: const Icon(
+              Icons.arrow_upward_rounded,
+              size: 19,
+              color: Colors.white,
+            ),
           ),
       ],
     );
@@ -1218,32 +1281,33 @@ class BComposer extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.bubbleFill,
         borderRadius: BorderRadius.circular(25),
-        border: Border.all(color: AppColors.bubbleBorder()),
+        border: Border.all(color: AppColors.bubbleBorder(focused: _focused)),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (onAttach != null)
+          if (widget.onAttach != null)
             _ComposerGlyph(
               icon: Codicons.plus,
               color: AppColors.textMuted,
-              onPressed: onAttach,
+              onPressed: widget.onAttach,
             ),
           Expanded(
             child: TextField(
-              controller: controller,
+              controller: widget.controller,
+              focusNode: _focusNode,
               minLines: 1,
               maxLines: 5,
               textInputAction: TextInputAction.send,
               cursorColor: AppColors.accent,
               style: TextStyle(fontSize: 15, color: AppColors.text),
-              onChanged: (_) => onChanged?.call(),
+              onChanged: (_) => widget.onChanged?.call(),
               onSubmitted: (_) {
-                if (canSend) onSend?.call();
+                if (widget.canSend) widget.onSend?.call();
               },
               decoration: InputDecoration(
-                hintText: hint,
+                hintText: widget.hint,
                 hintStyle: TextStyle(color: AppColors.textFaint, fontSize: 15),
                 isDense: true,
                 filled: false,
@@ -1288,6 +1352,37 @@ class _ComposerGlyph extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(8),
         child: Icon(icon, size: 23, color: color),
+      ),
+    );
+  }
+}
+
+/// A filled circular action button inside [BComposer] — the send key's
+/// accent-green disc and the stop key's error-red one, as WeChat and the
+/// mainstream IMs draw them.
+class _ComposerRoundButton extends StatelessWidget {
+  const _ComposerRoundButton({
+    required this.background,
+    required this.child,
+    this.onPressed,
+  });
+
+  final Color background;
+  final Widget child;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(4),
+      child: Material(
+        color: background,
+        shape: const CircleBorder(),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onPressed,
+          child: SizedBox(width: 32, height: 32, child: Center(child: child)),
+        ),
       ),
     );
   }
@@ -1516,4 +1611,137 @@ class BFileIcon extends StatelessWidget {
     'psd': 'adobe-photoshop', 'ai': 'adobe-illustrator',
     'log': 'log', 'txt': 'document', 'out': 'document',
   };
+}
+
+/// A loading placeholder: grey rounded bars where messages will be, one
+/// breathing softly, until the conversation's items arrive.
+class BSkeletonLines extends StatefulWidget {
+  const BSkeletonLines({super.key, this.lines = 4});
+
+  final int lines;
+
+  @override
+  State<BSkeletonLines> createState() => _BSkeletonLinesState();
+}
+
+class _BSkeletonLinesState extends State<BSkeletonLines>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _breath = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1200),
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _breath.dispose();
+    super.dispose();
+  }
+
+  // Widths cycling through 40%..80% so the bars read as bubbles of
+  // different lengths, alternating the side they start from.
+  static const _widths = [0.62, 0.4, 0.78, 0.5, 0.68, 0.45];
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: Tween(begin: 0.4, end: 1.0).animate(
+        CurvedAnimation(parent: _breath, curve: Curves.easeInOut),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (var i = 0; i < widget.lines; i++)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Row(
+                  mainAxisAlignment: i.isEven
+                      ? MainAxisAlignment.start
+                      : MainAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: Align(
+                        alignment: i.isEven
+                            ? Alignment.centerLeft
+                            : Alignment.centerRight,
+                        child: FractionallySizedBox(
+                          widthFactor: _widths[i % _widths.length],
+                          child: Container(
+                            height: 15,
+                            decoration: BoxDecoration(
+                              color: AppColors.bubbleFill,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A scroll controller that pins its list to the end while [anchored], as
+/// the desktop's does: the correction happens inside layout, so content
+/// growing while streaming never shows a frame off the bottom — no
+/// post-frame jump that lands short of the real extent. Scrolling up by
+/// hand lets go of the anchor; landing at the very bottom re-engages it.
+class BottomAnchoredScrollController extends ScrollController {
+  bool anchored = true;
+
+  @override
+  ScrollPosition createScrollPosition(
+    ScrollPhysics physics,
+    ScrollContext context,
+    ScrollPosition? oldPosition,
+  ) =>
+      _BottomAnchoredScrollPosition(
+    controller: this,
+    physics: physics,
+    context: context,
+    oldPosition: oldPosition,
+  );
+}
+
+class _BottomAnchoredScrollPosition extends ScrollPositionWithSingleContext {
+  _BottomAnchoredScrollPosition({
+    required this.controller,
+    required super.physics,
+    required super.context,
+    super.oldPosition,
+  });
+
+  final BottomAnchoredScrollController controller;
+
+  @override
+  void jumpTo(double value) {
+    if (hasContentDimensions) {
+      controller.anchored = value >= maxScrollExtent - 1;
+    }
+    super.jumpTo(value);
+  }
+
+  @override
+  bool applyContentDimensions(double minScrollExtent, double maxScrollExtent) {
+    final accepted = super.applyContentDimensions(
+      minScrollExtent,
+      maxScrollExtent,
+    );
+    if (controller.anchored &&
+        hasPixels &&
+        pixels != maxScrollExtent &&
+        activity is! DragScrollActivity) {
+      // Re-run layout at the new offset: a jump scheduled after the frame
+      // would read the extent before the growth, landing above the end.
+      correctPixels(maxScrollExtent);
+      return false;
+    }
+    return accepted;
+  }
 }

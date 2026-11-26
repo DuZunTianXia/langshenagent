@@ -66,9 +66,21 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _pickMessageStyle() async {
     final picked = await showBActions<UserMessageStyle>(
       context,
+      title: '用户消息样式',
+      selected: UserMessageStyle.current.value,
       actions: const [
-        (null, '整宽滚动吸顶', '整宽显示，滚动时当前这轮的消息停在顶部', UserMessageStyle.sticky),
-        (null, '靠右气泡', '像聊天一样靠右显示为气泡，随内容滚走', UserMessageStyle.bubble),
+        (
+          Icons.vertical_align_top_rounded,
+          '整宽滚动吸顶',
+          '整宽显示，滚动时当前这轮的消息停在顶部',
+          UserMessageStyle.sticky,
+        ),
+        (
+          Icons.chat_bubble_outline_rounded,
+          '靠右气泡',
+          '像聊天一样靠右显示为气泡，随内容滚走',
+          UserMessageStyle.bubble,
+        ),
       ],
     );
     if (picked == null || !mounted) return;
@@ -78,9 +90,21 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _pickEditDetail() async {
     final picked = await showBActions<EditDetail>(
       context,
+      title: '文件编辑样式',
+      selected: EditDetail.current.value,
       actions: const [
-        (null, '紧凑一行', '每个文件编辑收成一行，点开看差异', EditDetail.compact),
-        (null, '完整卡片', '文件编辑直接展开为差异卡片', EditDetail.card),
+        (
+          Icons.compress_rounded,
+          '紧凑一行',
+          '每个文件编辑收成一行，点开看差异',
+          EditDetail.compact,
+        ),
+        (
+          Icons.difference_outlined,
+          '完整卡片',
+          '文件编辑直接展开为差异卡片',
+          EditDetail.card,
+        ),
       ],
     );
     if (picked == null || !mounted) return;

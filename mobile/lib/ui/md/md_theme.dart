@@ -11,35 +11,35 @@ abstract final class MdTheme {
 abstract final class AppColors {
   // `sideBar.background` / `editorWidget.background` / `menu.background`.
   static Color get background =>
-      MdTheme.dark ? const Color(0xFF1F1F1F) : const Color(0xFFF7F7F7);
+      MdTheme.dark ? const Color(0xFF141414) : const Color(0xFFF7F7F7);
   static Color get surface =>
-      MdTheme.dark ? const Color(0xFF2D2D30) : const Color(0xFFE8E8E8);
+      MdTheme.dark ? const Color(0xFF26262A) : const Color(0xFFE8E8E8);
   static Color get surfaceRaised =>
-      MdTheme.dark ? const Color(0xFF3E3E42) : const Color(0xFFFFFFFF);
+      MdTheme.dark ? const Color(0xFF38383D) : const Color(0xFFFFFFFF);
 
   /// `editor.background`: the conversation's surface, code blocks'.
   static Color get conversationSurface =>
-      MdTheme.dark ? const Color(0xFF1F1F1F) : const Color(0xFFFFFFFF);
+      MdTheme.dark ? const Color(0xFF171717) : const Color(0xFFFFFFFF);
   static Color get code => conversationSurface;
 
   /// A bubble's fill: `agentsChatInput.background` over [code] — Dark
   /// Modern's is a light wash, Light's a dark one.
   static Color get bubbleFill =>
-      MdTheme.dark ? const Color(0xFF2B2B2E) : const Color(0xFFECECF0);
+      MdTheme.dark ? const Color(0xFF323236) : const Color(0xFFECECF0);
 
   static Color get partBorder =>
-      MdTheme.dark ? const Color(0xFF2B2B2B) : const Color(0xFFD4D4D4);
+      MdTheme.dark ? const Color(0xFF333337) : const Color(0xFFD4D4D4);
   static Color get border =>
-      MdTheme.dark ? const Color(0xFF2B2B2B) : const Color(0xFFD4D4D4);
+      MdTheme.dark ? const Color(0xFF333337) : const Color(0xFFD4D4D4);
   static Color get borderStrong =>
-      MdTheme.dark ? const Color(0xFF3C3C3C) : const Color(0xFFCECECE);
+      MdTheme.dark ? const Color(0xFF4A4A50) : const Color(0xFFCECECE);
 
   static Color get textPrimary =>
       MdTheme.dark ? const Color(0xFFFFFFFF) : const Color(0xFF1F1F1F);
   static Color get text =>
       MdTheme.dark ? const Color(0xFFCCCCCC) : const Color(0xFF424242);
   static Color get textMuted =>
-      MdTheme.dark ? const Color(0xFF9D9D9D) : const Color(0xFF6F6F6F);
+      MdTheme.dark ? const Color(0xFFA8A8A8) : const Color(0xFF6F6F6F);
   static Color get textFaint =>
       MdTheme.dark ? const Color(0xFF656565) : const Color(0xFF9E9E9E);
 
@@ -50,7 +50,7 @@ abstract final class AppColors {
 
   /// The user's own message bubble, as the official phone app's.
   static Color get userBubble =>
-      MdTheme.dark ? const Color(0xFF1E4D33) : const Color(0xFF95EC69);
+      MdTheme.dark ? const Color(0xFF2B5C40) : const Color(0xFF95EC69);
 
   /// Text on [userBubble]: near-black on the light green, near-white on
   /// the dark one.

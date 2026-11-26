@@ -132,11 +132,20 @@ class AgentStep extends StatefulWidget {
   }
 
   /// [model], a subagent's as its upstream answered, as people read it:
-  /// an upstream's model by the name the picker gives it, and that
-  /// upstream (unless more than one has a model of that id); Claude's as
-  /// "Opus 5.5"; else as it is.
+  /// Claude's as "Opus 5.5"; a `@provider/model` ref as its model part
+  /// (the upstream stays in the tooltip); else as it is.
   static ({String label, String? upstream}) modelName(String model) {
-    final id = model;
+    // `@provider/model`: only the model names the card, as the desktop's.
+    var id = model;
+    if (model.startsWith('@')) {
+      final slash = model.indexOf('/');
+      if (slash > 1 && slash < model.length - 1) {
+        id = model.substring(slash + 1);
+      }
+    }
+    // A model id can itself be namespaced (`devin/swe-2.1`): the last
+    // part is its name.
+    if (id.contains('/')) id = id.split('/').last;
     final claude = RegExp(r'^claude-(?:[\d-]+-)?(opus|sonnet|haiku|fable)\b')
         .firstMatch(id);
     if (claude != null) {

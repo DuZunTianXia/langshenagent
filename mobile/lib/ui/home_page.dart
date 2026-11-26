@@ -399,11 +399,33 @@ class _BottomBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // (unselected outlined, selected filled) as the official app's tabs:
+    // the filled one reads at a glance, the outlined ones stay quiet.
     final items = [
-      (Codicons.commentDiscussion, '对话', unread),
-      (Codicons.hubot, 'Bot', 0),
-      (Codicons.folder, '文件', 0),
-      (Codicons.gear, '设置', 0),
+      (
+        Icons.chat_bubble_outline_rounded,
+        Icons.chat_bubble_rounded,
+        '对话',
+        unread,
+      ),
+      (
+        Icons.smart_toy_outlined,
+        Icons.smart_toy_rounded,
+        'Bot',
+        0,
+      ),
+      (
+        Icons.folder_outlined,
+        Icons.folder_rounded,
+        '文件',
+        0,
+      ),
+      (
+        Icons.settings_outlined,
+        Icons.settings_rounded,
+        '设置',
+        0,
+      ),
     ];
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -429,8 +451,9 @@ class _BottomBar extends StatelessWidget {
                 Expanded(
                   child: _TabItem(
                     icon: items[i].$1,
-                    label: items[i].$2,
-                    badge: items[i].$3,
+                    selectedIcon: items[i].$2,
+                    label: items[i].$3,
+                    badge: items[i].$4,
                     selected: tab == i,
                     onTap: () => onSelect(i),
                   ),
@@ -444,10 +467,12 @@ class _BottomBar extends StatelessWidget {
 }
 
 /// One tab in [_BottomBar]: icon (with its badge) over its label, the
-/// icon in a soft green pill while selected.
+/// icon in a soft green pill while selected. Unselected it is the
+/// outlined glyph, selected the filled one — the two shapes crossfade.
 class _TabItem extends StatelessWidget {
   const _TabItem({
     required this.icon,
+    required this.selectedIcon,
     required this.label,
     required this.badge,
     required this.selected,
@@ -455,6 +480,7 @@ class _TabItem extends StatelessWidget {
   });
 
   final IconData icon;
+  final IconData selectedIcon;
   final String label;
   final int badge;
   final bool selected;
@@ -483,7 +509,15 @@ class _TabItem extends StatelessWidget {
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(15),
                 ),
-                child: Icon(icon, size: 20, color: color),
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 180),
+                  child: Icon(
+                    selected ? selectedIcon : icon,
+                    key: ValueKey(selected),
+                    size: 22,
+                    color: color,
+                  ),
+                ),
               ),
               if (badge > 0)
                 Positioned(
@@ -643,8 +677,7 @@ class _ChatsTab extends StatelessWidget {
         // chats don't show yet, e.g. a fresh or an empty one.
         return ListView.separated(
           itemCount: rows.length + 1,
-          separatorBuilder: (_, _) =>
-              Divider(height: 0.5, color: AppColors.partBorder),
+          separatorBuilder: (_, _) => const BDivider(),
           itemBuilder: (context, index) {
             if (index == rows.length) {
               return BInboxRow(

@@ -72,12 +72,18 @@ class LinkAdvert {
     'p': pairing ? '1' : '0',
   };
 
-  /// Where to dial (`ip:port`): IPv4 first; not link-local IPv6 addresses,
-  /// which need an interface named.
+  /// Where to dial (`ip:port`): IPv4 first; link-local IPv6 addresses
+  /// (fe80::/10) too, kept for when nothing else was found — iroh dials
+  /// one without a zone id where the interface is clear enough.
   List<String> get addrs {
     final usable = [
       for (final address in addresses)
         if (!address.toLowerCase().startsWith('fe80') && !address.contains('%'))
+          address,
+    ];
+    final linkLocal = [
+      for (final address in addresses)
+        if (address.toLowerCase().startsWith('fe80') && !address.contains('%'))
           address,
     ];
     return [
@@ -85,6 +91,8 @@ class LinkAdvert {
         if (!address.contains(':')) '$address:$port',
       for (final address in usable)
         if (address.contains(':')) '[$address]:$port',
+      if (usable.isEmpty)
+        for (final address in linkLocal) '[$address]:$port',
     ];
   }
 

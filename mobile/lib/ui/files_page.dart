@@ -8,6 +8,7 @@ import '../link/phone_link.dart';
 import 'chat_page.dart';
 import 'file_viewer.dart';
 import 'link_status.dart';
+import 'md/md_theme.dart';
 import 'widgets.dart';
 
 /// A computer's projects and their files, as the desktop's Explorer has
@@ -64,20 +65,26 @@ class _ProjectTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: _ProjectIcon(link: link, icon: project.icon),
-      title: Text(project.name),
+    return BInboxRow(
+      leading: Container(
+        width: 44,
+        height: 44,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AppColors.accent.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: _ProjectIcon(link: link, icon: project.icon),
+      ),
+      title: project.name,
       subtitle: Text(
         [
           project.path,
           ?project.branch,
         ].join(' · '),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
       ),
-      trailing: project.pinned == true
-          ? const Icon(Icons.push_pin_outlined, size: 18)
-          : null,
+      pinned: project.pinned == true,
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) => FolderPage(link: link, project: project),
@@ -301,14 +308,12 @@ class FolderPageState extends State<FolderPage> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-          ? Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('$_error'),
-                  TextButton(onPressed: _load, child: const Text('重试')),
-                ],
-              ),
+          ? BEmptyState(
+              icon: Icons.cloud_off_outlined,
+              title: '无法加载文件夹',
+              subtitle: '$_error',
+              actionLabel: '重试',
+              onAction: _load,
             )
           : folders.isEmpty && files.isEmpty
           ? const BEmptyState(
@@ -322,17 +327,15 @@ class FolderPageState extends State<FolderPage> {
                 key: PageStorageKey('files.${widget.project.id}.${widget.path}'),
                 children: [
                   for (final name in folders)
-                    ListTile(
-                      dense: true,
-                      leading: const BFileIcon(name: 'folder', size: 26),
-                      title: Text(name),
+                    _FileRow(
+                      name: name,
+                      isFolder: true,
                       onTap: () => _openFolder(name),
                     ),
                   for (final name in files)
-                    ListTile(
-                      dense: true,
-                      leading: BFileIcon(name: name, size: 26),
-                      title: Text(name),
+                    _FileRow(
+                      name: name,
+                      isFolder: false,
                       onTap: () => _openFile(name),
                     ),
                 ],
@@ -342,6 +345,60 @@ class FolderPageState extends State<FolderPage> {
   }
 
   static String _base(String path) => path.split('/').last;
+}
+
+/// A file or folder row of a [FolderPage]: compact, but in the visual
+/// language of a [BCell] — a tinted icon box, the name, a chevron.
+/// The link's `folder` reply carries names only, so there is no size,
+/// item count or date to show under the name.
+class _FileRow extends StatelessWidget {
+  const _FileRow({
+    required this.name,
+    required this.isFolder,
+    required this.onTap,
+  });
+
+  final String name;
+  final bool isFolder;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isFolder ? AppColors.accent : AppColors.textMuted;
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        child: Row(
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(9),
+              ),
+              alignment: Alignment.center,
+              child: BFileIcon(
+                name: isFolder ? 'folder' : name,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 14.5, color: AppColors.textPrimary),
+              ),
+            ),
+            Icon(Icons.chevron_right, size: 20, color: AppColors.textFaint),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 /// Opens [path] of [project] the right way: a picture as an image, a text
@@ -434,7 +491,19 @@ class _ImageViewState extends State<_ImageView> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-          ? Center(child: Text('$_error'))
+          ? BEmptyState(
+              icon: Icons.broken_image_outlined,
+              title: '无法加载图片',
+              subtitle: '$_error',
+              actionLabel: '重试',
+              onAction: () {
+                setState(() {
+                  _loading = true;
+                  _error = null;
+                });
+                _load();
+              },
+            )
           : data is! String
           ? const Center(child: Text('不是图片'))
           : InteractiveViewer(

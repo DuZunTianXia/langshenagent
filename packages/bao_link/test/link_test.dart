@@ -21,8 +21,17 @@ void main() {
     expect(found.id, advert.id);
     expect(found.pairing, isTrue);
     expect(found.sameAs(advert), isTrue);
-    // IPv4 first; not link-local.
+    // IPv4 first, then global IPv6; link-local only when nothing else.
     expect(found.addrs, ['192.168.1.5:47100', '[2408:8207::5]:47100']);
+    expect(
+      LinkAdvert.parse(
+        name: 'Mac',
+        port: 47100,
+        attributes: advert.attributes,
+        addresses: ['fe80::1', 'fe80::2%en0'],
+      )!.addrs,
+      ['[fe80::1]:47100'],
+    );
     expect(
       LinkAdvert.parse(name: 'x', port: 1, attributes: {'v': '2', 'k': ''}),
       isNull,

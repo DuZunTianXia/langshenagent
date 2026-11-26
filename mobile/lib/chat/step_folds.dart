@@ -290,12 +290,14 @@ bool isQuickStep(ChatItem item) => switch (item) {
 
 /// Whether [item] shows though its turn's work is folded: pictures an
 /// image model made, which are what the user asked for; questions the user
-/// answered, and what they said.
+/// answered, and what they said; a subagent's card, which stays the way
+/// into its page and output once its tile above the composer is gone.
 bool standsOutOfWork(ChatItem item) => switch (item) {
   ToolCallItem(kind: ToolKind.image, :final status, :final images) =>
     status == ToolStatus.succeeded && images.isNotEmpty,
   ToolCallItem(kind: ToolKind.question, :final status) =>
     status == ToolStatus.succeeded,
+  AgentItem() => true,
   _ => false,
 };
 

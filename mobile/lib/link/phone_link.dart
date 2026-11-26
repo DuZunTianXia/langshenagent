@@ -270,7 +270,9 @@ class PhoneLink extends ChangeNotifier {
         (final PairingOffer offer, _) => offer.address,
         (_, final LinkAdvert advert) => LinkAddress(
           advert.id,
-          addrs: advert.addrs,
+          // Found nearby: its advertised addrs first, then those it told
+          // last time (a domain's still good after its IPv6 moved).
+          addrs: [...advert.addrs, ...computer.addrs],
           relays: store.nodeRelays,
         ),
         _ => LinkAddress(
@@ -438,7 +440,9 @@ class PhoneLink extends ChangeNotifier {
     phase = PhonePhase.offline;
     error = switch (failure) {
       LinkRemoteException(:final code) => code,
-      LinkClosedException() => 'unreachable',
+      // The iroh side's word kept: 'nowhere to reach it' (no address
+      // dialled at all), 'timed out', or whatever the transport said.
+      LinkClosedException(:final reason) => 'unreachable:$reason',
       TimeoutException() => 'timeout',
       _ => 'failed',
     };

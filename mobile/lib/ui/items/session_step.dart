@@ -81,20 +81,23 @@ class SessionStep extends StatelessWidget {
             color: AppColors.textMuted,
           ),
         ),
-        if (expanded && (sent != null || output.isNotEmpty))
-          StepBody(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (sent != null)
-                  Text(
-                    sent,
-                    style: TextStyle(color: AppColors.text, fontSize: 12.5),
-                  ),
-                if (sent != null && output.isNotEmpty)
-                  const SizedBox(height: 8),
-                if (output.isNotEmpty) Text(output, style: stepMono),
-              ],
+        if (sent != null || output.isNotEmpty)
+          ExpandReveal(
+            show: expanded,
+            child: StepBody(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (sent != null)
+                    Text(
+                      sent,
+                      style: TextStyle(color: AppColors.text, fontSize: 12.5),
+                    ),
+                  if (sent != null && output.isNotEmpty)
+                    const SizedBox(height: 8),
+                  if (output.isNotEmpty) Text(output, style: stepMono),
+                ],
+              ),
             ),
           ),
       ],

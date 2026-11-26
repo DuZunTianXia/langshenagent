@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:bao_link/bao_link.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -26,6 +28,11 @@ class _PairPageState extends State<PairPage> {
   String? _error;
   bool _handled = false;
 
+  // The frame's outer size, its corner marks' reach, the scan line's travel.
+  static const double _frameExtent = 286;
+  static const double _cornerSpan = 26;
+  static const double _scanInset = 12;
+
   @override
   void dispose() {
     _controller.dispose();
@@ -48,13 +55,17 @@ class _PairPageState extends State<PairPage> {
   Widget _scan() {
     final state = AppScope.of(context);
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Expanded(
-          flex: 5,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+        const SizedBox(height: 12),
+        Center(
+          child: SizedBox.square(
+            dimension: math.min(
+              _frameExtent,
+              MediaQuery.of(context).size.width - 64,
+            ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(20),
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -76,43 +87,24 @@ class _PairPageState extends State<PairPage> {
                       if (value != null) _scanned(value);
                     },
                   ),
-                  IgnorePointer(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: AppColors.accent.withValues(alpha: 0.85),
-                          width: 2,
-                        ),
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                    ),
+                  const IgnorePointer(
+                    child: CustomPaint(painter: _ScanFramePainter()),
                   ),
-                  const Align(
-                    alignment: Alignment.bottomCenter,
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(16, 32, 16, 16),
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [Colors.transparent, Color(0x99000000)],
-                          ),
-                        ),
-                        child: SizedBox(height: 56),
-                      ),
+                  const IgnorePointer(
+                    child: RepaintBoundary(
+                      child: _ScanLine(inset: _scanInset),
                     ),
                   ),
                   const Positioned(
                     left: 0,
                     right: 0,
-                    bottom: 20,
+                    bottom: 12,
                     child: Text(
                       '对准电脑上的二维码',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 13.5,
+                        fontSize: 13,
                         fontWeight: FontWeight.w500,
                         shadows: [
                           Shadow(blurRadius: 6, color: Color(0xAA000000)),
@@ -125,16 +117,17 @@ class _PairPageState extends State<PairPage> {
             ),
           ),
         ),
+        const SizedBox(height: 18),
         Expanded(
-          flex: 4,
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
             children: [
               Text(
                 '将摄像头对准电脑上显示的二维码，或粘贴配对链接。',
+                textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 14, color: AppColors.textMuted),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 16),
               BButton(
                 label: '粘贴配对链接',
                 icon: Icons.link,
@@ -254,11 +247,15 @@ class _PairPageState extends State<PairPage> {
     try {
       final link = await state.pair(offer: offer, advert: advert);
       if (!mounted) return;
+      // The scanner stops before the tree swaps: stopping it as the
+      // MobileScanner unmounts races its teardown, and the debug build
+      // throws in the framework.
+      await _controller.stop();
+      if (!mounted) return;
       setState(() {
         _link = link;
         _error = null;
       });
-      _controller.stop();
     } on Object catch (failure) {
       _fail(describeLinkError(failure));
     }
@@ -352,6 +349,130 @@ String describeLinkError(Object failure) => switch (failure) {
   LinkClosedException() => '无法连接到电脑。',
   _ => '配对失败：$failure',
 };
+
+/// The square scan frame's chrome over the camera: a faint rounded outline
+/// and accent corner marks in the WeChat scan style.
+class _ScanFramePainter extends CustomPainter {
+  const _ScanFramePainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final radius = const Radius.circular(20);
+    final rrect = RRect.fromRectAndRadius(rect.deflate(1), radius);
+
+    // The outline, faint so the corners carry the frame.
+    canvas.drawRRect(
+      rrect,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1
+        ..color = Colors.white.withValues(alpha: 0.35),
+    );
+
+    // Accent corner marks: two short strokes meeting at each corner.
+    const span = _PairPageState._cornerSpan;
+    const stroke = 3.5;
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..strokeCap = StrokeCap.round
+      ..color = AppColors.accent;
+    const inset = stroke / 2 + 1.5;
+    final path = Path();
+    for (final corner in [
+      Alignment.topLeft,
+      Alignment.topRight,
+      Alignment.bottomLeft,
+      Alignment.bottomRight,
+    ]) {
+      final dx = corner.x < 0 ? inset : size.width - inset;
+      final dy = corner.y < 0 ? inset : size.height - inset;
+      final sx = corner.x < 0 ? 1.0 : -1.0;
+      final sy = corner.y < 0 ? 1.0 : -1.0;
+      path
+        ..moveTo(dx + sx * span, dy)
+        ..lineTo(dx, dy)
+        ..lineTo(dx, dy + sy * span);
+    }
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(_ScanFramePainter old) => false;
+}
+
+/// The green scan line sweeping top to bottom and back, soft-edged by its
+/// gradient, with a bright core.
+class _ScanLine extends StatefulWidget {
+  const _ScanLine({required this.inset});
+
+  final double inset;
+
+  @override
+  State<_ScanLine> createState() => _ScanLineState();
+}
+
+class _ScanLineState extends State<_ScanLine>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 2200),
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = AppColors.accent;
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final travel =
+                constraints.maxHeight - widget.inset * 2 - 3;
+            final t = Curves.easeInOut.transform(_controller.value);
+            final top = widget.inset + travel * t;
+            return Stack(
+              children: [
+                Positioned(
+                  left: widget.inset,
+                  right: widget.inset,
+                  top: top,
+                  height: 3,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(2),
+                      gradient: LinearGradient(
+                        colors: [
+                          accent.withValues(alpha: 0),
+                          accent.withValues(alpha: 0.9),
+                          accent.withValues(alpha: 0),
+                        ],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: accent.withValues(alpha: 0.55),
+                          blurRadius: 8,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+}
 
 /// The four groups of three digits both screens show, to be compared.
 class _SafetyCodes extends StatelessWidget {

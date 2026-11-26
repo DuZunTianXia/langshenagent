@@ -10,6 +10,9 @@ class BaoApp extends StatelessWidget {
   const BaoApp({super.key});
 
   static ThemeData _theme({required bool dark}) {
+    // AppColors reads MdTheme.dark live; pin it to this theme's own
+    // brightness while its colors are frozen into the ThemeData.
+    MdTheme.dark = dark;
     final scheme = ColorScheme(
       brightness: dark ? Brightness.dark : Brightness.light,
       primary: AppColors.accent,
@@ -114,11 +117,22 @@ class BaoApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
+    final systemDark =
+        MediaQuery.platformBrightnessOf(context) == Brightness.dark;
+    // The colors the themes below freeze at their build read this; it must
+    // be the system's brightness here already — waiting for HomePage's
+    // build leaves the first frame's frozen theme colors on the wrong side.
+    MdTheme.dark = systemDark;
+    final light = _theme(dark: false);
+    final dark = _theme(dark: true);
+    // _theme leaves MdTheme.dark on its own brightness; restore the system's
+    // for the widgets below that read AppColors live.
+    MdTheme.dark = systemDark;
     return MaterialApp(
       title: '宝码',
       debugShowCheckedModeBanner: false,
-      theme: _theme(dark: false),
-      darkTheme: _theme(dark: true),
+      theme: light,
+      darkTheme: dark,
       home: state.ready ? const HomePage() : const _BootSplash(),
     );
   }

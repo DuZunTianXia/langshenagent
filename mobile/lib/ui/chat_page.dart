@@ -39,6 +39,7 @@ import 'chat_items.dart';
 import 'edit_resend_sheet.dart';
 import 'items/fold_line.dart';
 import 'items/pixel_loader.dart';
+import 'items/step_header.dart' show ExpandReveal;
 import 'markdown.dart';
 
 /// One conversation: a session's items as they come, the composer, and
@@ -59,7 +60,7 @@ class ChatPage extends StatefulWidget {
 
 class _ChatPageState extends State<ChatPage> {
   final _text = TextEditingController();
-  final _scroll = ScrollController();
+  final _scroll = BottomAnchoredScrollController();
   SessionFeed? _feed;
   String? _sessionId;
   String? _error;
@@ -72,6 +73,10 @@ class _ChatPageState extends State<ChatPage> {
   void initState() {
     super.initState();
     widget.link.addListener(_onLinkChanged);
+    // Every move of the offset re-decides the pin — scroll notifications
+    // miss the layout corrections of the anchored controller, which is
+    // most of what streaming moves.
+    _scroll.addListener(_onScrolled);
     _sessionId = widget.sessionId ?? widget.bot?.session;
     if (_sessionId != null) _open(_sessionId!);
   }
@@ -79,10 +84,38 @@ class _ChatPageState extends State<ChatPage> {
   @override
   void dispose() {
     widget.link.removeListener(_onLinkChanged);
+    _scroll.removeListener(_onScrolled);
     _text.dispose();
     _scroll.dispose();
     super.dispose();
   }
+
+  void _onScrolled() {
+    if (!mounted || _feed == null) return;
+    final items = _decodedItems ?? const <ChatItem?>[];
+    _sticky(items);
+    // Rows coming into view are laid out only after this frame: scan
+    // again once they are, or a fast fling would leave the pin unset
+    // until the offset next moves.
+    if (_stickyFrameScheduled) return;
+    _stickyFrameScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _stickyFrameScheduled = false;
+      if (mounted && _feed != null) _sticky(_decodedItems ?? const []);
+    });
+  }
+
+  bool _stickyFrameScheduled = false;
+
+  /// The last items the feed was decoded into, for the scroll listener.
+  List<ChatItem?>? _decodedItems;
+
+  /// Decode results by their JSON object (see the history's builder); a
+  /// decode miss (undecodable JSON) is cached as [_decodeMiss].
+  final Expando<Object> _decodeCache = Expando<Object>();
+
+  /// What an undecodable item is cached as: it decodes once, not per frame.
+  static final Object _decodeMiss = Object();
 
   /// Re-opens the session once the computer is online again.
   void _onLinkChanged() {
@@ -105,12 +138,11 @@ class _ChatPageState extends State<ChatPage> {
         _sessionId = id;
         _error = null;
         _keys.clear();
-        _offsets.clear();
+        _positions.clear();
         _stickyText = null;
         _stickyIndex = -1;
         _firstOpen = true;
-        _atBottom = true;
-        _lastCount = 0;
+        _scroll.anchored = true;
       });
       _toBottom();
     } on Object catch (failure) {
@@ -329,10 +361,7 @@ class _ChatPageState extends State<ChatPage> {
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontSize: 17),
             ),
-            Text(
-              widget.link.computer.name,
-              style: TextStyle(fontSize: 11, color: AppColors.textMuted),
-            ),
+            _Subtitle(link: widget.link, feed: feed),
           ],
         ),
         actions: [
@@ -502,13 +531,56 @@ class _ChatPageState extends State<ChatPage> {
     return raw;
   }
 
+  /// A centered time divider above the item at [index], when more than
+  /// five minutes passed since the last message with a time — a chat
+  /// app's stamps between messages, not on them.
+  Widget? _timeHeader(List<ChatItem?> items, int index) {
+    DateTime? atOf(ChatItem? item) =>
+        item is UserMessageItem ? item.sentAt : null;
+    final at = atOf(items[index]);
+    if (at == null) return null;
+    for (var i = index - 1; i >= 0; i--) {
+      final before = atOf(items[i]);
+      if (before == null) continue;
+      if (at.difference(before).abs() < const Duration(minutes: 5)) {
+        return null;
+      }
+      break;
+    }
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 9),
+      child: Center(
+        child: Text(
+          _formatStamp(at),
+          style: TextStyle(fontSize: 11.5, color: AppColors.textMuted),
+        ),
+      ),
+    );
+  }
+
+  static String _two(int n) => n.toString().padLeft(2, '0');
+
+  /// HH:mm today, "昨天 HH:mm" yesterday, the date further back.
+  static String _formatStamp(DateTime at) {
+    final now = DateTime.now();
+    final hm = '${_two(at.hour)}:${_two(at.minute)}';
+    final day = DateTime(at.year, at.month, at.day);
+    final today = DateTime(now.year, now.month, now.day);
+    final diff = today.difference(day).inDays;
+    if (diff <= 0) return hm;
+    if (diff == 1) return '昨天 $hm';
+    if (at.year == now.year) return '${at.month}月${at.day}日';
+    return '${at.year}/${at.month}/${at.day}';
+  }
+
   Widget _body(SessionFeed? feed) {
     if (feed == null) {
       final wantsSession =
           _sessionId ?? widget.sessionId ?? widget.bot?.session;
       if (_opening || (wantsSession != null && linkWaitsForState(widget.link))) {
-        return Center(
-          child: CircularProgressIndicator(color: AppColors.accent),
+        return const Align(
+          alignment: Alignment.topCenter,
+          child: BSkeletonLines(lines: 5),
         );
       }
       if (wantsSession != null &&
@@ -558,9 +630,21 @@ class _ChatPageState extends State<ChatPage> {
     return ListenableBuilder(
       listenable: feed,
       builder: (context, _) {
+        // Decoded once per JSON object, not per update: streaming
+        // replaces the list but reuses the objects of items unchanged,
+        // so decoding anew what was decoded is most of the work a frame
+        // would do. (An Expando: the lists hold the keys, nothing keeps
+        // them past the items themselves.)
+        ChatItem? decode(Object json) =>
+            switch (_decodeCache[json] ??=
+                ChatCodec.decode(json) ?? _decodeMiss) {
+              final ChatItem item => item,
+              _ => null,
+            };
         final items = [
-          for (final json in feed.items) ChatCodec.decode(json),
+          for (final json in feed.items) json == null ? null : decode(json),
         ];
+        _decodedItems = items;
         // As the desktop's history folds: each run of quick steps into a
         // tally line, each finished turn's work into "已处理 …" before its
         // answer, the turn's figures under its last row.
@@ -570,16 +654,15 @@ class _ChatPageState extends State<ChatPage> {
           live: feed.live,
         );
         // Opens on the newest message, and stays pinned to the bottom
-        // while it is the bottom the user is at.
+        // while it is the bottom the user is at — the controller itself
+        // holds the pin through layout as streaming grows the list.
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted || !_scroll.hasClients) return;
           if (_firstOpen) {
             _firstOpen = false;
-            _scroll.jumpTo(_scroll.position.maxScrollExtent);
-          } else if (_atBottom && items.length != _lastCount) {
+            _scroll.anchored = true;
             _scroll.jumpTo(_scroll.position.maxScrollExtent);
           }
-          _lastCount = items.length;
           _sticky(items);
         });
         return NotificationListener<ScrollNotification>(
@@ -590,6 +673,13 @@ class _ChatPageState extends State<ChatPage> {
               _earlier();
             }
             if (notification is ScrollUpdateNotification) {
+              // As the desktop's: it re-anchors only at the very end, any
+              // tolerance snapping a small scroll up straight back down.
+              final position = _scroll.position;
+              if (position.hasContentDimensions && !_animatingToBottom) {
+                _scroll.anchored =
+                    position.pixels >= position.maxScrollExtent - 1;
+              }
               _sticky(items);
             }
             return false;
@@ -604,11 +694,13 @@ class _ChatPageState extends State<ChatPage> {
               final item = items[index];
               if (item == null) return const SizedBox.shrink();
               final row = folds.rowAt(index, item, _isFoldOpen);
+              final stamp = _timeHeader(items, index);
               return KeyedSubtree(
                 key: _keys.putIfAbsent(index, GlobalKey.new),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    ?stamp,
                     if (row.work case final fold?)
                       WorkFoldLine(
                         worked: fold.worked ?? Duration.zero,
@@ -625,11 +717,22 @@ class _ChatPageState extends State<ChatPage> {
                         onToggle: () => _toggleFold(fold),
                         images: foldImages(_itemsIn(fold, items)),
                       ),
-                    if (row.item)
-                      if (widget.bot != null && item is AssistantTextItem)
-                        _BotReply(item: item, bot: widget.bot!)
-                      else
-                        ChatItemView(
+                    // Hidden in a fold or shown out of it, the row stays in
+                    // the tree: its coming and going glides (ExpandReveal)
+                    // rather than popping the rows under it.
+                    ExpandReveal(
+                      show: row.item,
+                      child: Padding(
+                        // Breath between a message and what answers it:
+                        // bubbles and prose are flush without it.
+                        padding: item is UserMessageItem ||
+                                item is AssistantTextItem
+                            ? const EdgeInsets.symmetric(vertical: 5)
+                            : EdgeInsets.zero,
+                        child:
+                            widget.bot != null && item is AssistantTextItem
+                            ? _BotReply(item: item, bot: widget.bot!)
+                            : ChatItemView(
                           item: folds.shownAt(index, item),
                           // As the desktop's: it opens to its own
                           // conversation, when it has one (its tool call's id).
@@ -688,7 +791,9 @@ class _ChatPageState extends State<ChatPage> {
                         }
                       }
                     : null,
-                        ),
+                            ),
+                      ),
+                    ),
                     if (folds.turnEndingAt(index) case final prompt?)
                       if (items[prompt]
                           case UserMessageItem(
@@ -701,16 +806,32 @@ class _ChatPageState extends State<ChatPage> {
               );
             },
           ),
-              if (_stickyText != null)
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: _StickyUserBar(
-                    text: _stickyText!,
-                    onTap: _jumpToSticky,
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                // In and out with a slide as a header would, rather than
+                // popping over the text under it.
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 180),
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeInCubic,
+                  transitionBuilder: (child, animation) => SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0, -1),
+                      end: Offset.zero,
+                    ).animate(animation),
+                    child: FadeTransition(opacity: animation, child: child),
                   ),
+                  child: _stickyText != null
+                      ? _StickyUserBar(
+                          key: ValueKey(_stickyIndex),
+                          text: _stickyText!,
+                          onTap: _jumpToSticky,
+                        )
+                      : const SizedBox.shrink(),
                 ),
+              ),
               Positioned(
                 right: 12,
                 bottom: 12,
@@ -748,7 +869,13 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   final Map<int, GlobalKey> _keys = {};
-  final Map<int, double> _offsets = {};
+
+  /// Where each user message's row stands in the list: its top in scroll
+  /// offsets, and its height. Rows report it as they are laid out
+  /// ([_MeasureRow]); relaid out — a fold opened, text scaled — they
+  /// report it again, the entries of rows above one changed invalid then:
+  /// they are dropped, and re-reported as the rows come up again.
+  final Map<int, (double, double)> _positions = {};
   // The folds the history makes ([StepFolds]): which ones a click opened,
   // and which turns stay open once they were (see [_toggleFold]).
   final Map<(StepFoldKind, int), bool> _foldOpen = {};
@@ -758,67 +885,48 @@ class _ChatPageState extends State<ChatPage> {
   bool _showJump = false;
   bool _firstOpen = true;
   bool _atBottom = true;
-  int _lastCount = 0;
 
-  /// The message of the turn at the top pins itself while its answers
-  /// scroll under it — the desktop's `sticky` user-message style.
-  /// The message of the turn at the top pins itself while its answers
-  /// scroll under it — decided from each message's real position in the
-  /// viewport, not from estimated heights.
+  /// The user message of the turn at the top pins itself while its answers
+  /// scroll under it. The rule is plain: the last user message whose
+  /// bottom edge is above the viewport's top. Positions come from the
+  /// rows themselves, reported as they are laid out ([_MeasureRow]), kept
+  /// after the row leaves the tree — scrolling anywhere near them means
+  /// they were laid out, so the map is complete where it matters.
   void _sticky(List<ChatItem?> items) {
     if (UserMessageStyle.current.value != UserMessageStyle.sticky ||
-        !_scroll.hasClients) {
+        !_scroll.hasClients ||
+        !_scroll.position.hasContentDimensions) {
       if (_stickyText != null) setState(() => _stickyText = null);
-      if (!_scroll.hasClients && _showJump) {
-        setState(() => _showJump = false);
-      }
       return;
     }
     final offset = _scroll.offset;
-    // The desktop's algorithm (chat_history_view._topTurnMessage): the
-    // last user message fully scrolled past the top sticks. When it is
-    // not even laid out, the nearest user message before the first
-    // laid-out item is the one.
-    String? pinnedText;
-    var pinnedIndex = -1;
-    var firstLaid = -1;
-    var passed = -1;
-    var blocked = false;
+    // Rows in the tree re-report where they stand: a fold opened or
+    // closed, the list reflowed — what the map has of them is refreshed.
+    // Rows out of it keep what they last said: their position stands
+    // until they are laid out again (nothing of them changes meanwhile:
+    // a row's height is its content's, unchanged while away).
     for (var i = 0; i < items.length; i++) {
+      if (items[i] is! UserMessageItem) continue;
       final ro = _keys[i]?.currentContext?.findRenderObject();
-      if (ro == null || !ro.attached) continue;
-      if (firstLaid < 0) firstLaid = i;
-      final item = items[i];
-      if (item is! UserMessageItem) continue;
+      if (ro is! RenderBox || !ro.attached || !ro.hasSize) continue;
       final viewport = RenderAbstractViewport.of(ro);
-      final topOffset = viewport.getOffsetToReveal(ro, 0).offset;
-      _offsets[i] = topOffset; // remembered for the jump when unbuilt
-      // Its bottom edge in viewport coordinates; above the top edge
-      // means fully scrolled away (a still-visible one breaks the scan).
-      final height = (ro as RenderBox).size.height;
-      if (topOffset + height > offset - 2) {
-        // On screen, even by a line: it and the bar would overlap — the
-        // bar only shows while what it pins is fully out of view.
-        blocked = true;
-        break;
-      }
-      passed = i;
+      _positions[i] = (viewport.getOffsetToReveal(ro, 0).offset, ro.size.height);
     }
-    var index = blocked ? -1 : passed;
-    if (index < 0 && !blocked && firstLaid > 0) {
-      for (var i = firstLaid - 1; i >= 0; i--) {
-        if (items[i] is UserMessageItem) {
-          index = i;
-          break;
-        }
+    var index = -1;
+    double? top;
+    for (final entry in _positions.entries) {
+      final i = entry.key;
+      if (i >= items.length || items[i] is! UserMessageItem) continue;
+      final (rowTop, height) = entry.value;
+      if (rowTop + height <= offset + 1 && (index < 0 || rowTop > top!)) {
+        index = i;
+        top = rowTop;
       }
     }
-    if (index >= 0) {
-      pinnedText = (items[index] as UserMessageItem).text;
-      pinnedIndex = index;
-    }
-    _atBottom =
-        offset >= _scroll.position.maxScrollExtent - 40;
+    final pinnedText =
+        index >= 0 ? (items[index] as UserMessageItem).text : null;
+    final pinnedIndex = pinnedText == null ? -1 : index;
+    _atBottom = _scroll.anchored;
     final showJump = !_atBottom &&
         offset < _scroll.position.maxScrollExtent - 240;
     if (pinnedText != _stickyText ||
@@ -848,6 +956,9 @@ class _ChatPageState extends State<ChatPage> {
         _unfoldedTurns.remove(fold.start);
       }
     }
+    // Heights under it changed: the tops remembered no longer say where
+    // rows are. They re-report as they are laid out again.
+    _positions.clear();
   });
 
   /// The items [fold] holds (decode misses left out).
@@ -868,47 +979,113 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   void _jumpToSticky() {
-    if (_stickyIndex < 0) return;
-    final ctx = _keys[_stickyIndex]?.currentContext;
+    if (_stickyIndex < 0 || !_scroll.hasClients) return;
+    // Follow it again no longer: the user is headed up the list.
+    _scroll.anchored = false;
+    _animatingToBottom = true; // midway positions must not re-anchor
+    _jumpToIndex(_stickyIndex).whenComplete(() {
+      _animatingToBottom = false;
+    });
+  }
+
+  /// Scrolls the row at [index] to the top of the viewport, whether or not
+  /// it is built yet: built rows [Scrollable.ensureVisible] animates to;
+  /// unbuilt ones are jumped near first — the estimate of their top, or
+  /// as many rows up as they are — which builds them, then ensured.
+  Future<void> _jumpToIndex(int index, [int hops = 0]) async {
+    if (!mounted || !_scroll.hasClients || hops > 12) return;
+    final ctx = _keys[index]?.currentContext;
     if (ctx != null) {
-      // Lands the message flush at the top of the viewport.
-      Scrollable.ensureVisible(
+      await Scrollable.ensureVisible(
         ctx,
         alignment: 0,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOutCubic,
       );
-    } else if (_scroll.hasClients) {
-      // Unbuilt (long ago): its last measured top is still good.
-      final top = _offsets[_stickyIndex];
-      if (top != null) {
-        _scroll.animateTo(
-          top.clamp(
-            _scroll.position.minScrollExtent,
-            _scroll.position.maxScrollExtent,
-          ),
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOutCubic,
-        );
-      }
+      return;
     }
+    final position = _scroll.position;
+    final top = _positions[index]?.$1;
+    if (top != null) {
+      // Its last measured top: layouts of the same content repeat close
+      // enough that the row is in view afterwards.
+      _scroll.jumpTo(
+        top.clamp(position.minScrollExtent, position.maxScrollExtent),
+      );
+    } else {
+      // Never measured (the session opened at the bottom, this far above
+      // never shown): a viewport up per hop, converging on it.
+      final up = position.pixels - position.viewportDimension;
+      _scroll.jumpTo(up.clamp(position.minScrollExtent, position.maxScrollExtent));
+    }
+    await WidgetsBinding.instance.endOfFrame;
+    return _jumpToIndex(index, hops + 1);
   }
 
   void _jumpToBottom() {
     if (_scroll.hasClients) {
-      _scroll.animateTo(
+      // Headed for the end, however it lands: what is written is followed
+      // again — midway positions of the animation itself must not drop it.
+      _animatingToBottom = true;
+      _scroll
+          .animateTo(
         _scroll.position.maxScrollExtent,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOutCubic,
-      );
+      )
+          .then((_) {
+        _animatingToBottom = false;
+        if (_scroll.hasClients &&
+            _scroll.position.pixels >= _scroll.position.maxScrollExtent - 1) {
+          _scroll.anchored = true;
+        }
+      });
     }
   }
+
+  bool _animatingToBottom = false;
 
   Future<String?> _rename() =>
       showBPrompt(context, title: '重命名', initial: _title() ?? '');
 
   Future<bool> _confirm(String text) =>
       showBConfirm(context, title: text, confirm: '删除', danger: true);
+}
+
+/// The AppBar's second line: what the session is doing now, or where it
+/// stands reaching the computer — the computer's name when nothing is
+/// the more interesting answer.
+class _Subtitle extends StatelessWidget {
+  const _Subtitle({required this.link, this.feed});
+
+  final PhoneLink link;
+  final SessionFeed? feed;
+
+  @override
+  Widget build(BuildContext context) {
+    final listenables = <Listenable>[link, ?feed];
+    return ListenableBuilder(
+      listenable: Listenable.merge(listenables),
+      builder: (context, _) {
+        final String text;
+        final Color color;
+        if (link.phase != PhonePhase.online) {
+          text = link.phase == PhonePhase.connecting ||
+                  link.phase == PhonePhase.pairing
+              ? '连接中…'
+              : '离线，等待重连';
+          color = AppColors.caution;
+        } else if (feed?.live ?? false) {
+          text = '正在输入…';
+          color = AppColors.accent;
+        } else {
+          text = link.computer.name;
+          color = AppColors.textMuted;
+        }
+        return Text(text, style: TextStyle(fontSize: 11, color: color));
+      },
+    );
+  }
 }
 
 /// The composer's circular buttons: plus, stop, send — a tinted circle,
@@ -1493,7 +1670,7 @@ class _SessionBar extends StatelessWidget {
               ),
             if (changes.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
+                padding: const EdgeInsets.fromLTRB(12, 2, 6, 2),
                 child: Row(
                   children: [
                     Icon(Icons.folder_outlined, size: 18, color: AppColors.textMuted),
@@ -1504,15 +1681,28 @@ class _SessionBar extends StatelessWidget {
                         style: TextStyle(fontSize: 13, color: AppColors.textMuted),
                       ),
                     ),
-                    BButton(
-                      label: '撤回',
+                    TextButton(
                       onPressed: () => _run(context, () => link.undo(feed.session)),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.textMuted,
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        minimumSize: const Size(0, 32),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: const Text('撤回', style: TextStyle(fontSize: 13)),
                     ),
-                    const SizedBox(width: 8),
-                    BButton(
-                      label: '保留',
-                      primary: true,
+                    TextButton(
                       onPressed: () => _run(context, () => link.keep(feed.session)),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.accent,
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        minimumSize: const Size(0, 32),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: const Text(
+                        '保留',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                      ),
                     ),
                   ],
                 ),
@@ -1521,7 +1711,7 @@ class _SessionBar extends StatelessWidget {
           // （点卡片进它的页面看输出），否则越积越多，把聊天顶出屏幕。
           for (final task in tasks)
             if (task.status == 'running')
-              _TaskTile(link: link, session: feed.session, task: task),
+              _TaskTile(link: link, feed: feed, task: task),
         ],
         ),
       ),
@@ -1557,13 +1747,15 @@ class _SessionBar extends StatelessWidget {
 class _TaskTile extends StatelessWidget {
   const _TaskTile({
     required this.link,
-    required this.session,
+    required this.feed,
     required this.task,
   });
 
   final PhoneLink link;
-  final String session;
+  final SessionFeed feed;
   final LinkTask task;
+
+  String get session => feed.session;
 
   @override
   Widget build(BuildContext context) {
@@ -1572,10 +1764,42 @@ class _TaskTile extends StatelessWidget {
         ? task.description
         : task.command ?? task.kind;
     final isAgent = task.kind == 'agent';
+    // As the desktop's row: the whole tile opens what the task is — a
+    // subagent's conversation, a command's terminal output — no buttons
+    // for it at the end, only the stop there.
+    final opens = isAgent || task.output;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: !opens
+            ? null
+            : () {
+                if (isAgent) {
+                  // The agent in the history answers to the tool call that
+                  // started it, not the task's own id.
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => AgentPage(
+                        feed: feed,
+                        agentId: task.toolUseId ?? task.id,
+                      ),
+                    ),
+                  );
+                } else {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => OutputPage(
+                      link: link,
+                      session: session,
+                      task: task,
+                    ),
+                    ),
+                  );
+                }
+              },
+        child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
           color: running
               ? AppColors.accent.withValues(alpha: 0.06)
@@ -1592,26 +1816,26 @@ class _TaskTile extends StatelessWidget {
           children: [
             // 类型图标：子代理用像素小人，命令用终端符。
             Container(
-              width: 30,
-              height: 30,
+              width: 24,
+              height: 24,
               decoration: BoxDecoration(
                 color: (running ? AppColors.accent : AppColors.textMuted)
                     .withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(7),
               ),
               child: Center(
                 child: running
                     ? (isAgent
-                          ? const PixelLoader.subagent(size: 16)
-                          : const PixelLoader.agent(size: 16))
+                          ? const PixelLoader.subagent(size: 14)
+                          : const PixelLoader.agent(size: 14))
                     : Icon(
                         isAgent ? Codicons.hubot : Icons.terminal,
-                        size: 16,
+                        size: 14,
                         color: AppColors.textMuted,
                       ),
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1622,19 +1846,24 @@ class _TaskTile extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 13.5,
+                      fontSize: 13,
                       fontWeight: FontWeight.w500,
                       color: AppColors.textPrimary,
                     ),
                   ),
-                  if (task.summary != null) ...[
+                  // The summary repeating the title (or its prefix, both
+                  // truncations of one text) adds a line of nothing.
+                  if (task.summary != null &&
+                      task.summary != title &&
+                      !title.startsWith(task.summary!) &&
+                      !task.summary!.startsWith(title)) ...[
                     const SizedBox(height: 1),
                     Text(
                       task.summary!,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 11.5,
                         color: AppColors.textMuted,
                       ),
                     ),
@@ -1642,19 +1871,13 @@ class _TaskTile extends StatelessWidget {
                 ],
               ),
             ),
-            if (task.output)
-              _tileAction(
-                context,
-                tooltip: '输出',
-                icon: Icons.output_outlined,
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => OutputPage(
-                      link: link,
-                      session: session,
-                      task: task,
-                    ),
-                  ),
+            if (opens)
+              Padding(
+                padding: const EdgeInsets.all(6),
+                child: Icon(
+                  Icons.chevron_right,
+                  size: 18,
+                  color: AppColors.textFaint,
                 ),
               ),
             if (running)
@@ -1674,6 +1897,7 @@ class _TaskTile extends StatelessWidget {
                 },
               ),
           ],
+        ),
         ),
       ),
     );
@@ -2149,29 +2373,62 @@ class _StatusLine extends StatelessWidget {
   }
 
   /// A provider brand icon for a model/option id, from the official app's
-  /// extracted `assets/model_icons`, when one matches a known name.
+  /// extracted `assets/model_icons`. The matching is the desktop's
+  /// `ModelBrand.ofModel` ported: a word of the id (after its start or a
+  /// separator), the family before the vendor.
   static Widget? _modelIcon(String id) {
-    final lower = id.toLowerCase();
-    const names = [
-      'claudecode', 'claude', 'anthropic', 'openai', 'gemini', 'deepseek',
-      'kimi', 'moonshot', 'qwen', 'doubao', 'zhipu', 'xai', 'ollama',
-      'minimax', 'mistral', 'meta', 'perplexity', 'hunyuan', 'wenxin',
-      'baichuan', 'yi', 'siliconflow', 'openrouter', 'together',
-      'fireworks', 'vertexai', 'bedrock', 'azure', 'google', 'bytedance',
-      'nvidia', 'volcengine', 'stepfun', 'lmstudio', 'huggingface',
-      'githubcopilot', 'cloudflare', 'microsoft', 'vercel',
-    ];
-    for (final name in names) {
-      if (lower.contains(name)) {
-        return SvgPicture.asset(
-          'assets/model_icons/$name.svg',
-          width: 20,
-          height: 20,
-        );
-      }
+    final brand = _modelBrand(id);
+    if (brand == null) return null;
+    return SvgPicture.asset(
+      'assets/model_icons/$brand.svg',
+      width: 20,
+      height: 20,
+      // In the text's color, as the desktop draws them in one color.
+      colorFilter: ColorFilter.mode(AppColors.text, BlendMode.srcIn),
+    );
+  }
+
+  static String? _modelBrand(String id) {
+    final name = id.toLowerCase();
+    for (final (pattern, brand) in _brandPatterns) {
+      if (pattern.hasMatch(name)) return brand;
     }
     return null;
   }
+
+  /// A word of a model's name, after its start or a separator — as the
+  /// desktop's `_word`.
+  static RegExp _word(String pattern) =>
+      RegExp('(^|[/_.: -])(?:$pattern)', caseSensitive: false);
+
+  static final _brandPatterns = [
+    (_word('claude|anthropic'), 'claude'),
+    (_word(r'gemini'), 'gemini'),
+    (_word(r'gemma'), 'google'),
+    (_word(r'deepseek'), 'deepseek'),
+    (_word(r'qwen|qwq|qvq'), 'qwen'),
+    (_word(r'glm|chatglm|codegeex|cogview|zhipu'), 'zhipu'),
+    (_word(r'kimi|moonshot'), 'kimi'),
+    (_word(r'minimax|abab'), 'minimax'),
+    (_word(r'doubao'), 'doubao'),
+    (_word(r'seed'), 'bytedance'),
+    (_word(r'hunyuan'), 'hunyuan'),
+    (_word(r'ernie|wenxin'), 'wenxin'),
+    (_word(r'step-'), 'stepfun'),
+    (_word(r'baichuan'), 'baichuan'),
+    (_word(r'yi-'), 'yi'),
+    (_word(r'grok|xai'), 'xai'),
+    (
+      _word(r'mistral|mixtral|codestral|devstral|magistral|ministral|pixtral'),
+      'mistral',
+    ),
+    (_word(r'llama'), 'meta'),
+    (_word(r'phi-'), 'microsoft'),
+    (_word(r'nemotron|nvidia'), 'nvidia'),
+    (_word(r'sonar|perplexity'), 'perplexity'),
+    // Last, as the most general: `o3` alone, or `o3-mini`.
+    (_word(r'gpt|chatgpt|codex|openai|o\d+(?:$|[-_.: ])'), 'openai'),
+  ];
 
   /// The model chip's dropdown: the effort/context choices that used to
   /// sit beside it, each leading into its own picker.
@@ -2640,55 +2897,67 @@ class _BotReply extends StatelessWidget {
 }
 
 /// The user message of the turn at the top, pinned there while the
-/// answers below it scroll.
+/// answers below it scroll — a small echo of the bubble itself rather
+/// than a bar: the user's green, rounded, a tap scrolling back to it.
 class _StickyUserBar extends StatelessWidget {
-  const _StickyUserBar({required this.text, this.onTap});
+  const _StickyUserBar({super.key, required this.text, this.onTap});
 
   final String text;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.surfaceRaised,
-      elevation: 2,
-      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(14)),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
+    return Container(
+      // What is under it shows through the ends of the fade: the list's own
+      // background, not a bar across it.
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            AppColors.background,
+            AppColors.background.withValues(alpha: 0.0),
+          ],
+        ),
+      ),
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
+      child: GestureDetector(
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.fromLTRB(16, 10, 12, 10),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            border: Border(
-              left: BorderSide(color: AppColors.accent, width: 3),
-              bottom: BorderSide(color: AppColors.bubbleBorder()),
+            color: AppColors.userBubble,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppColors.userBubble.withValues(alpha: 0.6),
             ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.18),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
           child: Row(
             children: [
-              Icon(Icons.person_outline, size: 15, color: AppColors.accent),
-              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   text,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 13,
-                    color: AppColors.text,
+                    fontSize: 12.5,
+                    color: AppColors.onUserBubble,
                     height: 1.4,
                   ),
                 ),
               ),
-              const SizedBox(width: 6),
-              Text(
-                '跳转到此消息',
-                style: TextStyle(fontSize: 11, color: AppColors.textMuted),
-              ),
+              const SizedBox(width: 8),
               Icon(
-                Icons.keyboard_arrow_up,
+                Icons.keyboard_arrow_up_rounded,
                 size: 16,
-                color: AppColors.textMuted,
+                color: AppColors.onUserBubble.withValues(alpha: 0.7),
               ),
             ],
           ),

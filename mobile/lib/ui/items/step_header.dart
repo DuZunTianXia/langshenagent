@@ -428,3 +428,75 @@ class _StepBodyState extends State<StepBody> {
 /// Monospaced text as steps show it: commands, output, matches.
 TextStyle get stepMono =>
     AppFonts.uiCodeStyle(12).copyWith(height: 1.5, color: AppColors.textMuted);
+
+/// What a step opens to, appearing and going with a size-and-fade
+/// animation rather than popping in: [show] gates [child]'s presence, the
+/// transition running as it changes. Sized from the top, so what is under
+/// it glides down rather than jumping.
+class ExpandReveal extends StatefulWidget {
+  const ExpandReveal({super.key, required this.show, required this.child});
+
+  final bool show;
+  final Widget child;
+
+  @override
+  State<ExpandReveal> createState() => _ExpandRevealState();
+}
+
+class _ExpandRevealState extends State<ExpandReveal>
+    with SingleTickerProviderStateMixin {
+  late final _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 200),
+  );
+  late final _eased = CurvedAnimation(
+    parent: _controller,
+    curve: Curves.easeOutCubic,
+  );
+
+  /// Whether it was ever open: what has never shown builds nothing, a
+  /// fold's rows out of the tree until it first opens.
+  late bool _opened = widget.show;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.value = widget.show ? 1 : 0;
+  }
+
+  @override
+  void didUpdateWidget(ExpandReveal old) {
+    super.didUpdateWidget(old);
+    if (widget.show == old.show) return;
+    if (widget.show) {
+      _opened = true;
+      _controller.forward();
+    } else {
+      _controller.reverse();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_opened) return const SizedBox(width: double.infinity);
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) => _controller.isDismissed
+          ? const SizedBox(width: double.infinity)
+          : ClipRect(
+              child: Align(
+                alignment: Alignment.topLeft,
+                heightFactor: _eased.value,
+                child: FadeTransition(opacity: _eased, child: child),
+              ),
+            ),
+      child: widget.child,
+    );
+  }
+}

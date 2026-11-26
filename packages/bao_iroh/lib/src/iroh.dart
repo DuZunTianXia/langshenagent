@@ -623,13 +623,18 @@ class IrohStream {
   return (host, port);
 }
 
-/// `ip:port` 原样通过；`host:port` 现场解析成 `ip:port`（解析不出的丢弃）。
+/// `ip:port` 原样通过；`host:port` 现场解析成 `ip:port`（解析不出的丢弃
+/// —— Rust 端只收 `SocketAddr`，域名塞过去也只会被跳过，还白等一轮
+/// DNS 超时；Android 上 `.local` 之类的名字常常整个超时都查不出来）。
 /// 直连模式下桌面可以报一个域名进来，IPv6 怎么变手机都能找到它。
 Future<List<String>> _resolving(List<String> addrs) async {
   final out = <String>[];
   for (final addr in addrs) {
     final hp = _splitHostPort(addr);
-    if (hp == null) continue;
+    if (hp == null) {
+      out.add(addr);
+      continue;
+    }
     final (host, port) = hp;
     if (InternetAddress.tryParse(host) != null) {
       out.add(addr);

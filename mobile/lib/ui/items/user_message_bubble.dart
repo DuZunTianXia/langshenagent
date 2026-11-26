@@ -52,7 +52,7 @@ class UserMessageBubble extends StatefulWidget {
 }
 
 /// Lines shown of a collapsed message. Messages up to one line longer show
-/// in full: hiding a single line is not worth it.
+/// in full: hiding a single line is not worth it. As the desktop's.
 const _collapsedLines = 3;
 const _lineHeight = 13.5 * 1.5;
 
@@ -183,22 +183,8 @@ class _UserMessageBubbleState extends State<UserMessageBubble> {
                       ],
                     ),
                   ),
-                if (widget.images.isNotEmpty) _Thumbnails(widget.images),
                 InlineCodeText(
-                  inlineCodeSpan(
-                    // The agent names its pictures `[Image #n]`; the
-                    // pictures themselves show above — the names are not
-                    // for reading.
-                    widget.images.isEmpty
-                        ? widget.text
-                        : widget.text
-                              .replaceAll(
-                                RegExp(r'\s*\[Image #\d+\]'),
-                                '',
-                              )
-                              .trimRight(),
-                    _messageStyle,
-                  ),
+                  _messageSpan(widget.text, widget.images),
                 ),
               ],
             ),
@@ -210,45 +196,196 @@ class _UserMessageBubbleState extends State<UserMessageBubble> {
   }
 }
 
-/// The message's pictures, small; a click shows one whole.
-class _Thumbnails extends StatelessWidget {
-  const _Thumbnails(this.images);
+/// [text] as the desktop shows a sent message: its `[Image #n]`
+/// references as inline image chips in the text's flow, a chip for each
+/// picture the text does not refer to after it. There are no thumbnails.
+TextSpan _messageSpan(String text, List<ImageAttachment> images) {
+  if (images.isEmpty) return inlineCodeSpan(text, _messageStyle);
+  final byNumber = {for (final image in images) ?image.number: image};
+  // Numbered as they would be in the text; one sent before images were
+  // numbered by its place among them.
+  final numbered = [
+    for (final (i, image) in images.indexed) (image.number ?? i + 1, image),
+  ];
+  ImageAttachment? imageOf(int number) =>
+      byNumber[number] ??
+      numbered.where((entry) => entry.$1 == number).firstOrNull?.$2;
+  final children = <InlineSpan>[];
+  final referred = <int>{};
+  var at = 0;
+  for (final match in imageReferencePattern.allMatches(text)) {
+    final number = int.tryParse(match[1]!) ?? 0;
+    final image = imageOf(number);
+    if (image == null) continue;
+    referred.add(number);
+    if (match.start > at) {
+      children.add(inlineCodeSpan(text.substring(at, match.start), _messageStyle));
+    }
+    children.add(_ImageChip.span(number, image, _messageStyle));
+    at = match.end;
+  }
+  if (at < text.length) {
+    children.add(inlineCodeSpan(text.substring(at), _messageStyle));
+  }
+  // The pictures the text never names tag along at its end, as the
+  // desktop's.
+  for (final (number, image) in numbered) {
+    if (!referred.contains(number)) {
+      children.add(const TextSpan(text: ' '));
+      children.add(_ImageChip.span(number, image, _messageStyle));
+    }
+  }
+  return TextSpan(style: _messageStyle, children: children);
+}
 
-  final List<ImageAttachment> images;
+/// An image's inline reference in a sent message: its 14 px glimpse and
+/// "图片N", a click shows it whole — as the desktop's ComposerImageChip.
+class _ImageChip extends StatelessWidget {
+  const _ImageChip({
+    required this.number,
+    required this.image,
+    required this.textStyle,
+  });
+
+  final int number;
+  final ImageAttachment? image;
+  final TextStyle textStyle;
+
+  static InlineSpan span(
+    int number,
+    ImageAttachment? image,
+    TextStyle textStyle,
+  ) => WidgetSpan(
+    alignment: PlaceholderAlignment.baseline,
+    baseline: TextBaseline.alphabetic,
+    child: _ImageChip(number: number, image: image, textStyle: textStyle),
+  );
+
+  static const _pictureSize = 14.0;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Wrap(
-        spacing: 6,
-        runSpacing: 6,
-        children: [
-          for (final image in images)
-            ImagePreviewClick(
-              image: image,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(6),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    maxWidth: 200,
-                    maxHeight: 160,
-                  ),
-                  child: Image.memory(
-                    image.bytes,
-                    errorBuilder: (_, _, _) => Icon(
-                      Icons.broken_image_outlined,
-                      size: 20,
-                      color: AppColors.textFaint,
-                    ),
+    final image = this.image;
+    Widget chip = _CenteredOnText(
+      textStyle: textStyle,
+      child: DefaultTextStyle.merge(
+        style: const TextStyle(
+          height: 1.25,
+          leadingDistribution: TextLeadingDistribution.even,
+        ),
+        child: SelectionContainer.disabled(
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 1),
+            padding: const EdgeInsets.fromLTRB(2, 1, 5, 1),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: AppColors.bubbleBorder()),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(2.5),
+                  child: SizedBox.square(
+                    dimension: _pictureSize,
+                    child: image == null
+                        ? Icon(
+                            Icons.image_outlined,
+                            size: 12,
+                            color: AppColors.textMuted,
+                          )
+                        : Image.memory(
+                            image.bytes,
+                            fit: BoxFit.cover,
+                            cacheWidth: (_pictureSize * 3).round(),
+                            gaplessPlayback: true,
+                            errorBuilder: (_, _, _) => Icon(
+                              Icons.broken_image_outlined,
+                              size: 12,
+                              color: AppColors.textFaint,
+                            ),
+                          ),
                   ),
                 ),
-              ),
+                const SizedBox(width: 4),
+                Text(
+                  '图片$number',
+                  style: TextStyle(color: AppColors.text, fontSize: 12),
+                ),
+              ],
             ),
-        ],
+          ),
+        ),
       ),
     );
+    if (image != null) {
+      chip = ImagePreviewClick(image: image, child: chip);
+    }
+    return chip;
   }
+}
+
+/// A chip centered on the text around it, as the desktop's: its baseline
+/// reported so the glyph centers line up.
+class _CenteredOnText extends SingleChildRenderObjectWidget {
+  const _CenteredOnText({required this.textStyle, required super.child});
+
+  final TextStyle textStyle;
+
+  double _glyphCenterAboveBaseline(TextScaler scaler) {
+    final painter = TextPainter(
+      text: TextSpan(
+        text: 'x',
+        style: textStyle.copyWith(
+          leadingDistribution: TextLeadingDistribution.even,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+      textScaler: scaler,
+    )..layout();
+    final metrics = painter.computeLineMetrics().first;
+    painter.dispose();
+    return (metrics.ascent - metrics.descent) / 2;
+  }
+
+  @override
+  _RenderCenteredOnText createRenderObject(BuildContext context) =>
+      _RenderCenteredOnText(
+        _glyphCenterAboveBaseline(MediaQuery.textScalerOf(context)),
+      );
+
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    _RenderCenteredOnText renderObject,
+  ) {
+    renderObject.centerAboveBaseline = _glyphCenterAboveBaseline(
+      MediaQuery.textScalerOf(context),
+    );
+  }
+}
+
+class _RenderCenteredOnText extends RenderProxyBox {
+  _RenderCenteredOnText(this._centerAboveBaseline);
+
+  double _centerAboveBaseline;
+  set centerAboveBaseline(double value) {
+    if (value == _centerAboveBaseline) return;
+    _centerAboveBaseline = value;
+    markNeedsLayout();
+  }
+
+  @override
+  double? computeDistanceToActualBaseline(TextBaseline baseline) =>
+      size.height / 2 + _centerAboveBaseline;
+
+  @override
+  double? computeDryBaseline(
+    BoxConstraints constraints,
+    TextBaseline baseline,
+  ) =>
+      getDryLayout(constraints).height / 2 + _centerAboveBaseline;
 }
 
 /// Over the bottom of a collapsed message, where its text fades out: an

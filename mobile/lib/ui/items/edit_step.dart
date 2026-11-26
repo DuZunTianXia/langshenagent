@@ -53,8 +53,14 @@ class EditStep extends StatelessWidget {
             onToggle: onToggle,
             trailing: _Counts(item),
           ),
-          if (expanded)
-            _card(counts: false, maxHeight: maxCodeHeight, padding: EdgeInsets.zero),
+          ExpandReveal(
+            show: expanded,
+            child: _card(
+              counts: false,
+              maxHeight: maxCodeHeight,
+              padding: EdgeInsets.zero,
+            ),
+          ),
         ],
       ),
     },
