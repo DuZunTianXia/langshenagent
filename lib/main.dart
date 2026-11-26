@@ -910,17 +910,28 @@ class _LangshenAgentAppState extends State<LangshenAgentApp>
         appEvent('app', 'quit cancelled: the update would not start');
         return AppExitResponse.cancel;
       }
-      await Future.wait([
-        stopClaudeProcesses(),
-        RemoteClaudeTransport.stopAll(),
-        stopModelProxy(),
-        stopLspProcesses(),
-        ?widget.themeExtensions?.dispose(),
-        stopPtyProcesses(),
-        ?_settings.link?.stopAdvertising(),
-      ]);
+      // Each of these is bounded: one stuck (a dead connection that never
+      // answers its close) must not keep the app, and the update waiting on
+      // it, forever.
+      try {
+        await Future.wait([
+          stopClaudeProcesses(),
+          RemoteClaudeTransport.stopAll(),
+          stopModelProxy(),
+          stopLspProcesses(),
+          ?widget.themeExtensions?.dispose(),
+          stopPtyProcesses(),
+          ?_settings.link?.stopAdvertising(),
+        ]).timeout(const Duration(seconds: 10));
+      } on TimeoutException {
+        appEvent('app', 'quit cleanup timed out: quitting anyway');
+      }
       // The remote hosts' servers end, and all they run with them.
-      await SshHosts.instance.closeAll();
+      try {
+        await SshHosts.instance.closeAll().timeout(const Duration(seconds: 5));
+      } on TimeoutException {
+        appEvent('app', 'closing the remote hosts timed out: quitting anyway');
+      }
       appExit(updating ? 'quit to update' : 'quit');
       return AppExitResponse.exit;
     },

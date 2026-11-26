@@ -447,6 +447,15 @@ fi
 new="\$target.langshenagent-new"
 old="\$target.langshenagent-old"
 rm -rf "\$new" "\$old"
+# The parent's writability, not the app's own: moving it in place needs
+# only that, and the app itself is often owned by another user (installed
+# by an administrator the first time).
+parent=\$(/usr/bin/dirname "\$target")
+if [ ! -w "\$parent" ]; then
+  echo "Cannot write to \$parent: not installed"
+  rm -rf "\$new" "\$staging"
+  exit 1
+fi
 if /usr/bin/ditto "\$source" "\$new" && mv "\$target" "\$old"; then
   if mv "\$new" "\$target"; then
     rm -rf "\$old"
