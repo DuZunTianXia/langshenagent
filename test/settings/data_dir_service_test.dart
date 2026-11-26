@@ -45,6 +45,14 @@ void main() {
       ('browser/profile/Default/Cookies', 'chromium'),
       // The pictures agents made (see lib/images/).
       ('images/2026-10-17/a-fox-120000.png', 'png'),
+      // The bots, the usage records and the updates downloaded (see
+      // lib/bots/, lib/usage/, lib/update/).
+      ('bots/bots.json', '[]'),
+      ('turn-stats/today.json', '{}'),
+      ('usage/calls.jsonl', ''),
+      ('updates/note.txt', ''),
+      // Claude Code's home the app runs it against: its sessions.
+      ('claude-data/projects/-proj/abc.jsonl', '{}'),
       // Where the providers' keys are kept where the system has no
       // keychain of its own (see secret_store_io.dart).
       ('secrets/provider.abc123', 'sk-kept'),
@@ -171,6 +179,8 @@ void main() {
       'User/keybindings.json',
       'User/settings.json',
       'argv.json',
+      'bots',
+      'bots/bots.json',
       'browser',
       'browser/profile',
       'browser/profile/Default',
@@ -180,6 +190,10 @@ void main() {
       'checkpoints',
       'checkpoints/app-1f',
       'checkpoints/app-1f/HEAD',
+      'claude-data',
+      'claude-data/projects',
+      'claude-data/projects/-proj',
+      'claude-data/projects/-proj/abc.jsonl',
       'extensions',
       'extensions/extensions.json',
       'icons',
@@ -207,6 +221,12 @@ void main() {
       'state',
       'state/state.json',
       'state/storage.json',
+      'turn-stats',
+      'turn-stats/today.json',
+      'updates',
+      'updates/note.txt',
+      'usage',
+      'usage/calls.jsonl',
       'workspaces',
       'workspaces/w1',
       'workspaces/w1/web.code-workspace',
@@ -220,8 +240,8 @@ void main() {
       Link(p.join(target, 'servers', 'tool-link')).targetSync(),
       p.join(target, 'servers', 'tool', 'bin', 'tool'),
     );
-    expect(progress.first, (0, 18));
-    expect(progress.last, (18, 18));
+    expect(progress.first, (0, 23));
+    expect(progress.last, (23, 23));
     // The old folder is as it was: the web view's files included.
     expect(File(p.join(current, 'Cookies')).existsSync(), isTrue);
     expect(File(p.join(current, 'state', 'state.json')).existsSync(), isTrue);
@@ -283,7 +303,7 @@ void main() {
       File(p.join(target, 'icons', 'index.json')).readAsStringSync(),
       '[{"id": "a"}]',
     );
-    expect(progress.last, (18, 18));
+    expect(progress.last, (23, 23));
     expect(jsonDecode(pointer().readAsStringSync())['dataDir'], target);
   });
 

@@ -571,7 +571,10 @@ jobs:
           size=$(stat -f %z "dist/$apk")
           notes="LangshenAgent $MARKETING"
           file="release-notes/$MARKETING.zh.md"
-          [ -f "$file" ] && notes=$(head -c 500 "$file" | tr '\n' ' ')
+          # LC_ALL=C: the file is UTF-8 Chinese, whose bytes a UTF-8
+          # locale's tr rejects once head has cut a character in two
+          # (2026-11-24: "tr: Illegal byte sequence" ended the publish).
+          [ -f "$file" ] && notes=$(head -c 500 "$file" | LC_ALL=C tr '\n' ' ')
           jq -n --arg version "$MARKETING" --argjson build "${VERSION##*+}" \
             --arg apk "/mobile-v$MARKETING/$apk" --argjson size "$size" --arg notes "$notes" \
             '{version: $version, build: $build, apk: $apk, size: $size, notes: $notes}' \

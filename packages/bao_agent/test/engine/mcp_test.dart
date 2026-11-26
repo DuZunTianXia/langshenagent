@@ -386,6 +386,51 @@ void main() {
     );
   });
 
+  test('disabledMcpServers in the settings: never connected, its tools '
+      'never in the context; turned off and on as the settings change', () async {
+    Future<List<String>> toolsOffered() async {
+      h.model.script.add(Reply.text('ok'));
+      await h.turn('again');
+      return [
+        for (final t in h.model.turns.last.body['tools'] as List)
+          (t as Map)['name'] as String,
+      ];
+    }
+
+    // Off from the start: not connected, not offered.
+    h = await Harness.start(
+      flagSettings: {
+        'mcpServers': {
+          'old': {'type': 'sse', 'url': '${servers.base}/sse'},
+        },
+        'disabledMcpServers': ['old'],
+      },
+    );
+    expect((await statusOf('old'))['status'], 'disabled');
+    expect(await toolsOffered(), isNot(contains('mcp__old__echo')));
+
+    // Turned on as the settings change: connected, offered.
+    await h.request('apply_flag_settings', {
+      'settings': {'disabledMcpServers': <String>[]},
+    });
+    for (
+      var i = 0;
+      i < 100 && (await statusOf('old'))['status'] != 'connected';
+      i++
+    ) {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    }
+    expect((await statusOf('old'))['status'], 'connected');
+    expect(await toolsOffered(), contains('mcp__old__echo'));
+
+    // And off again: let go, out of the next turn's tools.
+    await h.request('apply_flag_settings', {
+      'settings': {'disabledMcpServers': ['old']},
+    });
+    expect((await statusOf('old'))['status'], 'disabled');
+    expect(await toolsOffered(), isNot(contains('mcp__old__echo')));
+  });
+
   group('JsonRpcPeer', () {
     test(
       'requests answered, failed, timed out, cancelled; requests answered',

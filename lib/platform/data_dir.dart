@@ -160,6 +160,13 @@ class DataDirectory {
     'extensions',
     'browser',
     'images',
+    'bots',
+    'turn-stats',
+    'usage',
+    'updates',
+    // Claude Code's home the app runs it against: every session it ever
+    // had. Left behind by a move, they were all gone from the sidebar.
+    'claude-data',
     // Where the providers' keys are kept where the system has no keychain
     // of its own (Windows' DPAPI files, Linux's fallback; see
     // secret_store_io.dart). Moving the folder without it left the

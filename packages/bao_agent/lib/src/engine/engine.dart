@@ -440,6 +440,9 @@ class AgentEngine {
         final settings = asMap(request['settings']);
         session.settings.applyFlag(settings);
         session.reloadSettings();
+        if (settings.containsKey('disabledMcpServers')) {
+          unawaited(session.mcp.resync());
+        }
         if (settings.containsKey('effortLevel')) {
           session.effort = asText(settings['effortLevel']);
         }

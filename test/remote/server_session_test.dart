@@ -134,6 +134,48 @@ void main() {
     );
   });
 
+  test('a daemon of another build is not resumed: a bridge of this one '
+      'starts its own', () async {
+    // A daemon of before the server was upgraded (its build another's),
+    // its socket and version file as runDaemon writes them.
+    final run = p.join(dir.path, 'versioned-run');
+    final id = 'd1b2c3d4e5f60718';
+    final old = ServerSession(
+      id: id,
+      runDirectory: run,
+      heartbeat: const Duration(seconds: 1),
+      version: 'old-build',
+    );
+    final oldEnded = old.runDaemon(
+      serve: (peer) => RemoteServer(
+        peer,
+        dataDir: p.join(dir.path, 'old-data'),
+        version: 'old-build',
+      ),
+    );
+    final socket = File(p.join(run, id));
+    final deadline = DateTime.now().add(const Duration(seconds: 10));
+    while (!File('${socket.path}.version').existsSync() &&
+        DateTime.now().isBefore(deadline)) {
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+    }
+    expect(File('${socket.path}.version').readAsStringSync(), 'old-build');
+
+    // A bridge of the new build, resuming: the old daemon is not its to
+    // carry on. The test harness runs without -Dlangshenagent.version, so
+    // a bridge's build is '' — not 'old-build'.
+    final second = await bridge(id, run: run, resume: true);
+    expect(
+      await second.channel.ended.timeout(const Duration(seconds: 10)),
+      ChannelEnd.gone,
+    );
+
+    // The old daemon is left running meanwhile, its session intact: one
+    // of its own build still finds it where it was.
+    expect(File('${socket.path}.version').readAsStringSync(), 'old-build');
+    unawaited(oldEnded.then((_) {}, onError: (Object _) {}));
+  });
+
   test('as on Windows: the daemon listens on a port of the loopback, said '
       'in a file with a token, and only one that says it is let in; the '
       'link lost, the next carries on', () async {

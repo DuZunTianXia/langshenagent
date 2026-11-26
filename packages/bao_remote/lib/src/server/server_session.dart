@@ -26,6 +26,7 @@ class ServerSession {
     required this.runDirectory,
     this.grace = defaultGrace,
     this.heartbeat = defaultHeartbeat,
+    this.version = '',
     bool? tcp,
   }) : tcp = tcp ?? Platform.isWindows;
 
@@ -69,6 +70,13 @@ class ServerSession {
   final String runDirectory;
   final Duration grace;
   final Duration heartbeat;
+
+  /// The build of the server this session's daemon is, written beside its
+  /// socket once it listens: a bridge of another build does not resume it
+  /// (an old one, left running since before an upgrade, is not to be
+  /// taken for this one's), but starts a daemon of its own. Set where the
+  /// build is known (the server's entrypoint).
+  String version;
 
   /// Whether the daemon listens on a port of the loopback with a token
   /// (Windows'), not on a socket of its folder.
@@ -126,8 +134,37 @@ class ServerSession {
   static InternetAddress _address(String socket) =>
       InternetAddress(socket, type: InternetAddressType.unix);
 
+  /// Where the daemon's build is written, beside its socket (or port
+  /// file): read by a bridge before it resumes.
+  static String _versionPath(String socketPath) => '$socketPath.version';
+
+  /// The build the daemon of this session is, as it wrote; null where it
+  /// said none (one from before versions were written, or gone already).
+  Future<String?> _daemonVersion() async {
+    for (final path in socketPaths) {
+      try {
+        return await File(_versionPath(path)).readAsString();
+      } on FileSystemException {
+        // The next place, or none.
+      }
+    }
+    try {
+      return await File(_versionPath(portPath)).readAsString();
+    } on FileSystemException {
+      return null;
+    }
+  }
+
   /// The daemon's socket, wherever it listens; null when none answers.
+  ///
+  /// One of another build (a daemon left running since before the server
+  /// was upgraded) is not resumed: none is answered, so that a daemon of
+  /// this build is started instead. A daemon of before versions were
+  /// written (null) is taken as another build's: only one of this very
+  /// build is resumed.
   Future<Socket?> _connect() async {
+    final daemonVersion = await _daemonVersion();
+    if (daemonVersion != version) return null;
     for (final path in socketPaths) {
       try {
         return await Socket.connect(
@@ -328,6 +365,18 @@ class ServerSession {
     } on _AlreadyServed {
       return true;
     }
+    // Once listening: the build this daemon is, for a bridge to tell it
+    // from one of before an upgrade (see [_connect]).
+    final boundPath = tcp ? portPath : _bound;
+    if (boundPath != null) {
+      try {
+        await File(
+          _versionPath(boundPath),
+        ).writeAsString(version, flush: true);
+      } on FileSystemException {
+        // Not written: never resumed, as a daemon of another build is.
+      }
+    }
     final channel = ResumableChannel(heartbeat: heartbeat, silence: silence);
     final peer = RpcPeer(channel.messages, channel.send);
     final server = serve(peer);
@@ -396,7 +445,9 @@ class ServerSession {
     channel.close();
     current?.destroy();
     await listener.close();
-    await _deleteSocket(tcp ? portPath : _bound);
+    final endedPath = tcp ? portPath : _bound;
+    await _deleteSocket(endedPath);
+    if (endedPath != null) await _deleteSocket(_versionPath(endedPath));
     return end == ChannelEnd.closed;
   }
 

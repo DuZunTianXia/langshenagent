@@ -65,6 +65,40 @@ runs:
           fi
           sleep 10
         done
+    # Downloaded with curl rather than actions/download-artifact: the
+    # artifacts API lists one its upload has only just finished before
+    # it can be downloaded, and the action's "Artifact not found" then
+    # fails the job for good (2026-11-24, the Linux x64 build 500ms after
+    # "remote is there"). Tried again until it answers, as the wait did.
+    - name: Download ${{ inputs.name }}
+      if: runner.os != 'Windows'
+      shell: bash
+      env:
+        TOKEN: ${{ github.token }}
+        NAME: ${{ inputs.name }}
+        PATH_OUT: ${{ inputs.path }}
+        MINUTES: ${{ inputs.minutes }}
+      run: |
+        run="$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+        deadline=$(( $(date +%s) + MINUTES * 60 ))
+        mkdir -p "$PATH_OUT"
+        while true; do
+          url=$(curl -fsSL -H "Authorization: Bearer $TOKEN" \
+            -H 'Accept: application/vnd.github+json' "$run/artifacts?name=$NAME" \
+            | jq -r '.artifacts[0].archive_download_url // empty')
+          if [ -n "$url" ] && curl -fsSL -o "$RUNNER_TEMP/artifact.zip" \
+            -H "Authorization: Bearer $TOKEN" "$url"; then
+            unzip -q -o "$RUNNER_TEMP/artifact.zip" -d "$PATH_OUT"
+            rm -f "$RUNNER_TEMP/artifact.zip"
+            echo "$NAME downloaded"
+            break
+          fi
+          if [ "$(date +%s)" -gt "$deadline" ]; then
+            echo "::error::$NAME could not be downloaded within $MINUTES minutes"
+            exit 1
+          fi
+          sleep 5
+        done
     - name: Wait for ${{ inputs.name }}
       if: runner.os == 'Windows'
       shell: pwsh
@@ -99,7 +133,45 @@ runs:
           }
           Start-Sleep -Seconds 10
         }
-    - uses: actions/download-artifact@v7
-      with:
-        name: ${{ inputs.name }}
-        path: ${{ inputs.path }}
+    # Downloaded with the API directly rather than actions/download-artifact:
+    # the artifacts API lists one its upload has only just finished before
+    # it can be downloaded, and the action's "Artifact not found" then
+    # fails the job for good.
+    - name: Download ${{ inputs.name }}
+      if: runner.os == 'Windows'
+      shell: pwsh
+      env:
+        TOKEN: ${{ github.token }}
+        NAME: ${{ inputs.name }}
+        PATH_OUT: ${{ inputs.path }}
+        MINUTES: ${{ inputs.minutes }}
+      run: |
+        $headers = @{ Authorization = "Bearer $env:TOKEN"; Accept = 'application/vnd.github+json' }
+        $run = "$env:GITHUB_API_URL/repos/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID"
+        $deadline = (Get-Date).AddMinutes([int]$env:MINUTES)
+        New-Item -ItemType Directory -Force -Path $env:PATH_OUT | Out-Null
+        $zip = Join-Path $env:RUNNER_TEMP 'artifact.zip'
+        while ($true) {
+          try {
+            $artifacts = Invoke-RestMethod "$run/artifacts?name=$env:NAME" -Headers $headers
+            $url = $artifacts.artifacts[0].archive_download_url
+            if ($url) {
+              try {
+                Invoke-WebRequest $url -Headers @{ Authorization = "Bearer $env:TOKEN" } -OutFile $zip
+                Expand-Archive -Force $zip $env:PATH_OUT
+                Remove-Item $zip -ErrorAction SilentlyContinue
+                Write-Output "$env:NAME downloaded"
+                break
+              } catch {
+                Write-Output "Download not ready yet: $_"
+              }
+            }
+          } catch {
+            Write-Output "Asking GitHub failed, asking again: $_"
+          }
+          if ((Get-Date) -gt $deadline) {
+            Write-Output "::error::$env:NAME could not be downloaded within $env:MINUTES minutes"
+            exit 1
+          }
+          Start-Sleep -Seconds 5
+        }

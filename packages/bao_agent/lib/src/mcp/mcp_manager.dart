@@ -169,10 +169,47 @@ class McpManager {
     return found;
   }
 
+  /// The servers turned off: `/mcp`'s in `~/.claude.json`'s of this
+  /// project, and the app's own (`disabledMcpServers` in the settings,
+  /// given as flag settings), whose server is not to connect at all — its
+  /// tools are not the conversation's to see, let alone call.
   Set<String> get _disabled {
     final claudeJson = AgentSettings.readJson(session.paths.claudeJson);
     final project = asMap(asMap(claudeJson['projects'])[session.cwd]);
-    return {...asList(project['disabledMcpServers']).whereType<String>()};
+    return {
+      ...asList(project['disabledMcpServers']).whereType<String>(),
+      ...asList(session.settings['disabledMcpServers']).whereType<String>(),
+    };
+  }
+
+  /// The connections re-made as the settings now say (`apply_flag_settings`):
+  /// a server turned off since is let go, its tools out of the
+  /// conversation; one turned back on is connected again.
+  Future<void> resync() async {
+    final disabled = _disabled;
+    final dropped = <McpServer>[];
+    final revive = <McpServer>[];
+    for (final server in servers.values) {
+      if (server.scope == 'sdk') continue;
+      final off = disabled.contains(server.name);
+      if (off && server.status != 'disabled') {
+        dropped.add(server);
+      } else if (!off && server.status == 'disabled') {
+        revive.add(server);
+      }
+    }
+    if (dropped.isEmpty && revive.isEmpty) return;
+    for (final server in dropped) {
+      await _disconnect(server);
+      server
+        ..status = 'disabled'
+        ..error = null
+        ..tools = const []
+        ..resources = const []
+        ..prompts = const [];
+    }
+    await Future.wait([for (final server in revive) connect(server)]);
+    onToolsChanged?.call();
   }
 
   /// Connects every server set up, at once; returns when each has

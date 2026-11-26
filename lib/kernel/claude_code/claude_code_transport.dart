@@ -272,6 +272,7 @@ class ClaudeLaunch {
     final allow = [for (final folder in readable) readRule(folder), ...allowed];
     final deny = switches.denyRules;
     final overrides = switches.skillOverrides;
+    final serversOff = [...switches.disabledServers]..sort();
     return {
       if (whole || allow.isNotEmpty || deny.isNotEmpty)
         'permissions': {
@@ -279,6 +280,10 @@ class ClaudeLaunch {
           if (whole || deny.isNotEmpty) 'deny': deny,
         },
       if (whole || overrides.isNotEmpty) 'skillOverrides': overrides,
+      // The MCP servers turned off: LangshenAgent's own core keeps them
+      // unconnected, their tools out of the conversation (the CLI does
+      // not read it: its deny rules above are all that reaches it).
+      if (whole || serversOff.isNotEmpty) 'disabledMcpServers': serversOff,
     };
   }
 

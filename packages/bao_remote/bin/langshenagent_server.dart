@@ -78,6 +78,7 @@ Future<void> main(List<String> arguments) async {
     ClaudeSettingsFile.parent = Directory(runtime);
   }
   if (ServerSession.fromArguments(arguments, home) case final session?) {
+    session.version = _version;
     if (arguments.contains('--daemon')) {
       // Where the log cannot be (a folder of the user's alone, refused
       // there), none is kept.
