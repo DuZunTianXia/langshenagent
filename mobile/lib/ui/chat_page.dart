@@ -1,5 +1,6 @@
 import 'dart:async' show unawaited;
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:bao_link/bao_link.dart';
@@ -9,12 +10,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../codicons.dart';
+import '../main.dart';
+import '../phone_platform.dart';
 
 import '../chat/chat_models.dart'
     show
         AgentItem,
         AssistantTextItem,
         ChatItem,
+        CommandStatus,
         DiffLineType,
         ImageAttachment,
         LiveStatusItem,
@@ -25,7 +29,9 @@ import '../chat/chat_models.dart'
 import 'agent_page.dart';
 import 'bot_edit_page.dart';
 import 'file_viewer.dart';
+import 'items/agent_step.dart';
 import 'items/image_preview.dart';
+import 'items/shimmer_text.dart';
 import 'md/md_theme.dart';
 import 'widgets.dart';
 import '../chat/interaction.dart';
@@ -45,7 +51,13 @@ import 'markdown.dart';
 /// One conversation: a session's items as they come, the composer, and
 /// what the agent asks of the user.
 class ChatPage extends StatefulWidget {
-  const ChatPage({super.key, required this.link, this.sessionId, this.bot});
+  const ChatPage({
+    super.key,
+    required this.link,
+    this.sessionId,
+    this.bot,
+    this.initialText,
+  });
 
   final PhoneLink link;
 
@@ -53,6 +65,9 @@ class ChatPage extends StatefulWidget {
   /// one (a bot with none yet is written to by [bot]'s id).
   final String? sessionId;
   final LinkBot? bot;
+
+  /// Optional prefilled text (e.g. `@path ` from FileViewer).
+  final String? initialText;
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -65,9 +80,64 @@ class _ChatPageState extends State<ChatPage> {
   String? _sessionId;
   String? _error;
   bool _opening = false;
+  bool _stopping = false;
+  bool _pickingMention = false;
+  String _prevComposerText = '';
+  final Set<String> _stoppingTasks = {};
   List<Map<String, Object?>> _images = const [];
 
   String? get _botId => widget.bot?.id;
+
+  ProjectInfo? get _project {
+    final session = _sessionId;
+    if (session == null) return null;
+    final summary = widget.link.state?.sessions
+        .where((s) => s.id == session)
+        .firstOrNull;
+    if (summary == null) return null;
+    return widget.link.state?.projects
+        .where((p) => p.id == summary.project)
+        .firstOrNull;
+  }
+
+  void _bindFeed(SessionFeed? next) {
+    if (identical(_feed, next)) return;
+    _feed?.removeListener(_onFeedChanged);
+    _feed = next;
+    _feed?.addListener(_onFeedChanged);
+  }
+
+  void _onFeedChanged() {
+    if (!mounted) return;
+    final feed = _feed;
+    if (feed == null) return;
+    var changed = false;
+    if (_stopping && !feed.live) {
+      _stopping = false;
+      changed = true;
+    }
+    if (_stoppingTasks.isNotEmpty) {
+      final activeIds = <String>{
+        for (final t in feed.tasks)
+          if (t.status == 'running') ...[t.id, ?t.toolUseId],
+      };
+      for (final json in feed.items) {
+        final item = ChatCodec.decode(json);
+        if (item is AgentItem &&
+            item.status == CommandStatus.running &&
+            item.id != null) {
+          activeIds.add(item.id!);
+        }
+      }
+      final before = _stoppingTasks.length;
+      _stoppingTasks.removeWhere((id) => !activeIds.contains(id));
+      if (_stoppingTasks.length != before) changed = true;
+    }
+    if (changed) setState(() {});
+  }
+
+  String? get _draftKey =>
+      _sessionId ?? widget.sessionId ?? (widget.bot == null ? null : 'bot:${widget.bot!.id}');
 
   @override
   void initState() {
@@ -78,11 +148,32 @@ class _ChatPageState extends State<ChatPage> {
     // most of what streaming moves.
     _scroll.addListener(_onScrolled);
     _sessionId = widget.sessionId ?? widget.bot?.session;
+    if (widget.initialText != null && widget.initialText!.isNotEmpty) {
+      _text.text = widget.initialText!;
+      _text.selection = TextSelection.collapsed(
+        offset: widget.initialText!.length,
+      );
+      _prevComposerText = widget.initialText!;
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _text.text.isNotEmpty) return;
+        final key = _draftKey;
+        if (key == null) return;
+        final saved = AppScope.of(context).draftOf(key);
+        if (saved.isNotEmpty) {
+          _text.text = saved;
+          _text.selection = TextSelection.collapsed(offset: saved.length);
+          _prevComposerText = saved;
+          setState(() {});
+        }
+      });
+    }
     if (_sessionId != null) _open(_sessionId!);
   }
 
   @override
   void dispose() {
+    _feed?.removeListener(_onFeedChanged);
     widget.link.removeListener(_onLinkChanged);
     _scroll.removeListener(_onScrolled);
     _text.dispose();
@@ -117,12 +208,21 @@ class _ChatPageState extends State<ChatPage> {
   /// What an undecodable item is cached as: it decodes once, not per frame.
   static final Object _decodeMiss = Object();
 
-  /// Re-opens the session once the computer is online again.
+  /// Re-opens or re-binds the session once the computer is online again.
   void _onLinkChanged() {
     if (!mounted) return;
-    if (widget.link.phase == PhonePhase.online && _feed == null) {
-      final id = _sessionId ?? widget.sessionId ?? widget.bot?.session;
-      if (id != null && !_opening) unawaited(_open(id));
+    final id = _sessionId ?? widget.sessionId ?? widget.bot?.session;
+    if (widget.link.phase == PhonePhase.online) {
+      if (_error != null) _error = null;
+      if (id != null) {
+        final liveFeed = widget.link.feeds[id];
+        if (liveFeed != null && !identical(_feed, liveFeed)) {
+          _bindFeed(liveFeed);
+          _sessionId = id;
+        } else if (_feed == null && !_opening) {
+          unawaited(_open(id));
+        }
+      }
     }
     setState(() {});
   }
@@ -134,9 +234,10 @@ class _ChatPageState extends State<ChatPage> {
       final feed = await widget.link.open(id);
       if (!mounted) return;
       setState(() {
-        _feed = feed;
+        _bindFeed(feed);
         _sessionId = id;
         _error = null;
+        _stopping = false;
         _keys.clear();
         _positions.clear();
         _stickyText = null;
@@ -163,15 +264,26 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> _send() async {
     final text = _text.text.trim();
     if (text.isEmpty && _images.isEmpty) return;
-    _text.clear();
+    final sendNow =
+        (_feed?.live ?? false) && AppScope.of(context).sendNowWhileLive;
     final images = _images;
-    setState(() => _images = const []);
+    _text.clear();
+    _prevComposerText = '';
+    final draftKey = _draftKey;
+    if (draftKey != null) {
+      AppScope.of(context).setDraft(draftKey, '');
+    }
+    setState(() {
+      _images = const [];
+      _stopping = false;
+    });
     try {
       final session = await widget.link.send(
         sessionId: _sessionId,
         botId: _sessionId == null ? _botId : null,
         text: text,
         images: images,
+        now: sendNow,
       );
       if (session != null && session != _sessionId && mounted) {
         await _open(session);
@@ -180,18 +292,76 @@ class _ChatPageState extends State<ChatPage> {
       }
     } on Object catch (failure) {
       if (mounted) {
-        showBToast(context, '发送失败：$failure');
+        // Restore unsent draft so user input is never lost on network errors.
+        setState(() {
+          if (_text.text.isEmpty && text.isNotEmpty) {
+            _text.text = text;
+            _text.selection = TextSelection.collapsed(offset: text.length);
+            _prevComposerText = text;
+          }
+          if (_images.isEmpty && images.isNotEmpty) {
+            _images = images;
+          }
+        });
+        showBToast(context, '发送失败：$failure', isError: true);
+      }
+    }
+  }
+
+  void _onComposerChanged() {
+    final current = _text.text;
+    final prev = _prevComposerText;
+    _prevComposerText = current;
+    final draftKey = _draftKey;
+    if (draftKey != null) {
+      AppScope.of(context).setDraft(draftKey, current);
+    }
+    setState(() {});
+    final project = _project;
+    if (project == null || _pickingMention) return;
+    final sel = _text.selection;
+    if (!sel.isCollapsed || sel.baseOffset <= 0) return;
+    final cursor = sel.baseOffset;
+    if (current.length == prev.length + 1 && current[cursor - 1] == '@') {
+      final before = cursor == 1 ? ' ' : current[cursor - 2];
+      if (before == ' ' || before == '\n' || before == '\t') {
+        unawaited(_mentionWorkspaceFile(project, triggerAtOffset: cursor - 1));
       }
     }
   }
 
   Future<void> _stop() async {
     final id = _sessionId;
-    if (id == null) return;
+    if (id == null || _stopping) return;
+    PhonePlatform.haptic('selection');
+    setState(() => _stopping = true);
     try {
       await widget.link.stop(id);
     } on Object {
       // Stopping is best-effort: the session may be gone already.
+      if (mounted) setState(() => _stopping = false);
+    }
+  }
+
+  Future<void> _stopTaskItem(LinkTask task) async {
+    final id = _sessionId;
+    if (id == null) return;
+    final key = task.toolUseId ?? task.id;
+    if (_stoppingTasks.contains(key)) return;
+    PhonePlatform.haptic('selection');
+    setState(() => _stoppingTasks.add(key));
+    try {
+      final inTasks = _feed?.tasks.any((t) => t.id == task.id) ?? false;
+      await widget.link.stopTask(
+        id,
+        task: inTasks ? task.id : null,
+        agent: inTasks ? null : task.toolUseId,
+      );
+    } on Object catch (failure) {
+      if (mounted) {
+        setState(() => _stoppingTasks.remove(key));
+        showBToast(context, '$failure');
+      }
     }
   }
 
@@ -216,18 +386,99 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-  /// The + menu: a picture joins the message's images; another file goes
-  /// to the desktop with `upload` and its path is mentioned in the text.
+  /// The + menu: camera photo, gallery image, file upload, or @workspace file.
   Future<void> _attach() async {
+    final project = _project;
     final kind = await showBActions<String>(
       context,
-      actions: const [
-        (Codicons.deviceCamera, '图片', null, 'image'),
+      actions: [
+        (Codicons.deviceCamera, '拍照', '拍摄照片直接发送', 'camera'),
+        (Icons.photo_library_outlined, '图片', '从相册选择图片', 'image'),
         (Codicons.file, '文件', '上传到电脑，路径以 @ 引用发给会话', 'file'),
+        if (project != null)
+          (Codicons.mention, '@工作区文件', '引用 ${project.name} 中的文件', 'mention'),
       ],
     );
+    if (kind == 'camera') return _takePhoto();
     if (kind == 'image') return _attachImage();
     if (kind == 'file') return _attachFile();
+    if (kind == 'mention' && project != null) {
+      return _mentionWorkspaceFile(project);
+    }
+  }
+
+  Future<void> _takePhoto() async {
+    final path = await PhonePlatform.takePhoto();
+    if (path == null || !mounted) return;
+    final file = File(path);
+    try {
+      final bytes = await file.readAsBytes();
+      if (!mounted) return;
+      if (bytes.length > 8 * 1024 * 1024) {
+        showBToast(context, '照片超过 8 MB，请调低分辨率后重试。', isError: true);
+        return;
+      }
+      setState(() {
+        _images = [
+          ..._images,
+          {
+            'data': base64Encode(bytes),
+            'type': 'image/jpeg',
+            'name': file.uri.pathSegments.last,
+          },
+        ];
+      });
+    } on Object catch (failure) {
+      if (mounted) showBToast(context, '读取照片失败：$failure', isError: true);
+    } finally {
+      unawaited(file.delete().catchError((Object _) => file));
+    }
+  }
+
+  Future<void> _mentionWorkspaceFile(
+    ProjectInfo project, {
+    int? triggerAtOffset,
+  }) async {
+    if (_pickingMention) return;
+    _pickingMention = true;
+    final picked = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: AppColors.surfaceRaised,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      builder: (_) => _WorkspaceFilePickerSheet(
+        link: widget.link,
+        project: project,
+      ),
+    );
+    _pickingMention = false;
+    if (picked == null || picked.isEmpty || !mounted) return;
+    final text = _text.text;
+    final mention = '@$picked ';
+    final String next;
+    final int nextCursor;
+    if (triggerAtOffset != null &&
+        triggerAtOffset >= 0 &&
+        triggerAtOffset < text.length &&
+        text[triggerAtOffset] == '@') {
+      next =
+          '${text.substring(0, triggerAtOffset)}$mention${text.substring(triggerAtOffset + 1)}';
+      nextCursor = triggerAtOffset + mention.length;
+    } else {
+      next = text.isEmpty || text.endsWith(' ') || text.endsWith('\n')
+          ? '$text$mention'
+          : '$text $mention';
+      nextCursor = next.length;
+    }
+    _prevComposerText = next;
+    _text.value = TextEditingValue(
+      text: next,
+      selection: TextSelection.collapsed(offset: nextCursor),
+    );
+    setState(() {});
   }
 
   Future<void> _attachFile() async {
@@ -361,7 +612,7 @@ class _ChatPageState extends State<ChatPage> {
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontSize: 17),
             ),
-            _Subtitle(link: widget.link, feed: feed),
+            _Subtitle(link: widget.link, feed: feed, stopping: _stopping),
           ],
         ),
         actions: [
@@ -424,7 +675,7 @@ class _ChatPageState extends State<ChatPage> {
         children: [
           BConnectionBanner(
             link: widget.link,
-            onRetry: widget.link.retryNow,
+            onRetry: () => widget.link.retryNow(force: true),
           ),
           if (_error != null)
             Padding(
@@ -457,58 +708,92 @@ class _ChatPageState extends State<ChatPage> {
               ),
             ),
           Expanded(child: _body(feed)),
-          if (feed != null) _SessionBar(link: widget.link, feed: feed),
-          if (feed?.interaction != null)
-            _InteractionCard(
-              interaction: feed!.interaction!,
-              onAnswer: (answer) => widget.link.answer(
-                _sessionId!,
-                InteractionCodec.encodeAnswer(answer),
+          if (feed != null)
+            ListenableBuilder(
+              listenable: feed,
+              builder: (context, _) => Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _SessionBar(
+                    link: widget.link,
+                    feed: feed,
+                    project: _project,
+                    stoppingTasks: _stoppingTasks,
+                    onStopTask: _stopTaskItem,
+                  ),
+                  if (feed.interaction != null)
+                    _InteractionCard(
+                      interaction: feed.interaction!,
+                      onAnswer: (answer) => widget.link.answer(
+                        _sessionId!,
+                        InteractionCodec.encodeAnswer(answer),
+                      ),
+                    ),
+                  if (_text.text.isEmpty)
+                    _Suggestions(
+                      feed: feed,
+                      bot: widget.bot != null,
+                      onPick: (text) {
+                        _text.text = text;
+                        _text.selection = TextSelection.collapsed(
+                          offset: text.length,
+                        );
+                        setState(() {});
+                      },
+                      onSend: (text) {
+                        _text.text = text;
+                        _send();
+                      },
+                    ),
+                  if (feed.queued.isNotEmpty)
+                    _QueuePanel(
+                      queued: feed.queued,
+                      onQueue: (id, action, {index}) =>
+                          _queue(id, action, index: index),
+                      onEditQueued: (entry) {
+                        // 撤回这一条，文字填进输入框（手机没有 draft：撤回后由
+                        // 用户确认再发）。
+                        final item = ChatCodec.decode(entry['item']);
+                        final text = item is UserMessageItem ? item.text : '';
+                        if (text.isNotEmpty) {
+                          _text.text = text;
+                          _text.selection = TextSelection.collapsed(
+                            offset: text.length,
+                          );
+                        }
+                        setState(() {});
+                        _queue(entry['id']! as String, 'edit');
+                      },
+                    ),
+                  _Composer(
+                    controller: _text,
+                    live: feed.live,
+                    stopping: _stopping,
+                    images: _images,
+                    onChanged: _onComposerChanged,
+                    onAttach: _attach,
+                    onRemoveImage: (index) => setState(
+                      () => _images = [..._images]..removeAt(index),
+                    ),
+                    onSend: _send,
+                    onStop: _stop,
+                  ),
+                  _StatusLine(link: widget.link, feed: feed),
+                ],
               ),
+            )
+          else
+            _Composer(
+              controller: _text,
+              live: false,
+              images: _images,
+              onChanged: () => setState(() {}),
+              onAttach: _attach,
+              onRemoveImage: (index) =>
+                  setState(() => _images = [..._images]..removeAt(index)),
+              onSend: _send,
+              onStop: _stop,
             ),
-          if (feed != null && _text.text.isEmpty)
-            _Suggestions(
-              feed: feed,
-              bot: widget.bot != null,
-              onPick: (text) {
-                _text.text = text;
-                _text.selection = TextSelection.collapsed(offset: text.length);
-                setState(() {});
-              },
-              onSend: (text) {
-                _text.text = text;
-                _send();
-              },
-            ),
-          if (feed != null && feed.queued.isNotEmpty)
-            _QueuePanel(
-              queued: feed.queued,
-              onQueue: (id, action, {index}) => _queue(id, action, index: index),
-              onEditQueued: (entry) {
-                // 撤回这一条，文字填进输入框（手机没有 draft：撤回后由
-                // 用户确认再发）。
-                final item = ChatCodec.decode(entry['item']);
-                final text = item is UserMessageItem ? item.text : '';
-                if (text.isNotEmpty) {
-                  _text.text = text;
-                  _text.selection = TextSelection.collapsed(offset: text.length);
-                }
-                setState(() {});
-                _queue(entry['id']! as String, 'edit');
-              },
-            ),
-          _Composer(
-            controller: _text,
-            live: feed?.live ?? false,
-            images: _images,
-            onChanged: () => setState(() {}),
-            onAttach: _attach,
-            onRemoveImage: (index) =>
-                setState(() => _images = [..._images]..removeAt(index)),
-            onSend: _send,
-            onStop: _stop,
-          ),
-          if (feed != null) _StatusLine(link: widget.link, feed: feed),
         ],
       ),
     );
@@ -731,7 +1016,11 @@ class _ChatPageState extends State<ChatPage> {
                             : EdgeInsets.zero,
                         child:
                             widget.bot != null && item is AssistantTextItem
-                            ? _BotReply(item: item, bot: widget.bot!)
+                            ? _BotReply(
+                                link: widget.link,
+                                item: item,
+                                bot: widget.bot!,
+                              )
                             : ChatItemView(
                           item: folds.shownAt(index, item),
                           // As the desktop's: it opens to its own
@@ -1056,10 +1345,11 @@ class _ChatPageState extends State<ChatPage> {
 /// stands reaching the computer — the computer's name when nothing is
 /// the more interesting answer.
 class _Subtitle extends StatelessWidget {
-  const _Subtitle({required this.link, this.feed});
+  const _Subtitle({required this.link, this.feed, this.stopping = false});
 
   final PhoneLink link;
   final SessionFeed? feed;
+  final bool stopping;
 
   @override
   Widget build(BuildContext context) {
@@ -1075,6 +1365,9 @@ class _Subtitle extends StatelessWidget {
               ? '连接中…'
               : '离线，等待重连';
           color = AppColors.caution;
+        } else if (stopping && (feed?.live ?? false)) {
+          text = '正在停止…';
+          color = AppColors.textMuted;
         } else if (feed?.live ?? false) {
           text = '正在输入…';
           color = AppColors.accent;
@@ -1094,6 +1387,7 @@ class _Composer extends StatelessWidget {
   const _Composer({
     required this.controller,
     required this.live,
+    this.stopping = false,
     required this.images,
     required this.onChanged,
     required this.onAttach,
@@ -1104,6 +1398,7 @@ class _Composer extends StatelessWidget {
 
   final TextEditingController controller;
   final bool live;
+  final bool stopping;
   final List<Map<String, Object?>> images;
   final VoidCallback onChanged;
   final VoidCallback onAttach;
@@ -1187,6 +1482,7 @@ class _Composer extends StatelessWidget {
             BComposer(
               controller: controller,
               live: live,
+              stopping: stopping,
               canSend: canSend,
               onAttach: onAttach,
               onChanged: onChanged,
@@ -1609,112 +1905,264 @@ class _InteractionCardState extends State<_InteractionCard> {
 /// plan put to the user, the files it changed, the model and mode to
 /// pick, and the tasks still running or keeping their output.
 class _SessionBar extends StatelessWidget {
-  const _SessionBar({required this.link, required this.feed});
+  const _SessionBar({
+    required this.link,
+    required this.feed,
+    required this.project,
+    required this.stoppingTasks,
+    required this.onStopTask,
+  });
 
   final PhoneLink link;
   final SessionFeed feed;
+  final ProjectInfo? project;
+  final Set<String> stoppingTasks;
+  final Future<void> Function(LinkTask task) onStopTask;
 
   @override
   Widget build(BuildContext context) {
-    // The plan awaiting, if the newest one is.
+    // The plan awaiting, if the newest one is, plus any running foreground
+    // subagents not already listed in `feed.tasks`.
     PlanItem? plan;
+    final runningTasks = <LinkTask>[
+      for (final task in feed.tasks)
+        if (task.status == 'running') task,
+    ];
+    final taskAgentIds = <String>{
+      for (final task in runningTasks)
+        if (task.kind == 'agent') ...[task.id, ?task.toolUseId],
+    };
+    final agentItemsById = <String, AgentItem>{};
+    final runningAgents = <LinkTask>[];
     for (final json in feed.items.reversed) {
       final item = ChatCodec.decode(json);
-      if (item is PlanItem) {
+      if (plan == null && item is PlanItem) {
         plan = item;
-        break;
+      }
+      if (item is AgentItem) {
+        final agentId = item.id;
+        if (agentId != null) {
+          agentItemsById.putIfAbsent(agentId, () => item);
+        }
+        if (item.status == CommandStatus.running) {
+          if (agentId != null && taskAgentIds.contains(agentId)) continue;
+          if (agentId != null) taskAgentIds.add(agentId);
+          runningAgents.add(
+            LinkTask(
+              id: agentId ?? item.description,
+              kind: 'agent',
+              description: item.description.isNotEmpty
+                  ? item.description
+                  : (item.agentType ?? '子代理'),
+              status: 'running',
+              startedAt: item.startedAt ?? DateTime.now(),
+              toolUseId: agentId,
+              summary: item.activity ?? item.lastTool,
+            ),
+          );
+        }
       }
     }
+    final activeTasks = <LinkTask>[
+      ...runningTasks,
+      ...runningAgents.reversed,
+    ];
     final awaitingPlan = plan?.status == PlanStatus.awaiting;
     final changes = feed.changes;
-    final tasks = feed.tasks;
-    if (!awaitingPlan && changes.isEmpty && tasks.isEmpty) {
+    final goal = feed.goal;
+    if (!awaitingPlan &&
+        changes.isEmpty &&
+        activeTasks.isEmpty &&
+        goal == null) {
       return const SizedBox.shrink();
     }
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
-      child: BCard(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (awaitingPlan)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                child: Row(
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 2),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (goal != null)
+            Padding(
+              padding: EdgeInsets.only(
+                bottom:
+                    (awaitingPlan ||
+                        changes.isNotEmpty ||
+                        activeTasks.isNotEmpty)
+                    ? 6
+                    : 2,
+              ),
+              child: _GoalCard(goal: goal),
+            ),
+          if (awaitingPlan || changes.isNotEmpty)
+            Padding(
+              padding: EdgeInsets.only(bottom: activeTasks.isNotEmpty ? 6 : 2),
+              child: BCard(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.fact_check_outlined, size: 20, color: AppColors.accent),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        '计划已就绪：${plan!.name}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textPrimary,
+                    if (awaitingPlan)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.fact_check_outlined,
+                              size: 20,
+                              color: AppColors.accent,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                '计划已就绪：${plan!.name}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ),
+                            BButton(
+                              label: '开始',
+                              primary: true,
+                              onPressed: () => _run(
+                                context,
+                                () => link.startPlan(feed.session),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                    BButton(
-                      label: '开始',
-                      primary: true,
-                      onPressed: () => _run(
-                        context,
-                        () => link.startPlan(feed.session),
+                    if (changes.isNotEmpty)
+                      InkWell(
+                        onTap: () => _showChanges(context, changes),
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(12, 4, 6, 4),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.difference_outlined,
+                                size: 17,
+                                color: AppColors.accent,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Row(
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        _changesLabel(changes),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w500,
+                                          color: AppColors.textPrimary,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Icon(
+                                      Icons.chevron_right_rounded,
+                                      size: 16,
+                                      color: AppColors.textFaint,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () => _run(
+                                  context,
+                                  () => link.undo(feed.session),
+                                ),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: AppColors.textMuted,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                  ),
+                                  minimumSize: const Size(0, 32),
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                child: const Text(
+                                  '撤回',
+                                  style: TextStyle(fontSize: 13),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () => _run(
+                                  context,
+                                  () => link.keep(feed.session),
+                                ),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: AppColors.accent,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                  ),
+                                  minimumSize: const Size(0, 32),
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                child: const Text(
+                                  '保留',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
-            if (changes.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 2, 6, 2),
-                child: Row(
-                  children: [
-                    Icon(Icons.folder_outlined, size: 18, color: AppColors.textMuted),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _changesLabel(changes),
-                        style: TextStyle(fontSize: 13, color: AppColors.textMuted),
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () => _run(context, () => link.undo(feed.session)),
-                      style: TextButton.styleFrom(
-                        foregroundColor: AppColors.textMuted,
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                        minimumSize: const Size(0, 32),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: const Text('撤回', style: TextStyle(fontSize: 13)),
-                    ),
-                    TextButton(
-                      onPressed: () => _run(context, () => link.keep(feed.session)),
-                      style: TextButton.styleFrom(
-                        foregroundColor: AppColors.accent,
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                        minimumSize: const Size(0, 32),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: const Text(
-                        '保留',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-          // 只有还在跑的任务挂在输入框上方：已完成的留在子代理卡片里
-          // （点卡片进它的页面看输出），否则越积越多，把聊天顶出屏幕。
-          for (final task in tasks)
-            if (task.status == 'running')
-              _TaskTile(link: link, feed: feed, task: task),
+            ),
+          // 正在运行的子代理/命令直接复用聊天界面的中性卡片样式，无多余外框与绿底。
+          for (final task in activeTasks)
+            _buildActiveTask(context, task, agentItemsById),
         ],
-        ),
       ),
+    );
+  }
+
+  Widget _buildActiveTask(
+    BuildContext context,
+    LinkTask task,
+    Map<String, AgentItem> agentItemsById,
+  ) {
+    final key = task.toolUseId ?? task.id;
+    final stopping = stoppingTasks.contains(key);
+    if (task.kind == 'agent') {
+      final agentItem =
+          agentItemsById[task.toolUseId] ?? agentItemsById[task.id];
+      if (agentItem != null) {
+        return AgentStep(
+          item: agentItem,
+          onOpen: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => AgentPage(
+                feed: feed,
+                agentId: task.toolUseId ?? task.id,
+              ),
+            ),
+          ),
+          onStop: stopping ? null : () => onStopTask(task),
+        );
+      }
+    }
+    return _TaskTile(
+      link: link,
+      feed: feed,
+      task: task,
+      stopping: stopping,
+      onStop: () => onStopTask(task),
     );
   }
 
@@ -1740,20 +2188,315 @@ class _SessionBar extends StatelessWidget {
       }
     }
   }
+
+  void _showChanges(
+    BuildContext context,
+    List<Map<String, Object?>> changes,
+  ) {
+    PhonePlatform.haptic('selection');
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: AppColors.surfaceRaised,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      builder: (_) => _ChangesSheet(
+        link: link,
+        session: feed.session,
+        project: project,
+        changes: changes,
+      ),
+    );
+  }
 }
 
-/// A task the session runs or ran, its output watched as it grows and
-/// it stopped when asked.
+/// Compact `/goal` progress card docked above the composer.
+class _GoalCard extends StatelessWidget {
+  const _GoalCard({required this.goal});
+
+  final Map<String, Object?> goal;
+
+  @override
+  Widget build(BuildContext context) {
+    final condition = (goal['condition'] as String? ?? '').trim();
+    if (condition.isEmpty) return const SizedBox.shrink();
+    final state = (goal['state'] as String? ?? '').toLowerCase();
+    final checks = (goal['checks'] as num?)?.toInt();
+    final durationMs = (goal['duration'] as num?)?.toInt();
+    final (label, color) = switch (state) {
+      'met' || 'done' || 'succeeded' => ('已达成', AppColors.accent),
+      'stopped' || 'cancelled' || 'failed' => ('已停止', AppColors.textMuted),
+      _ => ('目标进行中', AppColors.caution),
+    };
+    final meta = <String>[
+      if (checks != null && checks > 0) '已检查 $checks 次',
+      if (durationMs != null && durationMs > 0)
+        _formatDuration(Duration(milliseconds: durationMs)),
+    ];
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.partBorder),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.flag_rounded, size: 16, color: color),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  condition,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                if (meta.isNotEmpty)
+                  Text(
+                    meta.join(' · '),
+                    style: TextStyle(fontSize: 11.5, color: AppColors.textMuted),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: MdTheme.dark ? 0.2 : 0.12),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _formatDuration(Duration d) {
+    final s = d.inSeconds;
+    if (s < 60) return '$s秒';
+    final m = d.inMinutes;
+    if (m < 60) return '$m分${s % 60}秒';
+    return '${d.inHours}小时${m % 60}分';
+  }
+}
+
+/// Bottom sheet listing all changed files in the session with per-file Keep /
+/// Undo and tap-to-view Diff via [FileViewer].
+class _ChangesSheet extends StatelessWidget {
+  const _ChangesSheet({
+    required this.link,
+    required this.session,
+    required this.project,
+    required this.changes,
+  });
+
+  final PhoneLink link;
+  final String session;
+  final ProjectInfo? project;
+  final List<Map<String, Object?>> changes;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.72,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 0, 12, 10),
+              child: Row(
+                children: [
+                  Text(
+                    '文件变更 (${changes.length})',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const Spacer(),
+                  TextButton(
+                    onPressed: () async {
+                      Navigator.of(context).pop();
+                      try {
+                        await link.undo(session);
+                      } on Object catch (e) {
+                        if (context.mounted) showBToast(context, '$e', isError: true);
+                      }
+                    },
+                    child: Text(
+                      '全部撤回',
+                      style: TextStyle(color: AppColors.textMuted),
+                    ),
+                  ),
+                  BButton(
+                    label: '全部保留',
+                    primary: true,
+                    onPressed: () async {
+                      Navigator.of(context).pop();
+                      try {
+                        await link.keep(session);
+                      } on Object catch (e) {
+                        if (context.mounted) showBToast(context, '$e', isError: true);
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+            Flexible(
+              child: ListView.separated(
+                shrinkWrap: true,
+                padding: const EdgeInsets.fromLTRB(14, 0, 14, 18),
+                itemCount: changes.length,
+                separatorBuilder: (_, _) =>
+                    Divider(height: 0.5, indent: 44, color: AppColors.partBorder),
+                itemBuilder: (context, index) {
+                  final change = changes[index];
+                  final path = change['path'] as String? ?? '';
+                  final added = (change['added'] as num?)?.toInt() ?? 0;
+                  final removed = (change['removed'] as num?)?.toInt() ?? 0;
+                  final slash = path.lastIndexOf('/');
+                  final name = slash < 0 ? path : path.substring(slash + 1);
+                  final dir = slash < 0 ? '' : path.substring(0, slash);
+                  return InkWell(
+                    borderRadius: BorderRadius.circular(10),
+                    onTap: project == null || path.isEmpty
+                        ? null
+                        : () {
+                            Navigator.of(context).pop();
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => FileViewer(
+                                  link: link,
+                                  project: project!,
+                                  path: path,
+                                ),
+                              ),
+                            );
+                          },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 9,
+                      ),
+                      child: Row(
+                        children: [
+                          BFileIcon(name: name, size: 20),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w500,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                                if (dir.isNotEmpty)
+                                  Text(
+                                    dir,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 11.5,
+                                      color: AppColors.textMuted,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          if (added > 0)
+                            Text(
+                              '+$added',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.added,
+                                fontFeatures: const [
+                                  FontFeature.tabularFigures(),
+                                ],
+                              ),
+                            ),
+                          if (removed > 0) ...[
+                            const SizedBox(width: 5),
+                            Text(
+                              '-$removed',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.removed,
+                                fontFeatures: const [
+                                  FontFeature.tabularFigures(),
+                                ],
+                              ),
+                            ),
+                          ],
+                          if (project != null) ...[
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.chevron_right_rounded,
+                              size: 18,
+                              color: AppColors.textFaint,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A task the session runs or ran, styled to match [AgentStep]'s neutral card.
 class _TaskTile extends StatelessWidget {
   const _TaskTile({
     required this.link,
     required this.feed,
     required this.task,
+    this.stopping = false,
+    this.onStop,
   });
 
   final PhoneLink link;
   final SessionFeed feed;
   final LinkTask task;
+  final bool stopping;
+  final VoidCallback? onStop;
 
   String get session => feed.session;
 
@@ -1764,20 +2507,20 @@ class _TaskTile extends StatelessWidget {
         ? task.description
         : task.command ?? task.kind;
     final isAgent = task.kind == 'agent';
-    // As the desktop's row: the whole tile opens what the task is — a
-    // subagent's conversation, a command's terminal output — no buttons
-    // for it at the end, only the stop there.
     final opens = isAgent || task.output;
+    final showSummary =
+        task.summary != null &&
+        task.summary != title &&
+        !title.startsWith(task.summary!) &&
+        !task.summary!.startsWith(title);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+      padding: const EdgeInsets.only(top: 2, bottom: 4),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: !opens
             ? null
             : () {
                 if (isAgent) {
-                  // The agent in the history answers to the tool call that
-                  // started it, not the task's own id.
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => AgentPage(
@@ -1790,114 +2533,111 @@ class _TaskTile extends StatelessWidget {
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => OutputPage(
-                      link: link,
-                      session: session,
-                      task: task,
-                    ),
+                        link: link,
+                        session: session,
+                        task: task,
+                      ),
                     ),
                   );
                 }
               },
         child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          color: running
-              ? AppColors.accent.withValues(alpha: 0.06)
-              : AppColors.bubbleFill,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: running
-                ? AppColors.accent.withValues(alpha: 0.25)
-                : AppColors.partBorder.withValues(alpha: 0.5),
-            width: 0.5,
+          padding: const EdgeInsets.fromLTRB(12, 9, 10, 9),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppColors.partBorder),
           ),
-        ),
-        child: Row(
-          children: [
-            // 类型图标：子代理用像素小人，命令用终端符。
-            Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                color: (running ? AppColors.accent : AppColors.textMuted)
-                    .withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(7),
-              ),
-              child: Center(
-                child: running
-                    ? (isAgent
-                          ? const PixelLoader.subagent(size: 14)
-                          : const PixelLoader.agent(size: 14))
-                    : Icon(
-                        isAgent ? Codicons.hubot : Icons.terminal,
-                        size: 14,
-                        color: AppColors.textMuted,
-                      ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textPrimary,
+          child: Row(
+            children: [
+              if (running)
+                (isAgent
+                    ? const PixelLoader.subagent(size: 14)
+                    : const PixelLoader.agent(size: 14))
+              else
+                Icon(
+                  isAgent ? Codicons.hubot : Icons.terminal,
+                  size: 14,
+                  color: AppColors.textMuted,
+                ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: running
+                          ? ShimmerText(
+                              title,
+                              ellipsis: false,
+                              padding: EdgeInsets.zero,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            )
+                          : Text(
+                              title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
                     ),
-                  ),
-                  // The summary repeating the title (or its prefix, both
-                  // truncations of one text) adds a line of nothing.
-                  if (task.summary != null &&
-                      task.summary != title &&
-                      !title.startsWith(task.summary!) &&
-                      !task.summary!.startsWith(title)) ...[
-                    const SizedBox(height: 1),
-                    Text(
-                      task.summary!,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        color: AppColors.textMuted,
+                    if (showSummary)
+                      Flexible(
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 6),
+                          child: Text(
+                            '· ${task.summary!}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textFaint,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
                   ],
-                ],
-              ),
-            ),
-            if (opens)
-              Padding(
-                padding: const EdgeInsets.all(6),
-                child: Icon(
-                  Icons.chevron_right,
-                  size: 18,
-                  color: AppColors.textFaint,
                 ),
               ),
-            if (running)
-              _tileAction(
-                context,
-                tooltip: '停止',
-                icon: Icons.stop_circle_outlined,
-                color: AppColors.removed,
-                onTap: () async {
-                  try {
-                    await link.stopTask(session, task: task.id);
-                  } on Object catch (failure) {
-                    if (context.mounted) {
-                      showBToast(context, '$failure');
-                    }
-                  }
-                },
-              ),
-          ],
-        ),
+              if (running &&
+                  (!isAgent ||
+                      task.toolUseId != null ||
+                      feed.tasks.any((t) => t.id == task.id)))
+                stopping
+                    ? Padding(
+                        padding: const EdgeInsets.all(6),
+                        child: SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 1.8,
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                      )
+                    : _tileAction(
+                        context,
+                        tooltip: '停止',
+                        icon: Icons.stop_circle_outlined,
+                        color: AppColors.textMuted,
+                        onTap: onStop ?? () {},
+                      ),
+              if (opens)
+                Padding(
+                  padding: const EdgeInsets.only(left: 2),
+                  child: Icon(
+                    Icons.chevron_right_rounded,
+                    size: 18,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -2340,14 +3080,16 @@ class _StatusLine extends StatelessWidget {
         ),
       );
     }
-    final used = feed.context?['used'];
-    final window = feed.context?['window'];
-    if (used is num && window is num && window > 0) {
+    final contextInfo = feed.context;
+    final used = contextInfo?['used'];
+    final window = contextInfo?['window'];
+    if (contextInfo != null && used is num && window is num && window > 0) {
       if (children.isNotEmpty) children.add(const SizedBox(width: 8));
       children.add(
         _StatusChip(
           icon: Codicons.pieChart,
           label: '${_tokens(used)} / ${_tokens(window)}',
+          onTap: () => _showContextUsage(context, contextInfo),
         ),
       );
     }
@@ -2370,6 +3112,20 @@ class _StatusLine extends StatelessWidget {
       return '${k.toStringAsFixed(k >= 100 ? 0 : 1)}K';
     }
     return '$tokens';
+  }
+
+  void _showContextUsage(BuildContext context, Map<String, Object?> info) {
+    PhonePlatform.haptic('selection');
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: AppColors.surfaceRaised,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      builder: (_) => _ContextUsageSheet(info: info),
+    );
   }
 
   /// A provider brand icon for a model/option id, from the official app's
@@ -2521,9 +3277,15 @@ class _StatusChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
         decoration: BoxDecoration(
           color: accent
-              ? AppColors.caution.withValues(alpha: 0.10)
+              ? AppColors.caution.withValues(alpha: MdTheme.dark ? 0.14 : 0.10)
               : AppColors.bubbleFill,
-          borderRadius: BorderRadius.circular(9),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: accent
+                ? AppColors.caution.withValues(alpha: 0.3)
+                : AppColors.partBorder,
+            width: 0.75,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -2565,6 +3327,325 @@ class _StatusChip extends StatelessWidget {
   }
 }
 
+/// Bottom sheet displaying the session's context window usage breakdown
+/// (`used`, `window`, `compactAt`, and `parts`).
+class _ContextUsageSheet extends StatelessWidget {
+  const _ContextUsageSheet({required this.info});
+
+  final Map<String, Object?> info;
+
+  static const _partColors = <String, Color>{
+    'system': Color(0xFF6366F1),
+    'tools': Color(0xFF3B82F6),
+    'mcp': Color(0xFF8B5CF6),
+    'memory': Color(0xFF14B8A6),
+    'skills': Color(0xFFF59E0B),
+    'messages': Color(0xFF10B981),
+  };
+
+  static const _fallbackColors = [
+    Color(0xFF06B6D4),
+    Color(0xFFEC4899),
+    Color(0xFF84CC16),
+    Color(0xFFF97316),
+  ];
+
+  static String _partLabel(String key) => switch (key.toLowerCase()) {
+    'system' => '系统提示词',
+    'tools' => '内置工具',
+    'mcp' => 'MCP 工具',
+    'memory' => '记忆',
+    'skills' => '技能',
+    'messages' => '对话消息',
+    _ => key,
+  };
+
+  static Color _colorOf(String key, int index) =>
+      _partColors[key.toLowerCase()] ??
+      _fallbackColors[index % _fallbackColors.length];
+
+  static String _pct(num value, num total) {
+    if (total <= 0) return '0%';
+    final p = (value / total * 100).clamp(0, 100);
+    return p >= 10 ? '${p.toStringAsFixed(0)}%' : '${p.toStringAsFixed(1)}%';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final used = (info['used'] as num?) ?? 0;
+    final window = (info['window'] as num?) ?? 1;
+    final compactAt = info['compactAt'] as num?;
+    final remaining = math.max(0, window - used);
+    final ratio = (used / window).clamp(0.0, 1.0);
+    final statusColor = ratio >= 0.85
+        ? AppColors.removed
+        : ratio >= 0.65
+        ? AppColors.caution
+        : AppColors.accent;
+    final rawParts = info['parts'];
+    final parts = <(String key, num tokens)>[
+      if (rawParts is List)
+        for (final entry in rawParts)
+          if (entry is Map &&
+              entry['part'] is String &&
+              entry['tokens'] is num &&
+              (entry['tokens'] as num) > 0)
+            (entry['part'] as String, entry['tokens'] as num),
+    ];
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(18, 0, 18, 22),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Text(
+                  '上下文用量',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(
+                      alpha: MdTheme.dark ? 0.2 : 0.12,
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    _pct(used, window),
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      color: statusColor,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            BCard(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        _StatusLine._tokens(used),
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                      Text(
+                        ' / ${_StatusLine._tokens(window)} tokens',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppColors.textMuted,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '剩余 ${_StatusLine._tokens(remaining)}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final width = constraints.maxWidth;
+                      final compactLeft =
+                          compactAt != null && compactAt > 0 && compactAt < window
+                          ? (compactAt / window).clamp(0.0, 1.0) * width
+                          : null;
+                      return Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: Container(
+                              height: 10,
+                              color: AppColors.bubbleFill,
+                              child: Row(
+                                children: [
+                                  if (parts.isNotEmpty)
+                                    for (final (i, (key, tokens))
+                                        in parts.indexed)
+                                      Container(
+                                        width: (tokens / window).clamp(0.0, 1.0) *
+                                            width,
+                                        color: _colorOf(key, i),
+                                      )
+                                  else
+                                    Container(
+                                      width: ratio * width,
+                                      color: statusColor,
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          if (compactLeft != null)
+                            Positioned(
+                              left: compactLeft.clamp(0, width - 2),
+                              top: -2,
+                              bottom: -2,
+                              child: Container(
+                                width: 2,
+                                decoration: BoxDecoration(
+                                  color: AppColors.caution,
+                                  borderRadius: BorderRadius.circular(1),
+                                ),
+                              ),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
+                  if (compactAt != null && compactAt > 0) ...[
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Container(
+                          width: 7,
+                          height: 7,
+                          decoration: BoxDecoration(
+                            color: AppColors.caution,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '自动压缩阈值：${_StatusLine._tokens(compactAt)} (${_pct(compactAt, window)})',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            BCard(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 8,
+              ),
+              child: Column(
+                children: [
+                  if (parts.isNotEmpty)
+                    for (final (i, (key, tokens)) in parts.indexed) ...[
+                      _usageRow(
+                        color: _colorOf(key, i),
+                        label: _partLabel(key),
+                        tokens: tokens,
+                        window: window,
+                      ),
+                      Divider(height: 0.5, color: AppColors.partBorder),
+                    ]
+                  else ...[
+                    _usageRow(
+                      color: statusColor,
+                      label: '已占用',
+                      tokens: used,
+                      window: window,
+                    ),
+                    Divider(height: 0.5, color: AppColors.partBorder),
+                  ],
+                  _usageRow(
+                    color: AppColors.borderStrong,
+                    label: '剩余可用',
+                    tokens: remaining,
+                    window: window,
+                    muted: true,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _usageRow({
+    required Color color,
+    required String label,
+    required num tokens,
+    required num window,
+    bool muted = false,
+  }) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 7),
+    child: Row(
+      children: [
+        Container(
+          width: 9,
+          height: 9,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(3),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13.5,
+              color: muted ? AppColors.textMuted : AppColors.textPrimary,
+            ),
+          ),
+        ),
+        Text(
+          _StatusLine._tokens(tokens),
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: muted ? AppColors.textMuted : AppColors.textPrimary,
+            fontFeatures: const [FontFeature.tabularFigures()],
+          ),
+        ),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 44,
+          child: Text(
+            _pct(tokens, window),
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              fontSize: 12,
+              color: AppColors.textMuted,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
 /// The messages sent while the agent works, waiting their turn, docked
 /// above the composer: each can be taken back to edit, sent at once (the
 /// turn running stopped for it), or taken back — the desktop's
@@ -2587,57 +3668,59 @@ class _QueuePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(12, 0, 12, 4),
-      constraints: const BoxConstraints(maxHeight: 180),
-      decoration: BoxDecoration(
-        color: AppColors.bubbleFill,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.bubbleBorder()),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 2),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.schedule_rounded,
-                  size: 13,
-                  color: AppColors.textMuted,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  '排队中 ${queued.length} 条',
-                  style: TextStyle(
-                    color: AppColors.textMuted,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+      child: BCard(
+        padding: const EdgeInsets.fromLTRB(12, 8, 10, 6),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 196),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.schedule_rounded,
+                    size: 14,
+                    color: AppColors.accent,
                   ),
-                ),
-              ],
-            ),
-          ),
-          Flexible(
-            child: ListView(
-              shrinkWrap: true,
-              padding: const EdgeInsets.fromLTRB(4, 0, 4, 6),
-              children: [
-                for (final entry in queued)
-                  _QueuedRow(
-                    entry: entry,
-                    onEdit: () => onEditQueued(entry),
-                    onSendNow: () =>
-                        onQueue(entry['id']! as String, 'sendNow'),
-                    onRemove: () =>
-                        onQueue(entry['id']! as String, 'remove'),
+                  const SizedBox(width: 6),
+                  Text(
+                    '排队等待中 · ${queued.length} 条',
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-              ],
-            ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Flexible(
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  padding: EdgeInsets.zero,
+                  itemCount: queued.length,
+                  separatorBuilder: (_, _) =>
+                      Divider(height: 0.5, color: AppColors.partBorder),
+                  itemBuilder: (_, index) {
+                    final entry = queued[index];
+                    return _QueuedRow(
+                      order: index + 1,
+                      entry: entry,
+                      onEdit: () => onEditQueued(entry),
+                      onSendNow: () =>
+                          onQueue(entry['id']! as String, 'sendNow'),
+                      onRemove: () =>
+                          onQueue(entry['id']! as String, 'remove'),
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -2645,12 +3728,14 @@ class _QueuePanel extends StatelessWidget {
 
 class _QueuedRow extends StatelessWidget {
   const _QueuedRow({
+    required this.order,
     required this.entry,
     required this.onEdit,
     required this.onSendNow,
     required this.onRemove,
   });
 
+  final int order;
   final Map<String, Object?> entry;
   final VoidCallback onEdit;
   final VoidCallback onSendNow;
@@ -2664,39 +3749,75 @@ class _QueuedRow extends StatelessWidget {
         : '';
     final images = item is UserMessageItem ? item.images.length : 0;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
+          Container(
+            width: 20,
+            height: 20,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.bubbleFill,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              '$order',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textMuted,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
           Expanded(
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: onEdit,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Text(
-                  [
-                    if (text.isNotEmpty) text,
-                    if (images > 0) '$images 张图片',
-                  ].join(' · '),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 13, color: AppColors.text),
+              child: Text(
+                [
+                  if (text.isNotEmpty) text,
+                  if (images > 0) '$images 张图片',
+                ].join(' · '),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 13,
+                  height: 1.3,
+                  color: AppColors.textPrimary,
                 ),
               ),
             ),
           ),
+          const SizedBox(width: 6),
+          GestureDetector(
+            onTap: onSendNow,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.accent.withValues(
+                  alpha: MdTheme.dark ? 0.18 : 0.12,
+                ),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                '立即发',
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.accent,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 2),
           _QueueAction(
             icon: Icons.edit_outlined,
             tooltip: '编辑',
             onTap: onEdit,
           ),
           _QueueAction(
-            icon: Icons.arrow_upward,
-            tooltip: '立即发送',
-            onTap: onSendNow,
-          ),
-          _QueueAction(
-            icon: Icons.close,
+            icon: Icons.close_rounded,
             tooltip: '移除',
             onTap: onRemove,
           ),
@@ -2807,8 +3928,13 @@ class _TurnStats extends StatelessWidget {
 /// `<bot_suggest>`s are the chips over the composer,
 /// [ChatCodec.botSuggestions]).
 class _BotReply extends StatelessWidget {
-  const _BotReply({required this.item, required this.bot});
+  const _BotReply({
+    required this.link,
+    required this.item,
+    required this.bot,
+  });
 
+  final PhoneLink link;
   final AssistantTextItem item;
   final LinkBot bot;
 
@@ -2862,30 +3988,20 @@ class _BotReply extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 34,
-            height: 34,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: const Color(0xFF9270CA),
-              borderRadius: BorderRadius.circular(9),
-            ),
-            child: Text(
-              bot.name.isEmpty ? 'B' : bot.name[0],
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
+          BotAvatar(link: link, bot: bot, size: 34),
           const SizedBox(width: 8),
           Flexible(
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
               decoration: BoxDecoration(
-                color: AppColors.conversationSurface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.partBorder),
+                color: AppColors.surfaceRaised,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(6),
+                  topRight: Radius.circular(16),
+                  bottomLeft: Radius.circular(16),
+                  bottomRight: Radius.circular(16),
+                ),
+                border: Border.all(color: AppColors.partBorder, width: 0.75),
               ),
               child: child,
             ),
@@ -2915,8 +4031,8 @@ class _StickyUserBar extends StatelessWidget {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            AppColors.background,
-            AppColors.background.withValues(alpha: 0.0),
+            AppColors.conversationSurface,
+            AppColors.conversationSurface.withValues(alpha: 0.0),
           ],
         ),
       ),
@@ -2961,6 +4077,199 @@ class _StickyUserBar extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Searchable bottom sheet for picking a file from the current workspace to
+/// insert as `@path` into the chat composer.
+class _WorkspaceFilePickerSheet extends StatefulWidget {
+  const _WorkspaceFilePickerSheet({
+    required this.link,
+    required this.project,
+  });
+
+  final PhoneLink link;
+  final ProjectInfo project;
+
+  @override
+  State<_WorkspaceFilePickerSheet> createState() =>
+      _WorkspaceFilePickerSheetState();
+}
+
+class _WorkspaceFilePickerSheetState extends State<_WorkspaceFilePickerSheet> {
+  final _query = TextEditingController();
+  List<String> _paths = const [];
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void dispose() {
+    _query.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final result = await widget.link.files(widget.project.id);
+      final raw = result['paths'];
+      final paths = <String>[
+        for (final p in raw is List ? raw : const [])
+          if (p is String && p.isNotEmpty) p,
+      ];
+      if (mounted) {
+        setState(() {
+          _paths = paths;
+          _loading = false;
+        });
+      }
+    } on Object catch (failure) {
+      if (mounted) {
+        setState(() {
+          _error = '$failure';
+          _loading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final needle = _query.text.trim().toLowerCase();
+    final filtered = needle.isEmpty
+        ? _paths.take(200).toList()
+        : _paths
+              .where((p) => p.toLowerCase().contains(needle))
+              .take(200)
+              .toList();
+    return SafeArea(
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.72,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '@ ${widget.project.name}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  if (!_loading && _error == null)
+                    Text(
+                      '${_paths.length} 个文件',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textFaint,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+              child: TextField(
+                controller: _query,
+                autofocus: true,
+                style: TextStyle(fontSize: 14, color: AppColors.textPrimary),
+                decoration: BTextField.decoration(hint: '搜索文件名或路径…'),
+                onChanged: (_) => setState(() {}),
+              ),
+            ),
+            Expanded(
+              child: _loading
+                  ? Center(
+                      child: CircularProgressIndicator(color: AppColors.accent),
+                    )
+                  : _error != null
+                  ? BEmptyState(
+                      icon: Icons.cloud_off_outlined,
+                      title: '无法加载文件列表',
+                      subtitle: _error,
+                      actionLabel: '重试',
+                      onAction: _load,
+                    )
+                  : filtered.isEmpty
+                  ? const BEmptyState(
+                      icon: Codicons.search,
+                      title: '没有匹配的文件',
+                      subtitle: '换个关键词试试。',
+                    )
+                  : ListView.separated(
+                      itemCount: filtered.length,
+                      separatorBuilder: (_, _) => const BDivider(),
+                      itemBuilder: (context, index) {
+                        final path = filtered[index];
+                        final slash = path.lastIndexOf('/');
+                        final name = slash < 0 ? path : path.substring(slash + 1);
+                        final dir = slash < 0 ? '' : path.substring(0, slash);
+                        return InkWell(
+                          onTap: () => Navigator.of(context).pop(path),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
+                            ),
+                            child: Row(
+                              children: [
+                                BFileIcon(name: name, size: 20),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        name,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                          color: AppColors.textPrimary,
+                                        ),
+                                      ),
+                                      if (dir.isNotEmpty)
+                                        Text(
+                                          dir,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 11.5,
+                                            color: AppColors.textMuted,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
         ),
       ),
     );

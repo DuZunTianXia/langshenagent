@@ -172,6 +172,22 @@ abstract final class LinkMethods {
   /// its projects': `{"items": [LinkExtension]}`.
   static const extensions = 'extensions';
 
+  /// `{"kind", "name", "enabled"}`: toggles a skill or MCP server on or off.
+  static const toggleExtension = 'toggleExtension';
+
+  /// `{"kind", "scope", "name", "project"?}`: reads a customization's file text.
+  static const readExtension = 'readExtension';
+
+  /// `{"kind", "scope", "name", "project"?, "text"?}`: creates or updates a customization.
+  static const saveExtension = 'saveExtension';
+
+  /// `{"kind", "scope", "name", "project"?}`: deletes a customization.
+  static const deleteExtension = 'deleteExtension';
+
+  /// `{"days"?}`: aggregated usage statistics from the desktop ledger
+  /// (`{"days", "total", "daily", "models", "projects"}`).
+  static const usage = 'usage';
+
   /// `{"project"}`: the new agent the project's next conversation starts,
   /// as the desktop's New Chat has it ready: `{"session"}`. Not listed
   /// until a message is sent to it; [open]ed, it tells the models, modes

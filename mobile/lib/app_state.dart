@@ -6,6 +6,7 @@ import 'package:bao_link/bao_link_io.dart';
 import 'package:bonsoir/bonsoir.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart' show ThemeMode;
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -26,11 +27,60 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
   String _phoneName = '';
   String meGender = '';
   String meSignature = '';
+  Uint8List? meAvatarBytes;
+  String? meAvatarType;
+  String? selectedComputerId;
+  bool discovering = false;
+  ThemeMode themeMode = ThemeMode.system;
+
+  /// When the agent is working, whether sending a new message interrupts and
+  /// sends immediately (`true`) or queues it (`false`, default).
+  bool sendNowWhileLive = false;
+
+  /// Persisted unsent composer drafts, keyed by session/bot id.
+  final Map<String, String> drafts = {};
+
+  /// Session targeted by a tapped local notification, consumed by [HomePage].
+  ({String computerId, String sessionId})? _pendingNotification;
+
+  ({String computerId, String sessionId})? takePendingNotification() {
+    final target = _pendingNotification;
+    _pendingNotification = null;
+    return target;
+  }
+
+  String draftOf(String key) => drafts[key] ?? '';
+
+  void setDraft(String key, String text) {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) {
+      if (drafts.remove(key) == null) return;
+    } else {
+      if (drafts[key] == text) return;
+      drafts[key] = text;
+    }
+    notifyListeners();
+    unawaited(_saveDrafts());
+  }
+
+  Future<void> _saveDrafts() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('sessionDrafts', jsonEncode(drafts));
+    } on Object {
+      // Best-effort draft persistence.
+    }
+  }
   String get phoneName => _phoneName;
   set phoneName(String value) {
     _phoneName = value;
     notifyListeners();
   }
+
+  Map<String, Object?>? get mePicture =>
+      meAvatarBytes == null || meAvatarType == null
+      ? null
+      : {'data': base64Encode(meAvatarBytes!), 'type': meAvatarType!};
 
   String phoneSystem = '';
 
@@ -81,6 +131,8 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
       await prefs.setBool('batteryExemptAsked', true);
       await PhonePlatform.ensureBatteryExempt();
     }());
+    PhonePlatform.setNetworkChangedHandler(networkChanged);
+    PhonePlatform.setNotificationTapHandler(_onNotificationTap);
     for (final computer in store!.computers.values) {
       unawaited(_linkFor(computer).connect());
     }
@@ -94,6 +146,41 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
       custom = prefs.getString('phoneName');
       meGender = prefs.getString('meGender') ?? '';
       meSignature = prefs.getString('meSignature') ?? '';
+      selectedComputerId = prefs.getString('selectedComputerId');
+      themeMode = switch (prefs.getString('themeMode')) {
+        'light' => ThemeMode.light,
+        'dark' => ThemeMode.dark,
+        _ => ThemeMode.system,
+      };
+      sendNowWhileLive = prefs.getString('sendWhileLive') == 'interrupt';
+      final savedDrafts = prefs.getString('sessionDrafts');
+      if (savedDrafts != null && savedDrafts.isNotEmpty) {
+        try {
+          final map = jsonDecode(savedDrafts);
+          if (map is Map) {
+            for (final entry in map.entries) {
+              if (entry.key is String &&
+                  entry.value is String &&
+                  (entry.value as String).trim().isNotEmpty) {
+                drafts[entry.key as String] = entry.value as String;
+              }
+            }
+          }
+        } on Object {
+          // Ignore malformed saved drafts.
+        }
+      }
+      final avatarData = prefs.getString('meAvatarData');
+      final avatarType = prefs.getString('meAvatarType');
+      if (avatarData != null && avatarData.isNotEmpty && avatarType != null) {
+        try {
+          meAvatarBytes = base64Decode(avatarData);
+          meAvatarType = avatarType;
+        } on Object {
+          meAvatarBytes = null;
+          meAvatarType = null;
+        }
+      }
       UserMessageStyle.current.value =
           prefs.getString('userMessageStyle') == 'bubble'
           ? UserMessageStyle.bubble
@@ -158,6 +245,8 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
         name: phoneName,
         gender: meGender,
         signature: meSignature,
+        picture: mePicture,
+        updatePicture: true,
       );
       unawaited(_readMarks(link));
       link.onAttention = _attention;
@@ -214,24 +303,75 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
     return link;
   }
 
+  /// Persists the currently selected computer so restarts return to it.
+  Future<void> selectComputer(String id) async {
+    if (selectedComputerId == id) return;
+    selectedComputerId = id;
+    notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('selectedComputerId', id);
+    } on Object {
+      // Best-effort persistence.
+    }
+  }
+
   /// Who the user is to the bots: kept in the preferences, told to every
   /// computer ([PhoneLink.updateMe]).
   Future<void> setMeProfile({
     required String name,
     required String gender,
     required String signature,
+    Uint8List? avatarBytes,
+    String? avatarType,
+    bool updateAvatar = false,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('phoneName', name);
     await prefs.setString('meGender', gender);
     await prefs.setString('meSignature', signature);
+    if (updateAvatar) {
+      meAvatarBytes = avatarBytes;
+      meAvatarType = avatarType;
+      if (avatarBytes != null && avatarType != null) {
+        await prefs.setString('meAvatarData', base64Encode(avatarBytes));
+        await prefs.setString('meAvatarType', avatarType);
+      } else {
+        await prefs.remove('meAvatarData');
+        await prefs.remove('meAvatarType');
+      }
+    }
     phoneName = name;
     meGender = gender;
     meSignature = signature;
     for (final link in links.values) {
-      link.updateMe(name: name, gender: gender, signature: signature);
+      link.updateMe(
+        name: name,
+        gender: gender,
+        signature: signature,
+        picture: mePicture,
+        updatePicture: updateAvatar,
+      );
     }
     notifyListeners();
+  }
+
+  /// Settings → 外观主题.
+  Future<void> setThemeMode(ThemeMode mode) async {
+    if (themeMode == mode) return;
+    themeMode = mode;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('themeMode', mode.name);
+  }
+
+  /// Settings → 工作中发送消息处理 (`true` = 中断并发送, `false` = 排队).
+  Future<void> setSendNowWhileLive(bool interrupt) async {
+    if (sendNowWhileLive == interrupt) return;
+    sendNowWhileLive = interrupt;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('sendWhileLive', interrupt ? 'interrupt' : 'queue');
   }
 
   /// Settings → 用户消息样式.
@@ -271,6 +411,23 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
 
   void _linkChanged() => notifyListeners();
 
+  void _onNotificationTap(String payload) {
+    try {
+      final decoded = jsonDecode(payload);
+      if (decoded is Map &&
+          decoded['computer'] is String &&
+          decoded['session'] is String) {
+        final computerId = decoded['computer'] as String;
+        final sessionId = decoded['session'] as String;
+        _pendingNotification = (computerId: computerId, sessionId: sessionId);
+        unawaited(selectComputer(computerId));
+        notifyListeners();
+      }
+    } on Object {
+      // Ignore invalid payloads.
+    }
+  }
+
   /// A followed session came to need the user: a notification when the
   /// app is away, and the keep-alive service reminded.
   void _attention(String session, SessionFeed feed) {
@@ -283,25 +440,53 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
       body: feed.interaction != null
           ? '需要你回答'
           : '已完成',
+      payload: link == null
+          ? null
+          : jsonEncode({'computer': link.computer.id, 'session': session}),
     );
   }
 
   // --- Discovery -------------------------------------------------------------------
 
   Future<void> _discover() async {
+    await _discoveryEvents?.cancel();
+    _discoveryEvents = null;
+    try {
+      await _discovery?.stop();
+    } on Object {
+      // Ignore stop errors when restarting discovery.
+    }
     final discovery = _discovery = BonsoirDiscovery(
       type: LinkDiscovery.type,
     );
+    discovering = true;
+    notifyListeners();
     try {
       await discovery.initialize();
       _discoveryEvents = discovery.eventStream?.listen(_discovered);
       await discovery.start();
     } on Object {
+      discovering = false;
+      notifyListeners();
       // Discovery is a convenience: pairing by code works without it.
     }
   }
 
+  /// Restarts LAN mDNS discovery (e.g. when opening the Pair page).
+  Future<void> refreshDiscovery() => _discover();
+
   void _discovered(BonsoirDiscoveryEvent event) {
+    final discovery = _discovery;
+    if (event is BonsoirDiscoveryServiceFoundEvent) {
+      // Bonsoir v7 requires explicitly resolving found services to obtain
+      // TXT attributes (`v`, `k`, `p`), port, and hostAddresses.
+      if (discovery != null) {
+        unawaited(event.service.resolve(discovery.serviceResolver));
+      }
+      if (event.service.attributes.isEmpty || event.service.port <= 0) {
+        return;
+      }
+    }
     final service = switch (event) {
       BonsoirDiscoveryServiceFoundEvent(:final service) => service,
       BonsoirDiscoveryServiceResolvedEvent(:final service) => service,
@@ -310,6 +495,21 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
       _ => null,
     };
     if (service == null) return;
+    if (event is BonsoirDiscoveryServiceLostEvent) {
+      final advert = LinkAdvert.parse(
+        name: service.name,
+        port: service.port,
+        attributes: service.attributes,
+        addresses: service.hostAddresses,
+      );
+      if (advert != null) {
+        nearby.remove(advert.id);
+      } else {
+        nearby.removeWhere((_, a) => a.name == service.name);
+      }
+      notifyListeners();
+      return;
+    }
     final advert = LinkAdvert.parse(
       name: service.name,
       port: service.port,
@@ -317,13 +517,10 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
       addresses: service.hostAddresses,
     );
     if (advert == null) return;
-    if (event is BonsoirDiscoveryServiceLostEvent) {
-      nearby.remove(advert.id);
-    } else {
-      nearby[advert.id] = advert;
-      // A paired computer seen again may be reachable now.
-      links[advert.id]?.retryNow();
-    }
+    nearby[advert.id] = advert;
+    // A paired computer seen again may have a new LAN address and be
+    // reachable right away.
+    links[advert.id]?.updateNearbyAddrs(advert.addrs);
     notifyListeners();
   }
 
@@ -338,13 +535,21 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
         unawaited(_takeShared());
         for (final link in links.values) {
           link.away(false);
-          link.retryNow();
+          link.onNetworkChanged();
         }
       case AppLifecycleState.paused:
       case AppLifecycleState.inactive:
       case AppLifecycleState.hidden:
       case AppLifecycleState.detached:
         away = true;
+        if (links.isNotEmpty) {
+          unawaited(
+            PhonePlatform.keepAlive(
+              title: '宝码',
+              text: '保持与已配对电脑的连接',
+            ),
+          );
+        }
         for (final link in links.values) {
           link.away(true);
         }
@@ -368,11 +573,11 @@ class AppState extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   /// The network changed (Wi-Fi and cellular): the node looks again, and
-  /// the computers are tried at once.
+  /// the computers are probed or retried at once.
   void networkChanged() {
     _node?.networkChanged();
     for (final link in links.values) {
-      link.retryNow();
+      link.onNetworkChanged();
     }
   }
 

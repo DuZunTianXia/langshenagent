@@ -9,10 +9,13 @@ import '../link/link_store.dart';
 import '../link/phone_link.dart';
 import '../main.dart';
 import 'bot_edit_page.dart';
+import 'link_status.dart';
 import 'md/md_theme.dart';
 import 'profile_edit_page.dart';
 import 'providers_page.dart';
+import 'skills_page.dart';
 import 'update_dialog.dart';
+import 'usage_stats_page.dart';
 import 'widgets.dart';
 
 /// The phone's own settings: who its user is (told to the bots), the
@@ -61,6 +64,47 @@ class _SettingsPageState extends State<SettingsPage> {
       _load();
       if (mounted) showBToast(context, '已保存');
     }
+  }
+
+  Future<void> _pickThemeMode() async {
+    final state = AppScope.of(context);
+    final picked = await showBActions<ThemeMode>(
+      context,
+      title: '外观主题',
+      selected: state.themeMode,
+      actions: const [
+        (Icons.brightness_auto_rounded, '跟随系统', '自动匹配系统深浅色', ThemeMode.system),
+        (Icons.light_mode_outlined, '浅色模式', '始终使用浅色界面', ThemeMode.light),
+        (Icons.dark_mode_outlined, '深色模式', '始终使用深色界面', ThemeMode.dark),
+      ],
+    );
+    if (picked == null || !mounted) return;
+    await state.setThemeMode(picked);
+  }
+
+  Future<void> _pickSendWhileLive() async {
+    final state = AppScope.of(context);
+    final picked = await showBActions<bool>(
+      context,
+      title: '工作中发送消息',
+      selected: state.sendNowWhileLive,
+      actions: const [
+        (
+          Icons.schedule_rounded,
+          '排队等待',
+          '等当前回复结束后自动按顺序发送',
+          false,
+        ),
+        (
+          Icons.bolt_rounded,
+          '中断并发送',
+          '立即中断当前工作并马上发送新消息',
+          true,
+        ),
+      ],
+    );
+    if (picked == null || !mounted) return;
+    await state.setSendNowWhileLive(picked);
   }
 
   Future<void> _pickMessageStyle() async {
@@ -144,7 +188,10 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                   child: Row(
                     children: [
-                      SettingsAvatar(name: _meName),
+                      SettingsAvatar(
+                        name: _meName,
+                        avatarBytes: state.meAvatarBytes,
+                      ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
@@ -214,32 +261,20 @@ class _SettingsPageState extends State<SettingsPage> {
                   builder: (context, _) {
                     final bots =
                         widget.link!.state?.bots ?? const <LinkBot>[];
-                    if (bots.isEmpty) {
-                      return BCell(
-                        title: '电脑不在线或没有 Bot',
-                        titleColor: AppColors.textMuted,
-                        showChevron: false,
-                      );
-                    }
-                    return Column(
-                      children: [
-                        for (var i = 0; i < bots.length; i++) ...[
-                          BCell(
-                            icon: Icons.smart_toy_outlined,
-                            title: bots[i].name,
-                            subtitle: bots[i].model ?? '默认模型',
-                            onTap: () => Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => BotEditPage(
-                                  link: widget.link!,
-                                  bot: bots[i],
-                                ),
-                              ),
-                            ),
-                          ),
-                          if (i < bots.length - 1) const BDivider(),
-                        ],
-                      ],
+                    final subtitle = widget.link!.state == null
+                        ? '连接电脑后管理所有 Bot'
+                        : bots.isEmpty
+                        ? '还没有 Bot，点此添加'
+                        : '管理全部 ${bots.length} 个 Bot 的人设、能力与记忆';
+                    return BCell(
+                      icon: Icons.smart_toy_outlined,
+                      title: '管理 Bot',
+                      subtitle: subtitle,
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => _BotsConfigPage(link: widget.link!),
+                        ),
+                      ),
                     );
                   },
                 ),
@@ -247,7 +282,23 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           if (widget.link != null)
             BSection(
-              title: '模型',
+              title: '技能',
+              children: [
+                BCell(
+                  icon: Icons.extension_outlined,
+                  title: '技能与 MCP',
+                  subtitle: '配置 Skill、MCP 服务、子代理与插件',
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => SkillsPage(link: widget.link!),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          if (widget.link != null)
+            BSection(
+              title: '模型与用量',
               children: [
                 BCell(
                   icon: Icons.hub_outlined,
@@ -259,11 +310,42 @@ class _SettingsPageState extends State<SettingsPage> {
                     ),
                   ),
                 ),
+                const BDivider(),
+                BCell(
+                  icon: Icons.bar_chart_rounded,
+                  title: '用量统计',
+                  subtitle: '查看 Token 消耗、估算费用与模型分布',
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => UsageStatsPage(link: widget.link!),
+                    ),
+                  ),
+                ),
               ],
             ),
           BSection(
             title: '通用',
             children: [
+              BCell(
+                icon: Icons.palette_outlined,
+                title: '外观主题',
+                subtitle: switch (state.themeMode) {
+                  ThemeMode.system => '跟随系统',
+                  ThemeMode.light => '浅色模式',
+                  ThemeMode.dark => '深色模式',
+                },
+                onTap: _pickThemeMode,
+              ),
+              const BDivider(),
+              BCell(
+                icon: Icons.send_time_extension_outlined,
+                title: '工作中发送消息',
+                subtitle: state.sendNowWhileLive
+                    ? '中断并发送 · 立即打断当前任务'
+                    : '排队等待 · 按顺序依次发送',
+                onTap: _pickSendWhileLive,
+              ),
+              const BDivider(),
               ValueListenableBuilder(
                 valueListenable: UserMessageStyle.current,
                 builder: (context, style, _) => BCell(
@@ -324,19 +406,49 @@ class _ComputerCell extends StatelessWidget {
       final s when s.contains('Linux') => Icons.developer_board_outlined,
       _ => Icons.laptop_mac_outlined,
     };
-    BCell cell(bool online) => BCell(
-      icon: icon,
-      iconColor: online ? AppColors.accent : AppColors.textMuted,
-      title: computer.name.isEmpty ? '电脑' : computer.name,
-      subtitle: '${computer.system} · ${online ? '在线' : '离线'}',
-      trailing: BButton(label: '取消配对', onPressed: onUnpair),
-      showChevron: false,
-    );
     final link = this.link;
-    if (link == null) return cell(false);
+    BCell cell(PhonePhase phase, String? error) {
+      final online = phase == PhonePhase.online;
+      final connecting =
+          phase == PhonePhase.connecting || phase == PhonePhase.pairing;
+      final status = linkPhaseLabel(phase, error: error);
+      final pathLabel = online && link != null
+          ? describeLinkPath(link.path)
+          : null;
+      return BCell(
+        icon: icon,
+        iconColor: online
+            ? AppColors.accent
+            : connecting
+            ? AppColors.caution
+            : AppColors.textMuted,
+        title: computer.name.isEmpty ? '电脑' : computer.name,
+        subtitle: [
+          if (computer.system.isNotEmpty) computer.system,
+          status,
+          ?pathLabel,
+        ].join(' · '),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (!online && !connecting && link != null && !link.needsRePair) ...[
+              BButton(
+                label: '重连',
+                primary: true,
+                onPressed: () => link.retryNow(force: true),
+              ),
+              const SizedBox(width: 8),
+            ],
+            BButton(label: '取消配对', onPressed: onUnpair),
+          ],
+        ),
+        showChevron: false,
+      );
+    }
+    if (link == null) return cell(PhonePhase.offline, null);
     return ListenableBuilder(
       listenable: link,
-      builder: (context, _) => cell(link.phase == PhonePhase.online),
+      builder: (context, _) => cell(link.phase, link.error),
     );
   }
 }
@@ -379,4 +491,89 @@ class _Footer extends StatelessWidget {
       ],
     ],
   );
+}
+
+/// Dedicated Bot management page opened from Settings → Bot 配置.
+class _BotsConfigPage extends StatelessWidget {
+  const _BotsConfigPage({required this.link});
+
+  final PhoneLink link;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Bot 配置'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add_circle_outline),
+            tooltip: '添加 Bot',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => BotEditPage(link: link)),
+            ),
+          ),
+        ],
+      ),
+      body: ListenableBuilder(
+        listenable: link,
+        builder: (context, _) {
+          final state = link.state;
+          if (state == null) {
+            return LinkUnavailableBody(
+              link: link,
+              offlineTitle: '无法加载 Bot',
+              offlineSubtitle: '连接电脑后即可配置所有 Bot。',
+              onRetry: () => link.retryNow(force: true),
+            );
+          }
+          final bots = state.bots;
+          if (bots.isEmpty) {
+            return BEmptyState(
+              icon: Icons.smart_toy_outlined,
+              title: '还没有 Bot',
+              subtitle: '创建一个 Bot，设定它的身份、风格和能力。',
+              actionLabel: '添加 Bot',
+              onAction: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => BotEditPage(link: link)),
+              ),
+            );
+          }
+          return ListView(
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 24),
+            children: [
+              BCard(
+                padding: EdgeInsets.zero,
+                child: Column(
+                  children: [
+                    for (var i = 0; i < bots.length; i++) ...[
+                      BInboxRow(
+                        leading: BotAvatar(link: link, bot: bots[i], size: 40),
+                        title: bots[i].name,
+                        subtitle: Text(
+                          [
+                            if (bots[i].model != null) bots[i].model!,
+                            if (bots[i].signature.isNotEmpty) bots[i].signature,
+                            if (bots[i].model == null &&
+                                bots[i].signature.isEmpty)
+                              '默认模型',
+                          ].join(' · '),
+                        ),
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                BotEditPage(link: link, bot: bots[i]),
+                          ),
+                        ),
+                      ),
+                      if (i < bots.length - 1) const BDivider(),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
 }

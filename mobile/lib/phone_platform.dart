@@ -11,6 +11,20 @@ abstract final class PhonePlatform {
   static const _haptics = MethodChannel('langshenagent/haptics');
   static const _update = MethodChannel('langshenagent/update');
 
+  static VoidCallback? _onNetworkChanged;
+
+  /// Registers a callback fired by the native side when the device's
+  /// active network changes (e.g. Wi-Fi ↔ cellular, or reconnected).
+  static void setNetworkChangedHandler(VoidCallback? handler) {
+    _onNetworkChanged = handler;
+    if (!native) return;
+    _app.setMethodCallHandler((call) async {
+      if (call.method == 'networkChanged') {
+        _onNetworkChanged?.call();
+      }
+    });
+  }
+
   /// Whether there is a native side to ask (not the web, not tests).
   static bool get native => !kIsWeb && (Platform.isAndroid || Platform.isIOS);
 
@@ -65,6 +79,17 @@ abstract final class PhonePlatform {
       ];
     } on Object {
       return const [];
+    }
+  }
+
+  /// Launches the device camera to capture a photo and returns the temporary
+  /// JPEG file path, or null when cancelled or unavailable.
+  static Future<String?> takePhoto() async {
+    if (!native) return null;
+    try {
+      return await _app.invokeMethod<String>('takePhoto');
+    } on Object {
+      return null;
     }
   }
 
@@ -126,6 +151,21 @@ abstract final class PhonePlatform {
   static final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
   static bool _notificationsReady = false;
+  static void Function(String payload)? _onNotificationTap;
+
+  /// Registers a handler called when the user taps a local notification.
+  static void setNotificationTapHandler(
+    void Function(String payload)? handler,
+  ) {
+    _onNotificationTap = handler;
+  }
+
+  static void _handleNotificationResponse(NotificationResponse response) {
+    final payload = response.payload;
+    if (payload != null && payload.isNotEmpty) {
+      _onNotificationTap?.call(payload);
+    }
+  }
 
   /// Asks for POST_NOTIFICATIONS up front (Android 13+): by the time a
   /// session needs the user the app is already away.
@@ -135,6 +175,7 @@ abstract final class PhonePlatform {
       const android = AndroidInitializationSettings('@mipmap/ic_launcher');
       await _notifications.initialize(
         settings: const InitializationSettings(android: android),
+        onDidReceiveNotificationResponse: _handleNotificationResponse,
       );
       await _notifications
           .resolvePlatformSpecificImplementation<
@@ -151,6 +192,7 @@ abstract final class PhonePlatform {
   static Future<void> notify({
     required String title,
     required String body,
+    String? payload,
   }) async {
     if (!native) return;
     try {
@@ -158,6 +200,7 @@ abstract final class PhonePlatform {
         const android = AndroidInitializationSettings('@mipmap/ic_launcher');
         await _notifications.initialize(
           settings: const InitializationSettings(android: android),
+          onDidReceiveNotificationResponse: _handleNotificationResponse,
         );
         await _notifications
             .resolvePlatformSpecificImplementation<
@@ -178,9 +221,10 @@ abstract final class PhonePlatform {
         _notificationsReady = true;
       }
       await _notifications.show(
-        id: title.hashCode & 0x7fffffff,
+        id: (payload ?? title).hashCode & 0x7fffffff,
         title: title,
         body: body,
+        payload: payload,
         notificationDetails: const NotificationDetails(
           android: AndroidNotificationDetails(
             'langshenagent',

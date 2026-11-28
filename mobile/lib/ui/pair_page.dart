@@ -34,6 +34,14 @@ class _PairPageState extends State<PairPage> {
   static const double _scanInset = 12;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) AppScope.of(context).refreshDiscovery();
+    });
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
     super.dispose();
@@ -134,21 +142,139 @@ class _PairPageState extends State<PairPage> {
                 expand: true,
                 onPressed: _paste,
               ),
-              if (state.nearby.isNotEmpty) ...[
-                const SizedBox(height: 18),
-                BSection(
-                  title: '附近的电脑',
-                  children: [
-                    for (final advert in state.nearby.values)
-                      BCell(
-                        icon: Icons.wifi_find,
-                        title: advert.name,
-                        subtitle: advert.pairing ? '正在配对' : '同一网络',
-                        onTap: () => _nearby(advert),
+              const SizedBox(height: 18),
+              ListenableBuilder(
+                listenable: state,
+                builder: (context, _) {
+                  final nearby = state.nearby.values.toList()
+                    ..sort((a, b) => a.name.compareTo(b.name));
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(6, 0, 2, 8),
+                        child: Row(
+                          children: [
+                            Text(
+                              '局域网设备',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.3,
+                                color: AppColors.textMuted,
+                              ),
+                            ),
+                            if (state.discovering) ...[
+                              const SizedBox(width: 8),
+                              SizedBox(
+                                width: 11,
+                                height: 11,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 1.6,
+                                  color: AppColors.accent,
+                                ),
+                              ),
+                            ],
+                            const Spacer(),
+                            GestureDetector(
+                              onTap: () {
+                                PhonePlatform.haptic('selection');
+                                state.refreshDiscovery();
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                child: Text(
+                                  '重新扫描',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: AppColors.accent,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                  ],
-                ),
-              ],
+                      BCard(
+                        padding: EdgeInsets.zero,
+                        child: nearby.isEmpty
+                            ? Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 20,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        color: AppColors.accent.withValues(
+                                          alpha: 0.1,
+                                        ),
+                                        borderRadius: BorderRadius.circular(11),
+                                      ),
+                                      child: Icon(
+                                        Icons.wifi_tethering_rounded,
+                                        size: 20,
+                                        color: AppColors.accent,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            state.discovering
+                                                ? '正在寻找局域网内的电脑…'
+                                                : '暂未发现局域网内的电脑',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                              color: AppColors.textPrimary,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 3),
+                                          Text(
+                                            '请确保手机与电脑在同一 Wi-Fi，且电脑端已打开 LangshenAgent。',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: AppColors.textMuted,
+                                              height: 1.35,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : Column(
+                                children: [
+                                  for (var i = 0; i < nearby.length; i++) ...[
+                                    BCell(
+                                      icon: Icons.computer_rounded,
+                                      title: nearby[i].name,
+                                      subtitle: nearby[i].pairing
+                                          ? '正在等待配对 · 同一局域网'
+                                          : '同一局域网 · 点击配对',
+                                      onTap: () => _nearby(nearby[i]),
+                                    ),
+                                    if (i < nearby.length - 1) const BDivider(),
+                                  ],
+                                ],
+                              ),
+                      ),
+                    ],
+                  );
+                },
+              ),
               if (_error != null) ...[
                 const SizedBox(height: 14),
                 BCard(
@@ -280,6 +406,7 @@ class _PairPageState extends State<PairPage> {
           if (link.phase == PhonePhase.online) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) {
+                AppScope.of(context).selectComputer(link.computer.id);
                 // Land on a fresh HomePage whatever route stack brought
                 // us here — plain pop() could empty the stack.
                 Navigator.of(context).pushAndRemoveUntil(

@@ -1,11 +1,15 @@
 package dev.langshenagent.mobile
 
+import android.app.Activity
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageInstaller
+import android.net.ConnectivityManager
+import android.net.LinkProperties
+import android.net.Network
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -13,6 +17,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.VibrationAttributes
 import android.os.VibrationEffect
+import android.provider.MediaStore
 import android.provider.Settings
 import android.view.HapticFeedbackConstants
 import android.view.View
@@ -33,6 +38,18 @@ class MainActivity : FlutterActivity() {
     private val sharedItems = ArrayList<Map<String, Any>>()
     private val executor = Executors.newSingleThreadExecutor()
     private val handler = Handler(Looper.getMainLooper())
+    private var appChannel: MethodChannel? = null
+    private var networkCallback: ConnectivityManager.NetworkCallback? = null
+    private var networkInitialized = false
+    private val notifyNetworkChanged = Runnable {
+        appChannel?.invokeMethod("networkChanged", null)
+    }
+    private var pendingPhotoResult: MethodChannel.Result? = null
+    private var pendingPhotoFile: File? = null
+
+    companion object {
+        private const val REQ_TAKE_PHOTO = 4091
+    }
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,7 +66,9 @@ class MainActivity : FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
         val messenger = flutterEngine.dartExecutor.binaryMessenger
 
-        MethodChannel(messenger, "langshenagent/app").setMethodCallHandler { call, result ->
+        val channel = MethodChannel(messenger, "langshenagent/app")
+        appChannel = channel
+        channel.setMethodCallHandler { call, result ->
             when (call.method) {
                 "keepAlive" -> {
                     val title = call.argument<String>("title") ?: "LangshenAgent"
@@ -83,6 +102,9 @@ class MainActivity : FlutterActivity() {
                 "take" -> {
                     result.success(ArrayList(sharedItems))
                     sharedItems.clear()
+                }
+                "takePhoto" -> {
+                    launchCamera(result)
                 }
                 else -> result.notImplemented()
             }
@@ -138,11 +160,105 @@ class MainActivity : FlutterActivity() {
             }
         }
 
+        registerNetworkCallback()
     }
 
     override fun onDestroy() {
+        unregisterNetworkCallback()
+        handler.removeCallbacks(notifyNetworkChanged)
         executor.shutdown()
         super.onDestroy()
+    }
+
+    private fun registerNetworkCallback() {
+        unregisterNetworkCallback()
+        val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return
+        networkInitialized = false
+        val callback = object : ConnectivityManager.NetworkCallback() {
+            private fun scheduleNotify() {
+                // Skip the initial callback fired immediately upon registration.
+                if (!networkInitialized) {
+                    networkInitialized = true
+                    return
+                }
+                handler.removeCallbacks(notifyNetworkChanged)
+                handler.postDelayed(notifyNetworkChanged, 400L)
+            }
+
+            override fun onAvailable(network: Network) {
+                scheduleNotify()
+            }
+
+            override fun onLinkPropertiesChanged(network: Network, linkProperties: LinkProperties) {
+                scheduleNotify()
+            }
+        }
+        try {
+            cm.registerDefaultNetworkCallback(callback)
+            networkCallback = callback
+        } catch (_: Exception) {
+            // Best-effort: reconnect still works via lifecycle resume & retry backoff.
+        }
+    }
+
+    private fun unregisterNetworkCallback() {
+        val callback = networkCallback ?: return
+        networkCallback = null
+        val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return
+        try {
+            cm.unregisterNetworkCallback(callback)
+        } catch (_: Exception) {
+            // Ignore if already unregistered.
+        }
+    }
+
+    private fun launchCamera(result: MethodChannel.Result) {
+        pendingPhotoResult?.success(null)
+        pendingPhotoResult = null
+        pendingPhotoFile = null
+        try {
+            val dir = File(cacheDir, "camera").apply { mkdirs() }
+            val file = File(dir, "photo-${System.currentTimeMillis()}.jpg")
+            val uri = androidx.core.content.FileProvider.getUriForFile(
+                this,
+                "$packageName.fileProvider",
+                file,
+            )
+            val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
+                putExtra(MediaStore.EXTRA_OUTPUT, uri)
+                addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            if (intent.resolveActivity(packageManager) == null) {
+                result.success(null)
+                return
+            }
+            pendingPhotoResult = result
+            pendingPhotoFile = file
+            @Suppress("DEPRECATION")
+            startActivityForResult(intent, REQ_TAKE_PHOTO)
+        } catch (e: Exception) {
+            result.error("camera", e.message, null)
+        }
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (requestCode == REQ_TAKE_PHOTO) {
+            val res = pendingPhotoResult
+            val file = pendingPhotoFile
+            pendingPhotoResult = null
+            pendingPhotoFile = null
+            if (resultCode == Activity.RESULT_OK && file != null && file.exists() && file.length() > 0) {
+                res?.success(file.absolutePath)
+            } else {
+                file?.delete()
+                res?.success(null)
+            }
+            return
+        }
+        @Suppress("DEPRECATION")
+        super.onActivityResult(requestCode, resultCode, data)
     }
 
     private fun startKeepAlive(title: String, text: String, channel: String): Boolean =

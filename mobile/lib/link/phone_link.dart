@@ -120,6 +120,14 @@ class SessionFeed extends ChangeNotifier {
     this.items = [...items, ...this.items];
     notifyListeners();
   }
+
+  /// Marks the feed as no longer live when the link drops, without
+  /// disposing it so open screens stay attached across reconnects.
+  void markDisconnected() {
+    if (!live) return;
+    live = false;
+    notifyListeners();
+  }
 }
 
 /// A group chat followed, its messages as they came.
@@ -137,6 +145,13 @@ class GroupFeed extends ChangeNotifier {
 
   void prepend(List<LinkGroupMessage> incoming) {
     messages.insertAll(0, incoming);
+    notifyListeners();
+  }
+
+  void replace(List<LinkGroupMessage> incoming) {
+    messages
+      ..clear()
+      ..addAll(incoming);
     notifyListeners();
   }
 }
@@ -228,20 +243,43 @@ class PhoneLink extends ChangeNotifier {
   String? meName;
   String? meGender;
   String? meSignature;
+  Map<String, Object?>? mePicture;
 
   LinkPeer? _peer;
   StreamSubscription<LinkEvent>? _events;
   StreamSubscription<LinkPath>? _paths;
   Timer? _retry;
+  Timer? _keepAlive;
+  DateTime _lastInbound = DateTime.fromMillisecondsSinceEpoch(0);
+  bool _isAway = false;
   int _attempts = 0;
+  int _connectEpoch = 0;
+  DateTime? _connectingSince;
+  bool _probing = false;
+  List<String> _nearbyAddrs = const [];
   bool _closed = false;
   bool _wantOnline = false;
 
+  /// Records fresh LAN addresses advertised by mDNS for this computer so
+  /// reconnects can dial its current address immediately.
+  void updateNearbyAddrs(List<String> addrs) {
+    final next = List<String>.unmodifiable(addrs);
+    final changed = !listEquals(_nearbyAddrs, next);
+    _nearbyAddrs = next;
+    if (phase == PhonePhase.offline ||
+        (changed && phase == PhonePhase.connecting)) {
+      retryNow(force: changed);
+    }
+  }
+
   /// Asks the computer for its state again when it is connected.
-  Future<void> refresh() async {
+  Future<void> refresh({Duration timeout = const Duration(seconds: 30)}) async {
     final peer = _peer;
     if (peer == null || peer.isClosed) return;
-    state = LinkState.fromJson(_map(await peer.call(LinkMethods.state)));
+    final raw = await peer.call(LinkMethods.state, const {}, timeout);
+    if (!identical(_peer, peer) || _closed) return;
+    _lastInbound = DateTime.now();
+    state = LinkState.fromJson(_map(raw));
     _applyReadMarks();
     notifyListeners();
   }
@@ -260,11 +298,15 @@ class PhoneLink extends ChangeNotifier {
         phase == PhonePhase.pairing) {
       return;
     }
+    final epoch = ++_connectEpoch;
     _wantOnline = true;
     _retry?.cancel();
     phase = PhonePhase.connecting;
+    _connectingSince = DateTime.now();
     error = null;
     notifyListeners();
+    LinkConnection? connection;
+    LinkPeer? peer;
     try {
       final address = switch ((offer, advert)) {
         (final PairingOffer offer, _) => offer.address,
@@ -272,34 +314,58 @@ class PhoneLink extends ChangeNotifier {
           advert.id,
           // Found nearby: its advertised addrs first, then those it told
           // last time (a domain's still good after its IPv6 moved).
-          addrs: [...advert.addrs, ...computer.addrs],
+          addrs: {...advert.addrs, ...computer.addrs}.toList(),
           relays: store.nodeRelays,
         ),
         _ => LinkAddress(
           computer.id,
-          relays: computer.relays,
-          addrs: computer.addrs,
+          relays: computer.relays.isNotEmpty
+              ? computer.relays
+              : store.nodeRelays,
+          addrs: {..._nearbyAddrs, ...computer.addrs}.toList(),
         ),
       };
       final node = await _node();
-      final connection = await node.connect(address);
+      if (_closed || epoch != _connectEpoch) return;
+      connection = await node.connect(address);
+      if (_closed || epoch != _connectEpoch) {
+        connection.close();
+        return;
+      }
       _watchPath(connection);
-      final peer = await LinkPeer.connect(connection, mirror: mirror);
+      peer = await LinkPeer.connect(connection, mirror: mirror);
+      if (_closed || epoch != _connectEpoch) {
+        unawaited(peer.close());
+        return;
+      }
       _peer = peer;
       _listen(peer);
       final hello = _map(
         await peer.call(
           LinkMethods.hello,
           _helloParams(offer: offer, advert: advert),
-          const Duration(seconds: 30),
+          const Duration(seconds: 15),
         ),
       );
+      if (_closed || epoch != _connectEpoch || !identical(_peer, peer)) {
+        unawaited(peer.close());
+        return;
+      }
       if (hello['pairing'] == true) {
+        _connectingSince = null;
         _beginPairing(offer ?? _offerOf(advert), hello);
         return;
       }
       _online(hello);
     } on Object catch (failure) {
+      if (_closed || epoch != _connectEpoch) {
+        if (peer != null) {
+          unawaited(peer.close());
+        } else {
+          connection?.close();
+        }
+        return;
+      }
       _failed(failure);
     }
   }
@@ -385,6 +451,7 @@ class PhoneLink extends ChangeNotifier {
 
   void _online(Map<String, Object?> hello) {
     _attempts = 0;
+    _connectingSince = null;
     _retry?.cancel();
     final info = DeviceInfo.fromJson(_map(hello['device']));
     device = info;
@@ -404,24 +471,80 @@ class PhoneLink extends ChangeNotifier {
     unawaited(store.pair(paired));
     phase = PhonePhase.online;
     error = null;
+    _lastInbound = DateTime.now();
+    _startKeepAlive();
     notifyListeners();
     _sendMe();
-    // What was followed before the drop is followed again.
-    for (final id in wanted) {
-      unawaited(open(id));
+    // What was followed before the drop is followed again, reusing the
+    // existing feed instances so open pages keep receiving live events.
+    for (final id in [...wanted]) {
+      unawaited(open(id).catchError((Object _) => feeds[id] ?? SessionFeed(id)));
     }
-    for (final id in wantedGroups) {
-      unawaited(openGroup(id));
+    for (final id in [...wantedGroups]) {
+      unawaited(
+        openGroup(id).catchError((Object _) => groups[id] ?? GroupFeed(id)),
+      );
     }
-    unawaited(refresh());
+    unawaited(_initialRefresh(_peer));
+  }
+
+  /// Sends a lightweight frame every 25s to keep NAT/QUIC mappings warm in
+  /// the background, and actively probes if silent for >50s.
+  void _startKeepAlive() {
+    _keepAlive?.cancel();
+    _keepAlive = Timer.periodic(const Duration(seconds: 25), (_) {
+      if (_closed || phase != PhonePhase.online) {
+        _keepAlive?.cancel();
+        _keepAlive = null;
+        return;
+      }
+      final peer = _peer;
+      if (peer == null || peer.isClosed) {
+        _failed(const LinkClosedException('closed'));
+        return;
+      }
+      peer.emit(LinkMethods.away, {'away': _isAway});
+      if (DateTime.now().difference(_lastInbound) >
+          const Duration(seconds: 50)) {
+        unawaited(probe(timeout: const Duration(seconds: 6)));
+      }
+    });
+  }
+
+  Future<void> _initialRefresh(LinkPeer? peer) async {
+    if (peer == null) return;
+    try {
+      await refresh(timeout: const Duration(seconds: 10));
+    } on Object {
+      if (_closed || !identical(_peer, peer)) return;
+      if (peer.isClosed) {
+        _failed(const LinkClosedException('closed'));
+        return;
+      }
+      // Retry once shortly if the first state fetch timed out on a fresh link.
+      await Future<void>.delayed(const Duration(seconds: 2));
+      if (_closed || !identical(_peer, peer)) return;
+      try {
+        await refresh(timeout: const Duration(seconds: 10));
+      } on Object {
+        // Leave it to subsequent state events or next probe.
+      }
+    }
   }
 
   /// Remembers the profile and tells it to the computer when online
   /// ([LinkMethods.setMe]).
-  void updateMe({String? name, String? gender, String? signature}) {
+  void updateMe({
+    String? name,
+    String? gender,
+    String? signature,
+    Map<String, Object?>? picture,
+    bool updatePicture = false,
+  }) {
     meName = name;
     meGender = gender;
     meSignature = signature;
+    if (updatePicture) mePicture = picture;
     _sendMe();
   }
 
@@ -430,14 +553,22 @@ class PhoneLink extends ChangeNotifier {
     final name = meName;
     if (name == null || name.isEmpty) return;
     unawaited(
-      setMe(name: name, gender: meGender, signature: meSignature)
-          .catchError((_) {}),
+      setMe(
+        name: name,
+        gender: meGender,
+        signature: meSignature,
+        picture: mePicture,
+      ).catchError((_) {}),
     );
   }
 
   void _failed(Object failure) {
-    _teardown();
+    final wasOnline = phase == PhonePhase.online;
+    _connectingSince = null;
+    unawaited(_teardown());
     phase = PhonePhase.offline;
+    path = LinkPath.none;
+    if (wasOnline) _attempts = 0;
     error = switch (failure) {
       LinkRemoteException(:final code) => code,
       // The iroh side's word kept: 'nowhere to reach it' (no address
@@ -497,6 +628,7 @@ class PhoneLink extends ChangeNotifier {
   }
 
   void _event(LinkEvent event) {
+    _lastInbound = DateTime.now();
     final data = event.data;
     switch (event.name) {
       case LinkEvents.state:
@@ -515,8 +647,9 @@ class PhoneLink extends ChangeNotifier {
       case LinkEvents.resync:
         if (data is Map<String, Object?> && data['session'] is String) {
           final id = data['session']! as String;
-          feeds.remove(id)?.dispose();
-          unawaited(open(id));
+          unawaited(
+            open(id).catchError((Object _) => feeds[id] ?? SessionFeed(id)),
+          );
         }
       case LinkEvents.group:
         if (data is Map<String, Object?> && data['group'] is String) {
@@ -625,16 +758,18 @@ class PhoneLink extends ChangeNotifier {
     if (peer == null || peer.isClosed) {
       throw const LinkClosedException('offline');
     }
-    feeds.remove(sessionId)?.dispose();
     wanted.add(sessionId);
-    final feed = feeds[sessionId] = SessionFeed(sessionId);
+    final existing = feeds[sessionId];
+    final feed = existing ?? (feeds[sessionId] = SessionFeed(sessionId));
     try {
       await peer.call(LinkMethods.open, {
         'session': sessionId,
         'window': window,
       });
     } on Object {
-      feeds.remove(sessionId)?.dispose();
+      if (existing == null) {
+        feeds.remove(sessionId)?.dispose();
+      }
       rethrow;
     }
     _markRead(sessionId);
@@ -934,6 +1069,63 @@ class PhoneLink extends ChangeNotifier {
     ];
   }
 
+  Future<void> toggleExtension({
+    required String kind,
+    required String name,
+    required bool enabled,
+  }) => _call(LinkMethods.toggleExtension, {
+    'kind': kind,
+    'name': name,
+    'enabled': enabled,
+  });
+
+  Future<String> readExtension({
+    required String kind,
+    required String scope,
+    required String name,
+    String? project,
+  }) async {
+    final result = _map(
+      await _call(LinkMethods.readExtension, {
+        'kind': kind,
+        'scope': scope,
+        'name': name,
+        'project': ?project,
+      }),
+    );
+    return result['text'] as String? ?? '';
+  }
+
+  Future<void> saveExtension({
+    required String kind,
+    required String scope,
+    required String name,
+    String? project,
+    String? text,
+  }) => _call(LinkMethods.saveExtension, {
+    'kind': kind,
+    'scope': scope,
+    'name': name,
+    'project': ?project,
+    'text': ?text,
+  });
+
+  Future<void> deleteExtension({
+    required String kind,
+    required String scope,
+    required String name,
+    String? project,
+  }) => _call(LinkMethods.deleteExtension, {
+    'kind': kind,
+    'scope': scope,
+    'name': name,
+    'project': ?project,
+  });
+
+  /// Aggregated usage statistics from the desktop ledger for the last [days].
+  Future<Map<String, Object?>> usage({int days = 7}) =>
+      _call(LinkMethods.usage, {'days': days}).then(_map);
+
   /// A picture a project shows as its icon.
   Future<Map<String, Object?>> icon(String id) async =>
       _map(await _call(LinkMethods.icon, {'id': id}));
@@ -1044,19 +1236,26 @@ class PhoneLink extends ChangeNotifier {
   Future<GroupFeed> openGroup(String groupId, {int count = 50}) async {
     final peer = _requirePeer();
     wantedGroups.add(groupId);
-    groups.remove(groupId)?.dispose();
-    final feed = groups[groupId] = GroupFeed(groupId);
-    final result = _map(await peer.call(LinkMethods.openGroup, {
-      'group': groupId,
-      'count': count,
-    }));
-    feed.more = result['more'] == true;
-    feed.prepend([
-      for (final message in (result['messages'] as List?) ?? const [])
-        if (message is Map<String, Object?>)
-          LinkGroupMessage.fromJson(message),
-    ]);
-    return feed;
+    final existing = groups[groupId];
+    final feed = existing ?? (groups[groupId] = GroupFeed(groupId));
+    try {
+      final result = _map(await peer.call(LinkMethods.openGroup, {
+        'group': groupId,
+        'count': count,
+      }));
+      feed.more = result['more'] == true;
+      feed.replace([
+        for (final message in (result['messages'] as List?) ?? const [])
+          if (message is Map<String, Object?>)
+            LinkGroupMessage.fromJson(message),
+      ]);
+      return feed;
+    } on Object {
+      if (existing == null) {
+        groups.remove(groupId)?.dispose();
+      }
+      rethrow;
+    }
   }
 
   Future<void> earlierGroup(String groupId, {int count = 50}) async {
@@ -1163,6 +1362,7 @@ class PhoneLink extends ChangeNotifier {
 
   /// The phone's app in the background (or in front again).
   void away(bool away) {
+    _isAway = away;
     _peer?.emit(LinkMethods.away, {'away': away});
   }
 
@@ -1196,29 +1396,43 @@ class PhoneLink extends ChangeNotifier {
     return peer;
   }
 
-  Future<void> _teardown() async {
+  Future<void> _teardown({bool disposeFeeds = false}) async {
+    _keepAlive?.cancel();
+    _keepAlive = null;
+    // Detach synchronously before awaiting so a concurrent connect()
+    // cannot have its newly bound peer/subscriptions clobbered.
     final peer = _peer;
     _peer = null;
-    await _events?.cancel();
+    final events = _events;
     _events = null;
-    await _paths?.cancel();
+    final paths = _paths;
     _paths = null;
-    if (peer != null) await peer.close();
-    for (final feed in feeds.values) {
-      feed.dispose();
+    if (disposeFeeds) {
+      for (final feed in feeds.values) {
+        feed.dispose();
+      }
+      feeds.clear();
+      for (final feed in groups.values) {
+        feed.dispose();
+      }
+      groups.clear();
+    } else {
+      for (final feed in feeds.values) {
+        feed.markDisconnected();
+      }
     }
-    feeds.clear();
-    for (final feed in groups.values) {
-      feed.dispose();
-    }
-    groups.clear();
     outputs.clear();
+    await events?.cancel();
+    await paths?.cancel();
+    if (peer != null) await peer.close();
   }
 
   /// Forgets the computer: unpaired here, and unpaired on it when it can
   /// still be reached.
   Future<void> forget() async {
+    _connectEpoch++;
     _wantOnline = false;
+    _connectingSince = null;
     _retry?.cancel();
     if (_peer != null && !_peer!.isClosed) {
       try {
@@ -1227,7 +1441,7 @@ class PhoneLink extends ChangeNotifier {
         // Offline or gone: forgotten here all the same.
       }
     }
-    await _teardown();
+    await _teardown(disposeFeeds: true);
     phase = PhonePhase.offline;
     pairing = null;
     state = null;
@@ -1238,16 +1452,72 @@ class PhoneLink extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// The computer may be reachable now (its advert seen, the network
-  /// changed): try at once rather than at the retry's wait.
-  void retryNow() {
-    if (phase == PhonePhase.online || phase == PhonePhase.pairing) return;
+  /// Verifies an allegedly online connection is actually alive (e.g. after
+  /// returning from background or switching networks); tears down and
+  /// reconnects immediately if the socket is half-open/dead.
+  Future<void> probe({Duration timeout = const Duration(seconds: 4)}) async {
+    if (_closed || _probing || phase != PhonePhase.online) return;
+    final peer = _peer;
+    if (peer == null || peer.isClosed) {
+      _failed(const LinkClosedException('closed'));
+      return;
+    }
+    _probing = true;
+    try {
+      await refresh(timeout: timeout);
+    } on Object {
+      if (_closed || !identical(_peer, peer)) return;
+      _connectEpoch++;
+      _failed(const LinkClosedException('timeout'));
+      retryNow(force: true);
+    } finally {
+      _probing = false;
+    }
+  }
+
+  /// Called when the app returns to foreground or the device network
+  /// changes: probes live connections for zombie sockets, restarts stale
+  /// dials, and retries offline links immediately with fresh backoff.
+  void onNetworkChanged() {
+    if (_closed || phase == PhonePhase.pairing || needsRePair) return;
+    if (phase == PhonePhase.online) {
+      unawaited(probe());
+    } else {
+      retryNow(force: true);
+    }
+  }
+
+  /// The computer may be reachable now (user tapped retry, advert seen, or
+  /// network changed): reset backoff and try at once. With [force], aborts
+  /// an in-flight connecting attempt or probes an online link.
+  void retryNow({bool force = false}) {
+    if (_closed || phase == PhonePhase.pairing) return;
+    if (needsRePair) return;
+    if (phase == PhonePhase.online) {
+      if (force) unawaited(probe());
+      return;
+    }
+    if (phase == PhonePhase.connecting) {
+      final stuck =
+          _connectingSince != null &&
+          DateTime.now().difference(_connectingSince!) >
+              const Duration(seconds: 5);
+      if (!force && !stuck) return;
+      _connectEpoch++;
+      _connectingSince = null;
+      unawaited(_teardown());
+      phase = PhonePhase.offline;
+    }
+    _attempts = 0;
     _retry?.cancel();
-    if (!_closed && _wantOnline) unawaited(connect());
+    _wantOnline = true;
+    unawaited(connect());
   }
 
   /// The app is going away: connections kept by the node, not here.
   Future<void> suspend() async {
+    _connectEpoch++;
+    _connectingSince = null;
     await _teardown();
     if (phase != PhonePhase.pairing) phase = PhonePhase.offline;
     notifyListeners();
@@ -1256,9 +1526,10 @@ class PhoneLink extends ChangeNotifier {
   @override
   void dispose() {
     _closed = true;
+    _connectEpoch++;
     _wantOnline = false;
     _retry?.cancel();
-    unawaited(_teardown());
+    unawaited(_teardown(disposeFeeds: true));
     super.dispose();
   }
 

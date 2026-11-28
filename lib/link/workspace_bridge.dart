@@ -21,6 +21,8 @@ import '../chat/panels/context_usage_panel.dart' show ContextUsagePanel;
 import '../chat/rewind_files_setting.dart';
 import '../customize/customization_store.dart';
 import '../customize/customizations.dart';
+import '../kernel/extension_switches.dart';
+import '../usage/usage_ledger.dart';
 import '../ide/file_service.dart';
 import '../kernel/agent_kernel.dart' show KernelChoiceKind;
 import '../kernel/kernel_types.dart';
@@ -826,6 +828,23 @@ class WorkspaceBridge {
         return {
           'items': [for (final item in await _extensions()) item.toJson()],
         };
+      case LinkMethods.toggleExtension:
+        await _toggleExtension(
+          params['kind'] as String? ?? '',
+          params['name'] as String? ?? '',
+          params['enabled'] == true,
+        );
+        return null;
+      case LinkMethods.readExtension:
+        return {'text': await _readExtension(params)};
+      case LinkMethods.saveExtension:
+        await _saveExtension(params);
+        return null;
+      case LinkMethods.deleteExtension:
+        await _deleteExtension(params);
+        return null;
+      case LinkMethods.usage:
+        return _usage((params['days'] as num?)?.toInt() ?? 7);
       case LinkMethods.draft:
         return {
           'session': idOf(workspace.startAgent(_project(params['project']))),
@@ -1818,13 +1837,16 @@ class WorkspaceBridge {
     const kinds = {
       CustomizationKind.skills: 'skill',
       CustomizationKind.mcps: 'mcp',
-      CustomizationKind.plugins: 'plugin',
       CustomizationKind.subagents: 'agent',
+      CustomizationKind.rules: 'rule',
+      CustomizationKind.commands: 'command',
+      CustomizationKind.plugins: 'plugin',
     };
     final local = [
       for (final project in workspace.sidebarProjects)
         if (project.host == null) project,
     ];
+    final switches = ExtensionSwitches.current();
     Future<List<LinkExtension>> of(
       CustomizationKind kind,
       Project? project,
@@ -1847,7 +1869,12 @@ class WorkspaceBridge {
               name: item.name,
               description: item.description,
               project: project?.path,
-              enabled: item.enabled,
+              enabled: switch (kind) {
+                CustomizationKind.skills => switches.skillEnabled(item.name),
+                CustomizationKind.mcps =>
+                  (item.enabled ?? true) && switches.serverEnabled(item.name),
+                _ => item.enabled,
+              },
             ),
       ];
     }
@@ -1859,6 +1886,219 @@ class WorkspaceBridge {
       ],
     ]);
     return [for (final list in lists) ...list];
+  }
+
+  static CustomizationKind _extKind(String kind) => switch (kind) {
+    'skill' => CustomizationKind.skills,
+    'mcp' => CustomizationKind.mcps,
+    'plugin' => CustomizationKind.plugins,
+    'agent' => CustomizationKind.subagents,
+    'rule' => CustomizationKind.rules,
+    'command' => CustomizationKind.commands,
+    _ => throw LinkRemoteException(LinkErrors.notFound, 'Unknown kind: $kind'),
+  };
+
+  Future<void> _toggleExtension(String kind, String name, bool enabled) async {
+    if (name.isEmpty) {
+      throw const LinkRemoteException('failed', 'Empty name');
+    }
+    final save = ExtensionSwitches.save;
+    if (save == null) {
+      throw const LinkRemoteException(
+        'failed',
+        'Switching is not available on this desktop',
+      );
+    }
+    final current = ExtensionSwitches.current();
+    final next = switch (kind) {
+      'skill' => current.withSkills([name], enabled),
+      'mcp' => current.withServer(name, enabled),
+      _ => throw LinkRemoteException(
+        'failed',
+        'Cannot toggle $kind',
+      ),
+    };
+    await save(next);
+  }
+
+  Future<Customization?> _findExtension(Map<String, Object?> params) async {
+    final store = customizations;
+    if (store == null || !store.supported) return null;
+    final kind = _extKind(params['kind'] as String? ?? '');
+    final name = params['name'] as String? ?? '';
+    final scopeName = params['scope'] as String? ?? 'user';
+    final projectPath = params['project'] as String?;
+    final items = await store.list(kind, project: projectPath);
+    for (final item in items) {
+      if (item.name == name && item.scope.name == scopeName) return item;
+    }
+    for (final item in items) {
+      if (item.name == name) return item;
+    }
+    return null;
+  }
+
+  Future<String> _readExtension(Map<String, Object?> params) async {
+    final store = customizations;
+    if (store == null || !store.supported) {
+      throw const LinkRemoteException(LinkErrors.notFound, 'Unsupported');
+    }
+    final item = await _findExtension(params);
+    final path = item?.path;
+    if (path == null) {
+      throw const LinkRemoteException(LinkErrors.notFound, 'Extension not found');
+    }
+    return store.read(path);
+  }
+
+  Future<void> _saveExtension(Map<String, Object?> params) async {
+    final store = customizations;
+    if (store == null || !store.supported) {
+      throw const LinkRemoteException(LinkErrors.notFound, 'Unsupported');
+    }
+    final kind = _extKind(params['kind'] as String? ?? '');
+    final name = (params['name'] as String? ?? '').trim();
+    final scopeName = params['scope'] as String? ?? 'user';
+    final scope =
+        CustomizationScope.values.asNameMap()[scopeName] ??
+        CustomizationScope.user;
+    final projectPath = params['project'] as String?;
+    final text = params['text'] as String?;
+    final existing = await _findExtension(params);
+    final existingPath = existing?.path;
+    if (existingPath != null) {
+      if (text != null) await store.write(existingPath, text);
+      return;
+    }
+    final created = await store.create(
+      kind,
+      scope,
+      name,
+      project: projectPath,
+    );
+    if (text != null && text.isNotEmpty) {
+      await store.write(created, text);
+    }
+  }
+
+  Future<void> _deleteExtension(Map<String, Object?> params) async {
+    final store = customizations;
+    if (store == null || !store.supported) {
+      throw const LinkRemoteException(LinkErrors.notFound, 'Unsupported');
+    }
+    final item = await _findExtension(params);
+    if (item == null) {
+      throw const LinkRemoteException(LinkErrors.notFound, 'Extension not found');
+    }
+    await store.delete(item);
+  }
+
+  Future<Map<String, Object?>> _usage(int days) async {
+    final span = days.clamp(1, 365);
+    final now = DateTime.now();
+    final start = DateTime(now.year, now.month, now.day)
+        .subtract(Duration(days: span - 1));
+    final ledger = UsageLedger.current;
+    final calls = ledger.shown(await ledger.range(from: start));
+    var totalCalls = 0;
+    var totalInput = 0;
+    var totalOutput = 0;
+    var totalCacheRead = 0;
+    var totalCacheWrite = 0;
+    var totalCost = 0.0;
+    final byDay = <String, ({int calls, int tokens, double cost})>{};
+    final byModel = <String, ({int calls, int tokens, double cost})>{};
+    final byProject = <String, ({int calls, int tokens, double cost})>{};
+    for (final call in calls) {
+      final tokens =
+          call.input +
+          call.output +
+          call.cacheRead +
+          call.cacheWrite +
+          call.cacheWriteLong;
+      final cost = UsagePrices.current.priceOf(call)?.cost(call) ?? 0.0;
+      totalCalls++;
+      totalInput += call.input;
+      totalOutput += call.output;
+      totalCacheRead += call.cacheRead;
+      totalCacheWrite += call.cacheWrite + call.cacheWriteLong;
+      totalCost += cost;
+
+      final day = UsageLedger.dayOf(call.at);
+      final d = byDay[day];
+      byDay[day] = (
+        calls: (d?.calls ?? 0) + 1,
+        tokens: (d?.tokens ?? 0) + tokens,
+        cost: (d?.cost ?? 0.0) + cost,
+      );
+
+      final model = call.model.isEmpty ? 'unknown' : call.model;
+      final m = byModel[model];
+      byModel[model] = (
+        calls: (m?.calls ?? 0) + 1,
+        tokens: (m?.tokens ?? 0) + tokens,
+        cost: (m?.cost ?? 0.0) + cost,
+      );
+
+      final rawProject = call.project ?? '';
+      if (rawProject.isNotEmpty) {
+        final name = rawProject.split(RegExp(r'[/\\]')).where((s) => s.isNotEmpty).lastOrNull ?? rawProject;
+        final p = byProject[name];
+        byProject[name] = (
+          calls: (p?.calls ?? 0) + 1,
+          tokens: (p?.tokens ?? 0) + tokens,
+          cost: (p?.cost ?? 0.0) + cost,
+        );
+      }
+    }
+    final dailyList = [
+      for (var i = 0; i < span; i++)
+        () {
+          final day = UsageLedger.dayOf(start.add(Duration(days: i)));
+          final entry = byDay[day];
+          return {
+            'day': day,
+            'calls': entry?.calls ?? 0,
+            'tokens': entry?.tokens ?? 0,
+            'cost': entry?.cost ?? 0.0,
+          };
+        }(),
+    ];
+    final modelList = byModel.entries.toList()
+      ..sort((a, b) => b.value.tokens.compareTo(a.value.tokens));
+    final projectList = byProject.entries.toList()
+      ..sort((a, b) => b.value.tokens.compareTo(a.value.tokens));
+    return {
+      'days': span,
+      'total': {
+        'calls': totalCalls,
+        'input': totalInput,
+        'output': totalOutput,
+        'cacheRead': totalCacheRead,
+        'cacheWrite': totalCacheWrite,
+        'tokens': totalInput + totalOutput + totalCacheRead + totalCacheWrite,
+        'cost': totalCost,
+      },
+      'daily': dailyList,
+      'models': [
+        for (final entry in modelList.take(12))
+          {
+            'name': entry.key,
+            'calls': entry.value.calls,
+            'tokens': entry.value.tokens,
+            'cost': entry.value.cost,
+          },
+      ],
+      'projects': [
+        for (final entry in projectList.take(12))
+          {
+            'name': entry.key,
+            'calls': entry.value.calls,
+            'tokens': entry.value.tokens,
+            'cost': entry.value.cost,
+          },
+      ],
+    };
   }
 
   /// The changes' paths [params] names, absolute as [session] has them;

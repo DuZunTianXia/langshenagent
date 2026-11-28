@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../main.dart';
 import 'home_page.dart';
 import 'md/md_theme.dart';
 
-/// The app's theme, in LangshenAgent's colors (the desktop's `AppColors`, as the
-/// default VS Code themes have them).
+/// The app's theme, with refined obsidian-dark and airy-light palettes.
 class BaoApp extends StatelessWidget {
   const BaoApp({super.key});
 
@@ -36,35 +36,58 @@ class BaoApp extends StatelessWidget {
       colorScheme: scheme,
       useMaterial3: true,
       scaffoldBackgroundColor: AppColors.background,
+      splashFactory: InkSparkle.splashFactory,
+      highlightColor: AppColors.accent.withValues(alpha: dark ? 0.08 : 0.06),
+      splashColor: AppColors.accent.withValues(alpha: dark ? 0.10 : 0.08),
       appBarTheme: AppBarTheme(
         backgroundColor: AppColors.background,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
         scrolledUnderElevation: 0,
         surfaceTintColor: Colors.transparent,
+        systemOverlayStyle: dark
+            ? SystemUiOverlayStyle.light.copyWith(
+                statusBarColor: Colors.transparent,
+                systemNavigationBarColor: AppColors.surfaceRaised,
+                systemNavigationBarIconBrightness: Brightness.light,
+              )
+            : SystemUiOverlayStyle.dark.copyWith(
+                statusBarColor: Colors.transparent,
+                systemNavigationBarColor: AppColors.surfaceRaised,
+                systemNavigationBarIconBrightness: Brightness.dark,
+              ),
         titleTextStyle: TextStyle(
           fontSize: 17,
           fontWeight: FontWeight.w600,
+          letterSpacing: -0.2,
           color: AppColors.textPrimary,
         ),
       ),
       cardTheme: CardThemeData(
-        color: AppColors.bubbleFill,
+        color: AppColors.surfaceRaised,
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-          side: BorderSide(color: AppColors.partBorder),
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: AppColors.partBorder, width: 0.75),
         ),
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: AppColors.surfaceRaised,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
       bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: AppColors.surfaceRaised,
+        dragHandleColor: AppColors.borderStrong,
+        dragHandleSize: const Size(38, 4),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+        ),
       ),
-      dividerTheme: DividerThemeData(color: AppColors.partBorder, thickness: 1),
+      dividerTheme: DividerThemeData(
+        color: AppColors.partBorder,
+        thickness: 0.5,
+      ),
       textTheme: ThemeData(
         brightness: dark ? Brightness.dark : Brightness.light,
       ).textTheme.apply(bodyColor: AppColors.text, displayColor: AppColors.text),
@@ -72,20 +95,20 @@ class BaoApp extends StatelessWidget {
         filled: true,
         fillColor: AppColors.bubbleFill,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: AppColors.partBorder),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: AppColors.partBorder),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: AppColors.accent),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: AppColors.accent, width: 1.4),
         ),
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 10,
+          horizontal: 14,
+          vertical: 12,
         ),
       ),
       snackBarTheme: SnackBarThemeData(
@@ -100,11 +123,14 @@ class BaoApp extends StatelessWidget {
       ),
       popupMenuTheme: PopupMenuThemeData(
         color: AppColors.surfaceRaised,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         textStyle: TextStyle(color: AppColors.text),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: AppColors.accent,
         foregroundColor: Colors.white,
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       listTileTheme: ListTileThemeData(
         iconColor: AppColors.textMuted,
@@ -119,18 +145,24 @@ class BaoApp extends StatelessWidget {
     final state = AppScope.of(context);
     final systemDark =
         MediaQuery.platformBrightnessOf(context) == Brightness.dark;
+    final effectiveDark = switch (state.themeMode) {
+      ThemeMode.dark => true,
+      ThemeMode.light => false,
+      ThemeMode.system => systemDark,
+    };
     // The colors the themes below freeze at their build read this; it must
-    // be the system's brightness here already — waiting for HomePage's
+    // be the active brightness here already — waiting for HomePage's
     // build leaves the first frame's frozen theme colors on the wrong side.
-    MdTheme.dark = systemDark;
+    MdTheme.dark = effectiveDark;
     final light = _theme(dark: false);
     final dark = _theme(dark: true);
-    // _theme leaves MdTheme.dark on its own brightness; restore the system's
+    // _theme leaves MdTheme.dark on its own brightness; restore the active one
     // for the widgets below that read AppColors live.
-    MdTheme.dark = systemDark;
+    MdTheme.dark = effectiveDark;
     return MaterialApp(
       title: '宝码',
       debugShowCheckedModeBanner: false,
+      themeMode: state.themeMode,
       theme: light,
       darkTheme: dark,
       home: state.ready ? const HomePage() : const _BootSplash(),
@@ -143,8 +175,14 @@ class _BootSplash extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    MdTheme.dark =
+    final state = AppScope.of(context);
+    final systemDark =
         MediaQuery.platformBrightnessOf(context) == Brightness.dark;
+    MdTheme.dark = switch (state.themeMode) {
+      ThemeMode.dark => true,
+      ThemeMode.light => false,
+      ThemeMode.system => systemDark,
+    };
     return Scaffold(
       body: Center(
         child: Column(

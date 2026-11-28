@@ -16,6 +16,7 @@ import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../link/phone_link.dart';
+import 'chat_page.dart';
 import 'markdown.dart';
 import 'md/md_theme.dart';
 import 'widgets.dart';
@@ -395,6 +396,30 @@ class _FileViewerState extends State<FileViewer> {
               ),
               onPressed: () => setState(() => _diff = _diff != true),
             ),
+          IconButton(
+            tooltip: '@此文件发起对话',
+            icon: const Icon(Icons.alternate_email_rounded),
+            onPressed: () async {
+              try {
+                final session = await widget.link.draft(widget.project.id);
+                if (session != null && context.mounted) {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ChatPage(
+                        link: widget.link,
+                        sessionId: session,
+                        initialText: '@${widget.path} ',
+                      ),
+                    ),
+                  );
+                }
+              } on Object catch (failure) {
+                if (context.mounted) {
+                  showBToast(context, '$failure', isError: true);
+                }
+              }
+            },
+          ),
           if (file?['text'] is String)
             IconButton(
               tooltip: '复制',

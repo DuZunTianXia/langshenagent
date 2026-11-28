@@ -102,10 +102,13 @@ class BButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final child = busy
-        ? const SizedBox(
+        ? SizedBox(
             width: 16,
             height: 16,
-            child: CircularProgressIndicator(strokeWidth: 2),
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: danger || primary ? Colors.white : AppColors.accent,
+            ),
           )
         : Row(
             mainAxisSize: MainAxisSize.min,
@@ -114,7 +117,14 @@ class BButton extends StatelessWidget {
                 Icon(icon, size: 16),
                 const SizedBox(width: 6),
               ],
-              Text(label, style: const TextStyle(fontSize: 13.5)),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.1,
+                ),
+              ),
             ],
           );
     final style = FilledButton.styleFrom(
@@ -122,16 +132,20 @@ class BButton extends StatelessWidget {
           ? Theme.of(context).colorScheme.error
           : primary
           ? AppColors.accent
-          : AppColors.surface,
+          : AppColors.bubbleFill,
       foregroundColor: danger || primary
           ? Colors.white
           : AppColors.textPrimary,
       disabledBackgroundColor: AppColors.surface,
       disabledForegroundColor: AppColors.textFaint,
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
       minimumSize: Size.zero,
       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      elevation: 0,
+      side: !danger && !primary
+          ? BorderSide(color: AppColors.partBorder, width: 0.75)
+          : BorderSide.none,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     );
     final button = FilledButton(
       onPressed: busy ? null : onPressed,
@@ -143,7 +157,7 @@ class BButton extends StatelessWidget {
   }
 }
 
-/// A section of settings-like content: a small grey title above a white
+/// A section of settings-like content: a small muted title above a
 /// rounded card holding [children].
 class BSection extends StatelessWidget {
   const BSection({super.key, required this.title, required this.children});
@@ -153,15 +167,20 @@ class BSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: 14),
+    padding: const EdgeInsets.only(bottom: 18),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(6, 0, 6, 6),
+          padding: const EdgeInsets.fromLTRB(6, 0, 6, 8),
           child: Text(
             title,
-            style: TextStyle(fontSize: 12.5, color: AppColors.textMuted),
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.3,
+              color: AppColors.textMuted,
+            ),
           ),
         ),
         BCard(padding: EdgeInsets.zero, child: Column(children: children)),
@@ -170,7 +189,7 @@ class BSection extends StatelessWidget {
   );
 }
 
-/// A white rounded card, the surface every section and detail uses.
+/// An elevated rounded card, the surface every section and detail uses.
 class BCard extends StatelessWidget {
   const BCard({super.key, required this.child, this.padding});
 
@@ -182,15 +201,18 @@ class BCard extends StatelessWidget {
     clipBehavior: Clip.antiAlias,
     decoration: BoxDecoration(
       color: AppColors.surfaceRaised,
-      borderRadius: BorderRadius.circular(14),
-      border: Border.all(color: AppColors.partBorder.withValues(alpha: 0.55)),
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(
+        color: AppColors.partBorder.withValues(alpha: MdTheme.dark ? 0.85 : 0.9),
+        width: 0.75,
+      ),
       boxShadow: [
         BoxShadow(
           color: MdTheme.dark
-              ? Colors.black.withValues(alpha: 0.3)
-              : Colors.black.withValues(alpha: 0.08),
-          blurRadius: MdTheme.dark ? 8 : 6,
-          offset: MdTheme.dark ? const Offset(0, 2) : const Offset(0, 1),
+              ? Colors.black.withValues(alpha: 0.24)
+              : const Color(0xFF0F172A).withValues(alpha: 0.045),
+          blurRadius: MdTheme.dark ? 12 : 14,
+          offset: const Offset(0, 3),
         ),
       ],
     ),
@@ -224,21 +246,33 @@ class BEmptyState extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 72,
-            height: 72,
+            width: 76,
+            height: 76,
             decoration: BoxDecoration(
-              color: AppColors.accent.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(20),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.accent.withValues(alpha: MdTheme.dark ? 0.18 : 0.14),
+                  AppColors.accent.withValues(alpha: MdTheme.dark ? 0.06 : 0.04),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: AppColors.accent.withValues(alpha: 0.18),
+                width: 0.75,
+              ),
             ),
             child: Icon(icon, size: 34, color: AppColors.accent),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 20),
           Text(
             title,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 16.5,
               fontWeight: FontWeight.w600,
+              letterSpacing: -0.2,
               color: AppColors.textPrimary,
             ),
           ),
@@ -249,13 +283,13 @@ class BEmptyState extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13.5,
-                height: 1.45,
+                height: 1.5,
                 color: AppColors.textMuted,
               ),
             ),
           ],
           if (actionLabel != null && onAction != null) ...[
-            const SizedBox(height: 22),
+            const SizedBox(height: 24),
             BButton(label: actionLabel!, primary: true, onPressed: onAction),
           ],
         ],
@@ -299,10 +333,12 @@ class BInboxRow extends StatelessWidget {
     super.key,
     required this.leading,
     required this.title,
+    this.titleTrailing,
     this.subtitle,
     this.time,
     this.badge = 0,
     this.pinned = false,
+    this.highlightColor,
     this.titleWeight = FontWeight.w600,
     this.onTap,
     this.onLongPress,
@@ -310,83 +346,109 @@ class BInboxRow extends StatelessWidget {
 
   final Widget leading;
   final String title;
+  final Widget? titleTrailing;
   final Widget? subtitle;
   final String? time;
   final int badge;
   final bool pinned;
+  final Color? highlightColor;
   final FontWeight titleWeight;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
 
   @override
-  Widget build(BuildContext context) => Material(
-    color: Colors.transparent,
-    child: InkWell(
-      onTap: onTap,
-      onLongPress: onLongPress,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            leading,
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
+  Widget build(BuildContext context) {
+    final row = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          leading,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 15.5,
+                          fontWeight: titleWeight,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                    if (titleTrailing != null) ...[
+                      const SizedBox(width: 6),
+                      titleTrailing!,
+                    ],
+                  ],
+                ),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 3),
+                  DefaultTextStyle(
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textMuted,
+                      height: 1.25,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 15.5,
-                      fontWeight: titleWeight,
-                      color: AppColors.textPrimary,
-                    ),
+                    child: subtitle!,
                   ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 3),
-                    DefaultTextStyle(
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textMuted,
-                        height: 1.25,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      child: subtitle!,
-                    ),
-                  ],
                 ],
-              ),
+              ],
             ),
-            if (time != null || badge > 0 || pinned) ...[
-              const SizedBox(width: 8),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  if (time != null)
-                    Text(
-                      time!,
-                      style: TextStyle(fontSize: 11.5, color: AppColors.textFaint),
-                    ),
-                  if (badge > 0 || pinned) ...[
-                    const SizedBox(height: 5),
-                    if (badge > 0)
-                      BUnreadBadge(count: badge)
-                    else if (pinned)
-                      Icon(Icons.push_pin, size: 14, color: AppColors.textFaint),
-                  ],
+          ),
+          if (time != null || badge > 0 || pinned) ...[
+            const SizedBox(width: 8),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                if (time != null)
+                  Text(
+                    time!,
+                    style: TextStyle(fontSize: 11.5, color: AppColors.textFaint),
+                  ),
+                if (badge > 0 || pinned) ...[
+                  const SizedBox(height: 5),
+                  if (badge > 0)
+                    BUnreadBadge(count: badge)
+                  else if (pinned)
+                    Icon(Icons.push_pin, size: 14, color: AppColors.textFaint),
                 ],
-              ),
-            ],
+              ],
+            ),
           ],
-        ),
+        ],
       ),
-    ),
-  );
+    );
+    return Material(
+      color: highlightColor != null
+          ? highlightColor!.withValues(alpha: MdTheme.dark ? 0.08 : 0.055)
+          : Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        onLongPress: onLongPress,
+        child: highlightColor != null
+            ? DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border(
+                    left: BorderSide(color: highlightColor!, width: 3),
+                  ),
+                ),
+                child: row,
+              )
+            : row,
+      ),
+    );
+  }
 }
 
 /// A row in a [BCard]: optional leading icon in a tinted box, title,
@@ -1212,6 +1274,7 @@ class BComposer extends StatefulWidget {
     required this.controller,
     this.hint = '发消息…',
     this.live = false,
+    this.stopping = false,
     this.canSend = false,
     this.onAttach,
     this.onChanged,
@@ -1222,6 +1285,7 @@ class BComposer extends StatefulWidget {
   final TextEditingController controller;
   final String hint;
   final bool live;
+  final bool stopping;
   final bool canSend;
   final VoidCallback? onAttach;
   final VoidCallback? onChanged;
@@ -1256,15 +1320,28 @@ class _BComposerState extends State<BComposer> {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (widget.live && widget.onStop != null)
-          _ComposerRoundButton(
-            background: Theme.of(context).colorScheme.error,
-            onPressed: widget.onStop,
-            child: const Icon(
-              Icons.stop_rounded,
-              size: 18,
-              color: Colors.white,
-            ),
-          ),
+          widget.stopping
+              ? _ComposerRoundButton(
+                  background: AppColors.surface,
+                  onPressed: null,
+                  child: SizedBox(
+                    width: 15,
+                    height: 15,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                )
+              : _ComposerRoundButton(
+                  background: Theme.of(context).colorScheme.error,
+                  onPressed: widget.onStop,
+                  child: const Icon(
+                    Icons.stop_rounded,
+                    size: 18,
+                    color: Colors.white,
+                  ),
+                ),
         if (widget.canSend)
           _ComposerRoundButton(
             background: AppColors.accent,
@@ -1277,11 +1354,29 @@ class _BComposerState extends State<BComposer> {
           ),
       ],
     );
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
       decoration: BoxDecoration(
         color: AppColors.bubbleFill,
-        borderRadius: BorderRadius.circular(25),
-        border: Border.all(color: AppColors.bubbleBorder(focused: _focused)),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: _focused
+              ? AppColors.accent.withValues(alpha: 0.65)
+              : AppColors.partBorder,
+          width: _focused ? 1.2 : 0.75,
+        ),
+        boxShadow: _focused
+            ? [
+                BoxShadow(
+                  color: AppColors.accent.withValues(
+                    alpha: MdTheme.dark ? 0.12 : 0.08,
+                  ),
+                  blurRadius: 10,
+                  spreadRadius: 0,
+                ),
+              ]
+            : null,
       ),
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       child: Row(
@@ -1301,7 +1396,7 @@ class _BComposerState extends State<BComposer> {
               maxLines: 5,
               textInputAction: TextInputAction.send,
               cursorColor: AppColors.accent,
-              style: TextStyle(fontSize: 15, color: AppColors.text),
+              style: TextStyle(fontSize: 15, color: AppColors.textPrimary),
               onChanged: (_) => widget.onChanged?.call(),
               onSubmitted: (_) {
                 if (widget.canSend) widget.onSend?.call();
@@ -1324,7 +1419,11 @@ class _BComposerState extends State<BComposer> {
               ),
             ),
           ),
-          action,
+          AnimatedSize(
+            duration: const Duration(milliseconds: 160),
+            curve: Curves.easeOutCubic,
+            child: action,
+          ),
         ],
       ),
     );

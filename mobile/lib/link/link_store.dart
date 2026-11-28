@@ -124,7 +124,11 @@ class LinkStore {
   /// Loads it; a new phone's key made when there is none.
   static Future<LinkStore> load() async {
     final dir = await getApplicationSupportDirectory();
-    final file = File('${dir.path}/link.json');
+    return loadFromFile(File('${dir.path}/link.json'));
+  }
+
+  /// Loads or creates a store backed by [file] (used by [load] and tests).
+  static Future<LinkStore> loadFromFile(File file) async {
     Map<String, Object?> json = const {};
     try {
       if (await file.exists()) {

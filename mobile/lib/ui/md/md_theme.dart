@@ -7,81 +7,77 @@ abstract final class MdTheme {
   static bool dark = true;
 }
 
-/// VS Code Dark Modern's, beside Light Modern's where they differ.
+/// Refined obsidian-dark and airy-light color tokens for the mobile app.
 abstract final class AppColors {
-  // `sideBar.background` / `editorWidget.background` / `menu.background`.
   static Color get background =>
-      MdTheme.dark ? const Color(0xFF141414) : const Color(0xFFF7F7F7);
+      MdTheme.dark ? const Color(0xFF0D0E11) : const Color(0xFFF4F6F9);
   static Color get surface =>
-      MdTheme.dark ? const Color(0xFF26262A) : const Color(0xFFE8E8E8);
+      MdTheme.dark ? const Color(0xFF171920) : const Color(0xFFEBEFF5);
   static Color get surfaceRaised =>
-      MdTheme.dark ? const Color(0xFF38383D) : const Color(0xFFFFFFFF);
+      MdTheme.dark ? const Color(0xFF1A1C23) : const Color(0xFFFFFFFF);
 
-  /// `editor.background`: the conversation's surface, code blocks'.
+  /// The conversation's surface and code blocks.
   static Color get conversationSurface =>
-      MdTheme.dark ? const Color(0xFF171717) : const Color(0xFFFFFFFF);
+      MdTheme.dark ? const Color(0xFF101216) : const Color(0xFFFFFFFF);
   static Color get code => conversationSurface;
 
-  /// A bubble's fill: `agentsChatInput.background` over [code] — Dark
-  /// Modern's is a light wash, Light's a dark one.
+  /// Soft elevated fill for inputs, pills, and secondary containers.
   static Color get bubbleFill =>
-      MdTheme.dark ? const Color(0xFF323236) : const Color(0xFFECECF0);
+      MdTheme.dark ? const Color(0xFF20232C) : const Color(0xFFF0F2F6);
 
   static Color get partBorder =>
-      MdTheme.dark ? const Color(0xFF333337) : const Color(0xFFD4D4D4);
+      MdTheme.dark ? const Color(0xFF272B36) : const Color(0xFFE3E7EE);
   static Color get border =>
-      MdTheme.dark ? const Color(0xFF333337) : const Color(0xFFD4D4D4);
+      MdTheme.dark ? const Color(0xFF272B36) : const Color(0xFFE3E7EE);
   static Color get borderStrong =>
-      MdTheme.dark ? const Color(0xFF4A4A50) : const Color(0xFFCECECE);
+      MdTheme.dark ? const Color(0xFF383E4D) : const Color(0xFFD0D7E2);
 
   static Color get textPrimary =>
-      MdTheme.dark ? const Color(0xFFFFFFFF) : const Color(0xFF1F1F1F);
+      MdTheme.dark ? const Color(0xFFF3F5F8) : const Color(0xFF111418);
   static Color get text =>
-      MdTheme.dark ? const Color(0xFFCCCCCC) : const Color(0xFF424242);
+      MdTheme.dark ? const Color(0xFFD1D5DE) : const Color(0xFF2E3440);
   static Color get textMuted =>
-      MdTheme.dark ? const Color(0xFFA8A8A8) : const Color(0xFF6F6F6F);
+      MdTheme.dark ? const Color(0xFF8C93A4) : const Color(0xFF646E7E);
   static Color get textFaint =>
-      MdTheme.dark ? const Color(0xFF656565) : const Color(0xFF9E9E9E);
+      MdTheme.dark ? const Color(0xFF5A6070) : const Color(0xFF98A2B3);
 
-  /// The phone's own accent (the official app's green), where the desktop
-  /// asks for `textLink.foreground`.
+  /// Refined emerald accent.
   static Color get accent =>
-      MdTheme.dark ? const Color(0xFF2AAE67) : const Color(0xFF07C160);
+      MdTheme.dark ? const Color(0xFF10B981) : const Color(0xFF059669);
 
-  /// The user's own message bubble, as the official phone app's.
+  /// User's own message bubble in bubble mode: rich emerald tint.
   static Color get userBubble =>
-      MdTheme.dark ? const Color(0xFF2B5C40) : const Color(0xFF95EC69);
+      MdTheme.dark ? const Color(0xFF144535) : const Color(0xFFD1FAE5);
 
-  /// Text on [userBubble]: near-black on the light green, near-white on
-  /// the dark one.
+  /// Text on [userBubble].
   static Color get onUserBubble =>
-      MdTheme.dark ? const Color(0xFFE8F5EE) : const Color(0xFF1A1A1A);
+      MdTheme.dark ? const Color(0xFFECFDF5) : const Color(0xFF064E3B);
 
   static const claude = Color(0xFFD97857);
 
   /// `textPreformat.*`.
   static Color get inlineCode =>
-      MdTheme.dark ? const Color(0xFFD7BA7D) : const Color(0xFF800000);
+      MdTheme.dark ? const Color(0xFFE2C08D) : const Color(0xFF9A3412);
   static Color get inlineCodeBackground =>
-      MdTheme.dark ? const Color(0x14FFFFFF) : const Color(0x1A000000);
+      MdTheme.dark ? const Color(0x18FFFFFF) : const Color(0x10000000);
 
   /// `gitDecoration.*` — diff greens and reds.
   static Color get added =>
-      MdTheme.dark ? const Color(0xFF81B88B) : const Color(0xFF116329);
+      MdTheme.dark ? const Color(0xFF34D399) : const Color(0xFF15803D);
   static Color get addedBackground =>
-      MdTheme.dark ? const Color(0x1F2EA043) : const Color(0x402EA043);
+      MdTheme.dark ? const Color(0x1F10B981) : const Color(0x2822C55E);
   static Color get removed =>
-      MdTheme.dark ? const Color(0xFFC74E39) : const Color(0xFF82071E);
+      MdTheme.dark ? const Color(0xFFF87171) : const Color(0xFFDC2626);
   static Color get removedBackground =>
-      MdTheme.dark ? const Color(0x26F85149) : const Color(0x40F85149);
+      MdTheme.dark ? const Color(0x24EF4444) : const Color(0x24EF4444);
 
   /// `editorWarning.foreground`.
   static Color get caution =>
-      MdTheme.dark ? const Color(0xFFFFA14D) : const Color(0xFFBF8803);
+      MdTheme.dark ? const Color(0xFFFBBF24) : const Color(0xFFD97706);
 
   /// `list.hoverBackground`.
   static Color get hover =>
-      MdTheme.dark ? const Color(0xFF2A2D2E) : const Color(0xFFE8E8E8);
+      MdTheme.dark ? const Color(0xFF232732) : const Color(0xFFE8ECF2);
 
   /// The chat's message bubbles and its input: their line a step towards
   /// the text's color from [bubbleFill], tinged with [accent]; the input's

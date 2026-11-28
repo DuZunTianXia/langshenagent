@@ -304,6 +304,13 @@ class FolderPageState extends State<FolderPage> {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search_rounded),
+            tooltip: '搜索项目文件',
+            onPressed: _searchFiles,
+          ),
+        ],
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -344,7 +351,226 @@ class FolderPageState extends State<FolderPage> {
     );
   }
 
+  Future<void> _searchFiles() async {
+    final picked = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: AppColors.surfaceRaised,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      builder: (_) => _ProjectFileSearchSheet(
+        link: widget.link,
+        project: widget.project,
+      ),
+    );
+    if (picked == null || picked.isEmpty || !mounted) return;
+    try {
+      await FileViewPage.open(
+        context,
+        link: widget.link,
+        project: widget.project,
+        path: picked,
+      );
+    } on Object catch (failure) {
+      if (mounted) showBToast(context, '$failure', isError: true);
+    }
+  }
+
   static String _base(String path) => path.split('/').last;
+}
+
+class _ProjectFileSearchSheet extends StatefulWidget {
+  const _ProjectFileSearchSheet({
+    required this.link,
+    required this.project,
+  });
+
+  final PhoneLink link;
+  final ProjectInfo project;
+
+  @override
+  State<_ProjectFileSearchSheet> createState() =>
+      _ProjectFileSearchSheetState();
+}
+
+class _ProjectFileSearchSheetState extends State<_ProjectFileSearchSheet> {
+  final _query = TextEditingController();
+  List<String> _paths = const [];
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void dispose() {
+    _query.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final result = await widget.link.files(widget.project.id);
+      final raw = result['paths'];
+      final paths = <String>[
+        for (final p in raw is List ? raw : const [])
+          if (p is String && p.isNotEmpty) p,
+      ];
+      if (mounted) {
+        setState(() {
+          _paths = paths;
+          _loading = false;
+        });
+      }
+    } on Object catch (failure) {
+      if (mounted) {
+        setState(() {
+          _error = '$failure';
+          _loading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final needle = _query.text.trim().toLowerCase();
+    final filtered = needle.isEmpty
+        ? _paths.take(200).toList()
+        : _paths
+              .where((p) => p.toLowerCase().contains(needle))
+              .take(200)
+              .toList();
+    return SafeArea(
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.72,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '搜索 ${widget.project.name}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  if (!_loading && _error == null)
+                    Text(
+                      '${_paths.length} 个文件',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textFaint,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+              child: TextField(
+                controller: _query,
+                autofocus: true,
+                style: TextStyle(fontSize: 14, color: AppColors.textPrimary),
+                decoration: BTextField.decoration(hint: '输入文件名或路径…'),
+                onChanged: (_) => setState(() {}),
+              ),
+            ),
+            Expanded(
+              child: _loading
+                  ? Center(
+                      child: CircularProgressIndicator(color: AppColors.accent),
+                    )
+                  : _error != null
+                  ? BEmptyState(
+                      icon: Icons.cloud_off_outlined,
+                      title: '无法加载文件列表',
+                      subtitle: _error,
+                      actionLabel: '重试',
+                      onAction: _load,
+                    )
+                  : filtered.isEmpty
+                  ? const BEmptyState(
+                      icon: Icons.search_off_rounded,
+                      title: '没有匹配的文件',
+                      subtitle: '换个关键词试试。',
+                    )
+                  : ListView.separated(
+                      itemCount: filtered.length,
+                      separatorBuilder: (_, _) => const BDivider(),
+                      itemBuilder: (context, index) {
+                        final path = filtered[index];
+                        final slash = path.lastIndexOf('/');
+                        final name =
+                            slash < 0 ? path : path.substring(slash + 1);
+                        final dir = slash < 0 ? '' : path.substring(0, slash);
+                        return InkWell(
+                          onTap: () => Navigator.of(context).pop(path),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
+                            ),
+                            child: Row(
+                              children: [
+                                BFileIcon(name: name, size: 20),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        name,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                          color: AppColors.textPrimary,
+                                        ),
+                                      ),
+                                      if (dir.isNotEmpty)
+                                        Text(
+                                          dir,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 11.5,
+                                            color: AppColors.textMuted,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 /// A file or folder row of a [FolderPage]: compact, but in the visual
